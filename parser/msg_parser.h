@@ -42,6 +42,8 @@
 
 #include <strings.h>
 
+#include <siplog.h>
+
 #include "../str.h"
 #include "../lump_struct.h"
 #include "../flags.h"
@@ -312,6 +314,8 @@ struct sip_msg {
 	str set_global_port;
 
 	struct msg_callback *msg_cb;
+
+	siplog_t log;
 };
 
 

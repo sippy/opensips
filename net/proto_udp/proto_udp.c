@@ -24,11 +24,14 @@
  *  2015-02-11  first version (bogdan)
  */
 
+#include <ctype.h>
 #include <errno.h>
 #include <unistd.h>
 #include <netinet/tcp.h>
 #include <poll.h>
 #include <fcntl.h>
+
+#include <siplog.h>
 
 #include "../../pt.h"
 #include "../../timer.h"
@@ -51,6 +54,7 @@ static int udp_read_req(struct socket_info *src, int* bytes_read);
 static callback_list* cb_list = NULL;
 
 static int udp_port = SIP_PORT;
+static siplog_t glog;
 
 
 static cmd_export_t cmds[] = {
@@ -85,9 +89,48 @@ struct module_exports proto_udp_exports = {
 };
 
 
+static int
+extract_call_id(const char *buf, str *call_id)
+{
+       const char *cp, *cp1;
+       int len;
+
+       for (cp = buf;;) {
+           cp1 = strcasestr(cp, "call-id:");
+           if (cp1 == NULL) {
+               cp = strcasestr(cp, "i:");
+               if (cp == NULL)
+                   return -1;
+               len = 2;
+           } else {
+               cp = cp1;
+               len = 8;
+           }
+           if (cp > buf && cp[-1] != '\n' && cp[-1] != '\r') {
+               cp += len;
+               continue;
+           }
+           call_id->s = (char *)cp + len;
+           while (call_id->s[0] != '\0' && call_id->s[0] != '\r' &&
+             call_id->s[0] != '\n' && isspace(call_id->s[0]))
+               call_id->s++;
+           if (call_id->s[0] == '\0' || call_id->s[0] == '\r' ||
+             call_id->s[0] == '\n')
+               return -1;
+           call_id->len = 0;
+           while (call_id->s[call_id->len] != '\0' && call_id->s[call_id->len] != '\r' &&
+             call_id->s[call_id->len] != '\n' && !isspace(call_id->s[call_id->len]))
+               call_id->len++;
+           if (call_id->len == 0)
+               return -1;
+           return 0;
+       }
+}
+
 static int mod_init(void)
 {
 	LM_INFO("initializing UDP-plain protocol\n");
+	glog = siplog_open("ser", NULL, LF_REOPEN);
 	return 0;
 }
 
@@ -129,6 +172,8 @@ static int udp_read_req(struct socket_info *si, int* bytes_read)
 	unsigned int fromlen;
 	callback_list* p;
 	str msg;
+	str call_id;
+	char *idx_id;
 
 #ifdef DYN_BUF
 	buf=pkg_malloc(BUF_SIZE+1);
@@ -165,6 +210,17 @@ static int udp_read_req(struct socket_info *si, int* bytes_read)
 
 	su2ip_addr(&ri.src_ip, &ri.src_su);
 	ri.src_port=su_getport(&ri.src_su);
+
+	idx_id = NULL;
+	if (extract_call_id(buf, &call_id) != -1) {
+		idx_id = pkg_malloc(call_id.len + 1);
+		memcpy(idx_id, call_id.s, call_id.len);
+		idx_id[call_id.len] = '\0';
+	}
+	siplog_iwrite(SIPLOG_DBUG, glog, idx_id, "RECEIVED message from %s:%d:\n%s",
+	    ip_addr2a(&(ri.src_ip)), ri.src_port, buf);
+	if (idx_id != NULL)
+		pkg_free(idx_id);
 
 	msg.s = buf;
 	msg.len = len;
@@ -208,6 +264,8 @@ static int proto_udp_send(struct socket_info* source,
 		char* buf, unsigned int len, union sockaddr_union* to, int id)
 {
 	int n, tolen;
+	str call_id;
+	char *idx_id;
 
 	tolen=sockaddru_len(*to);
 again:
@@ -222,6 +280,24 @@ again:
 			"attempts to send to the net\n");
 		}
 	}
+
+	if (len > 5) {
+		struct ip_addr dst_ip;
+		unsigned short port;
+
+		su2ip_addr(&dst_ip, to);
+		port=(unsigned short)su_getport(to);
+
+		idx_id = NULL;
+		if (extract_call_id(buf, &call_id) != -1) {
+			idx_id = alloca(call_id.len + 1);
+			memcpy(idx_id, call_id.s, call_id.len);
+			idx_id[call_id.len] = '\0';
+		}
+		siplog_iwrite(SIPLOG_DBUG, glog, idx_id, "SENDING message to %s:%d:\n%.*s",
+		    ip_addr2a(&dst_ip), port, len, buf);
+	}
+
 	return n;
 }
 

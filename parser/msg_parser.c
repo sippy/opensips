@@ -39,6 +39,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include <siplog.h>
+
 #include "msg_parser.h"
 #include "parser_f.h"
 #include "../ut.h"
@@ -643,6 +645,17 @@ int parse_msg(char* buf, unsigned int len, struct sip_msg* msg)
 #ifdef EXTRA_DEBUG
 	LM_DBG("exiting\n");
 #endif
+
+	parse_headers(msg, HDR_CALLID_F, 0);
+	if (msg->callid != NULL && msg->callid->body.len > 0) {
+		tmp = pkg_malloc(msg->callid->body.len + 1);
+		memcpy(tmp, msg->callid->body.s, msg->callid->body.len);
+		tmp[msg->callid->body.len] = '\0';
+		msg->log = siplog_open("ser", tmp, 0);
+		pkg_free(tmp);
+	} else {
+		msg->log = NULL;
+	}
 
 	return 0;
 
