@@ -54,6 +54,7 @@ extern str ip;
 extern str buffer;
 extern int post_buf_size;
 extern struct httpd_cb *httpd_cb_list;
+extern union sockaddr_union httpd_server_info;
 
 static const str MI_HTTP_U_URL = str_init("<html><body>"
 "Unable to parse URL!</body></html>");
@@ -387,6 +388,11 @@ void httpd_lookup_arg(void *connection, const char *key,
 	return;
 }
 
+union sockaddr_union* httpd_get_server_info(void)
+{
+	return &httpd_server_info;
+}
+
 
 int answer_to_connection (void *cls, struct MHD_Connection *connection,
 		const char *url, const char *method,
@@ -397,7 +403,7 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection,
 	struct MHD_Response *response;
 	int ret;
 	void *async_data = NULL;
-	struct httpd_cb *cb;
+	struct httpd_cb *cb = NULL;
 	const char *normalised_url;
 	struct post_request *pr;
 	str_str_t *kv;
@@ -405,6 +411,8 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection,
 	int cnt_type = HTTPD_STD_CNT_TYPE;
 	int accept_type = HTTPD_STD_CNT_TYPE;
 	int ret_code = MHD_HTTP_OK;
+
+	union sockaddr_union* cl_socket;
 
 	LM_DBG("START *** cls=%p, connection=%p, url=%s, method=%s, "
 			"versio=%s, upload_data[%zu]=%p, *con_cls=%p\n",
@@ -422,6 +430,9 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection,
 		*con_cls = pr;
 		pr = NULL;
 	}
+
+	cl_socket = *(union sockaddr_union**)MHD_get_connection_info(connection,
+			MHD_CONNECTION_INFO_CLIENT_ADDRESS);
 
 	if(strncmp(method, "POST", 4)==0) {
 		if(pr == NULL){
@@ -503,7 +514,7 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection,
 								normalised_url,
 								method, version,
 								upload_data, upload_data_size, con_cls,
-								&buffer, &page);
+								&buffer, &page, cl_socket);
 					} else {
 						page = MI_HTTP_U_URL;
 						ret_code = MHD_HTTP_BAD_REQUEST;
@@ -589,7 +600,7 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection,
 						normalised_url,
 						method, version,
 						upload_data, upload_data_size, con_cls,
-						&buffer, &page);
+						&buffer, &page, cl_socket);
 			} else {
 				page = MI_HTTP_U_URL;
 				ret_code = MHD_HTTP_BAD_REQUEST;
@@ -613,7 +624,7 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection,
 					normalised_url,
 					method, version,
 					upload_data, upload_data_size, con_cls,
-					&buffer, &page);
+					&buffer, &page, cl_socket);
 		} else {
 			page = MI_HTTP_U_URL;
 			ret_code = MHD_HTTP_BAD_REQUEST;
@@ -641,13 +652,15 @@ send_response:
 #endif
 		LM_DBG("MHD_create_response_from_data [%p:%d]\n",
 			page.s, page.len);
-	} else {
+	} else if (cb) {
 		LM_DBG("MHD_create_response_from_callback\n");
 		response = MHD_create_response_from_callback (MHD_SIZE_UNKNOWN,
 							buffer.len,
 							(MHD_ContentReaderCallback)cb->flush_data_callback,
 							(void*)async_data,
 							NULL);
+	} else {
+		return -1;
 	}
 	if (cnt_type==HTTPD_TEXT_XML_CNT_TYPE || accept_type==HTTPD_TEXT_XML_CNT_TYPE)
 		MHD_add_response_header(response,

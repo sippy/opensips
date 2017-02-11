@@ -31,14 +31,6 @@
 #  2007-09-28  added db_berkeley (wiquan)
 #
 
-#FREERADIUS=1
-# freeradius libs check (must be done in toplevel makefile)
-ifeq ($(RADIUSCLIENT),)
-RADIUSCLIENT=$(shell if [ -n "`ldconfig -p | grep radcli`" ]; then echo "RADCLI"; \
-		 elif [ -n "`ldconfig -p | grep freeradius`" ]; then echo "FREERADIUS"; \
-		  elif [ -n "`ldconfig -p | grep radiusclient-ng`" ];then echo "RADIUSCLIENT"; fi)
-endif
-
 #SQLITE_BIND=1
 NICER?=1
 auto_gen=lex.yy.c cfg.tab.c   #lexx, yacc etc
@@ -57,7 +49,7 @@ tls_overwrite_certs?=
 
 
 makefile_defs=0
-DEFS:=
+DEFS?=
 DEBUG_PARSER?=
 
 # json libs check
@@ -76,6 +68,11 @@ ifeq (,$(wildcard Makefile.conf))
 $(shell cp Makefile.conf.template Makefile.conf)
 endif
 include Makefile.conf
+ifneq (,$(findstring SHM_EXTRA_STATS, $(DEFS)))
+MEM_STATS_HDR = mem/mem_stats.h
+deps_gen += $(MEM_STATS_HDR)
+auto_gen += mem/mem_stats.c
+endif
 include Makefile.sources
 include Makefile.defs
 
@@ -126,7 +123,7 @@ modules_names=$(patsubst modules/%, %.so, $(modules))
 modules_basenames=$(patsubst modules/%, %, $(modules))
 modules_full_path=$(join $(modules), $(addprefix /, $(modules_names)))
 
-ALLDEP=Makefile Makefile.sources Makefile.defs Makefile.rules Makefile.conf
+ALLDEP=Makefile Makefile.sources Makefile.defs Makefile.rules Makefile.conf $(deps_gen)
 
 install_docs := README-MODULES AUTHORS NEWS README
 ifneq ($(skip-install-doc),yes)
@@ -173,7 +170,7 @@ ifeq (,$(FASTER))
 endif
 	$(Q)$(LEX) $(LEX_FLAGS) $<
 
-cfg.tab.c cfg.tab.h: cfg.y  $(ALLDEP)
+cfg.tab.c cfg.tab.h: cfg.y $(ALLDEP)
 ifeq (,$(FASTER))
 	@echo "Generating parser"
 endif
@@ -200,7 +197,7 @@ $(modules):
 		)
 
 .PHONY: modules
-modules:
+modules: $(deps_gen)
 ifeq (,$(FASTER))
 	@set -e; \
 	for r in $(modules) "" ; do \
@@ -437,7 +434,8 @@ deb-orig-tar: tar
 deb-%:
 	rm -rf debian
 	# dpkg-source cannot use links for debian source
-	cp -r packaging/debian/$(@:deb-%=%) debian
+	cp -r packaging/debian/common debian
+	[ "$@" = "deb-common" ] || cp -r packaging/debian/$(@:deb-%=%)/* debian
 	dpkg-buildpackage \
 		-I.git -I.gitignore \
 		-I*.swp -I*~ \
@@ -715,11 +713,6 @@ doxygen:
 	echo "HAVE_DOT=no" ;\
 	echo "PROJECT_NUMBER=$(NAME)-$(RELEASE)" )| doxygen -
 	-@echo "Doxygen documentation created"
-
-
-.PHONY: print radius_lib
-print_radius_lib:
-	@echo $(RADIUSCLIENT)
 
 comp_menuconfig:
 	$(MAKE) -C menuconfig

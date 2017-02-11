@@ -60,7 +60,7 @@ int init_multi_proc_support(void)
 	/* info packet UDP receivers */
 
 	/* timer processes */
-	proc_no += 2 /* timer keeper + timer trigger */;
+	proc_no += 3 /* timer keeper + timer trigger + dedicated */;
 
 	/* count the processes requested by modules */
 	proc_no += count_module_procs();
@@ -131,7 +131,8 @@ pid_t internal_fork(char *proc_desc)
 	pt[process_counter].pid = 0;
 
 	if ( (pid=fork())<0 ){
-		LM_CRIT("cannot fork \"%s\" process\n",proc_desc);
+		LM_CRIT("cannot fork \"%s\" process (%d: %s)\n",proc_desc,
+				errno, strerror(errno));
 		return -1;
 	}
 
@@ -177,6 +178,9 @@ int count_init_children(int flags)
 	ret += tcp_count_processes();
 
 	/* attendent */
+	ret++;
+
+	/* dedicated timer */
 	ret++;
 
 	/* count number of module procs going to be initialised */

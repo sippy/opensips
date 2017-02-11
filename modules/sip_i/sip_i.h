@@ -1,7 +1,6 @@
-/*
- * Registrar errno
+/**
  *
- * Copyright (C) 2001-2003 FhG Fokus
+ * Copyright (C) 2016 OpenSIPS Foundation
  *
  * This file is part of opensips, a free SIP server.
  *
@@ -18,16 +17,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+ *
+ * History
+ * -------
+ *  2016-09-xx  initial version (rvlad-patrascu)
  */
 
-/*!
- * \file
- * \brief SIP registrar module - registrar errno
- * \ingroup registrar
- */
+#ifndef _SIP_I_H_
+#define _SIP_I_H_
 
+#define DEFAULT_PARAM_SUBF_SEP "|"
 
-#include "rerrno.h"
+#define ISUP_MIME_S "application/ISUP;version=itu-t92+"
 
-rerr_t rerrno;
+#define DEFAULT_COUNTRY_CODE "+1"
 
+struct isup_parse_fixup {
+	int isup_params_idx;
+	int subfield_idx;
+};
+
+#endif /* _SIP_I_H_ */

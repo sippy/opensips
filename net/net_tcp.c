@@ -979,12 +979,12 @@ static inline int handle_new_connect(struct socket_info* si)
 		LM_ERR("maximum number of connections exceeded: %d/%d\n",
 					tcp_connections_no, tcp_max_connections);
 		close(new_sock);
-		return 1; /* success, because the accept was succesfull */
+		return 1; /* success, because the accept was successful */
 	}
 	if (tcp_init_sock_opt(new_sock)<0){
 		LM_ERR("tcp_init_sock_opt failed\n");
 		close(new_sock);
-		return 1; /* success, because the accept was succesfull */
+		return 1; /* success, because the accept was successful */
 	}
 
 	/* add socket to list */
@@ -1011,7 +1011,7 @@ static inline int handle_new_connect(struct socket_info* si)
 		LM_ERR("tcpconn_new failed, closing socket\n");
 		close(new_sock);
 	}
-	return 1; /* accept() was succesfull */
+	return 1; /* accept() was successful */
 }
 
 
@@ -1021,7 +1021,7 @@ static inline int handle_new_connect(struct socket_info* si)
  * \param    tcpconn - pointer to the tcp_connection for which we have an io ev.
  * \param    fd_i    - index in the fd_array table (needed for delete)
  * \return   handle_* return convention, but on success it always returns 0
- *           (because it's one-shot, after a succesfull execution the fd is
+ *           (because it's one-shot, after a successful execution the fd is
  *            removed from tcp_main's watch fd list and passed to a child =>
  *            tcp_main is not interested in further io events that might be
  *            queued for this fd)
@@ -1185,6 +1185,15 @@ inline static int handle_tcp_worker(struct tcp_child* tcp_c, int fd_i)
 			tcpconn_put(tcpconn);
 			/* must be after the de-ref*/
 			reactor_add_reader( tcpconn->s, F_TCPCONN, RCT_PRIO_NET, tcpconn);
+			tcpconn->flags&=~F_CONN_REMOVED;
+			break;
+		case CONN_RELEASE_WRITE:
+			tcp_c->busy--;
+			if (tcpconn->state==S_CONN_BAD){
+				tcpconn_destroy(tcpconn);
+				break;
+			}
+			tcpconn_put(tcpconn);
 			tcpconn->flags&=~F_CONN_REMOVED;
 			break;
 		case ASYNC_WRITE:
@@ -1736,7 +1745,8 @@ int tcp_start_processes(int *chd_rank, int *startup_done)
 			set_proc_attrs("TCP receiver");
 			pt[process_no].idx=r;
 			pt[process_no].load = load_p;
-			if (init_child(*chd_rank) < 0) {
+			if (tcp_worker_proc_reactor_init(reader_fd[1]) < 0 ||
+					init_child(*chd_rank) < 0) {
 				LM_ERR("init_children failed\n");
 				report_failure_status();
 				if (startup_done)
@@ -1746,7 +1756,7 @@ int tcp_start_processes(int *chd_rank, int *startup_done)
 
 			/* was startup route executed so far ? */
 			if (startup_done!=NULL && *startup_done==0 && r==0) {
-				LM_DBG("runing startup for first TCP\n");
+				LM_DBG("running startup for first TCP\n");
 				if(run_startup_route()< 0) {
 					LM_ERR("Startup route processing failed\n");
 					report_failure_status();
@@ -1758,8 +1768,7 @@ int tcp_start_processes(int *chd_rank, int *startup_done)
 
 			report_conditional_status( 1, 0);
 
-			tcp_worker_proc( reader_fd[1] );
-			exit(-1);
+			tcp_worker_proc_loop();
 		}
 	}
 
@@ -1769,6 +1778,19 @@ int tcp_start_processes(int *chd_rank, int *startup_done)
 			usleep(5);
 			handle_sigs();
 		}
+
+	return 0;
+error:
+	return -1;
+}
+
+
+int tcp_start_listener(void)
+{
+	pid_t pid;
+
+	if (tcp_disabled)
+		return 0;
 
 	/* start the TCP manager process */
 	if ( (pid=internal_fork( "TCP main"))<0 ) {
@@ -1846,7 +1868,7 @@ struct mi_root *mi_tcp_list_conns(struct mi_root *cmd, void *param)
 					goto error;
 
 				/* add state */
-				p = int2str((unsigned long)conn->state, &len);
+				p = sint2str((long)conn->state, &len);
 				attr = add_mi_attr( node, MI_DUP_VALUE,MI_SSTR("State"),p,len);
 				if (attr==0)
 					goto error;

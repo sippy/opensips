@@ -638,6 +638,7 @@ static void ds_inherit_state( ds_data_t *old_data , ds_data_t *new_data)
 {
 	ds_set_p new_set, old_set;
 	ds_dest_p new_ds, old_ds;
+	int changed;
 
 	/* search the new sets through the old sets */
 	for ( new_set=new_data->sets ; new_set ; new_set=new_set->next ) {
@@ -650,6 +651,7 @@ static void ds_inherit_state( ds_data_t *old_data , ds_data_t *new_data)
 			continue;
 		}
 		LM_DBG("set id %d found in old sets\n",new_set->id);
+		changed = 0;
 
 		/* sets are matching, try to match the destinations, one by one */
 		for ( new_ds=new_set->dlist ; new_ds ; new_ds=new_ds->next ) {
@@ -658,7 +660,10 @@ static void ds_inherit_state( ds_data_t *old_data , ds_data_t *new_data)
 				strncasecmp(new_ds->uri.s, old_ds->uri.s, old_ds->uri.len)==0 ) {
 					LM_DBG("DST <%.*s> found in old set, copying state\n",
 						new_ds->uri.len,new_ds->uri.s);
-					new_ds->flags = old_ds->flags;
+					if (new_ds->flags != old_ds->flags) {
+						new_ds->flags = old_ds->flags;
+						changed = 1;
+					}
 					break;
 				}
 			}
@@ -666,6 +671,8 @@ static void ds_inherit_state( ds_data_t *old_data , ds_data_t *new_data)
 				LM_DBG("DST <%.*s> not found in old set\n",
 					new_ds->uri.len,new_ds->uri.s);
 		}
+		if (changed)
+			re_calculate_active_dsts(new_set);
 	}
 }
 
@@ -1300,6 +1307,8 @@ int ds_update_dst(struct sip_msg *msg, str *uri, struct socket_info *sock,
 	uri_type utype;
 	int typelen;
 
+	/* initialize all the act fields */
+	memset(&act, 0, sizeof(act));
 	switch(mode)
 	{
 		case 1:
@@ -1356,7 +1365,7 @@ static inline int push_ds_2_avps( ds_dest_t *ds, ds_partition_t *partition )
 	char buf[PTR_STRING_SIZE]; /* a hexa string */
 	int_str avp_val;
 
-	avp_val.s.len = 1 + snprintf( buf, PTR_STR_SIZE, "%p", ds->sock );
+	avp_val.s.len = snprintf( buf, PTR_STR_SIZE, "%p", ds->sock );
 	avp_val.s.s = buf;
 	if(add_avp(AVP_VAL_STR| partition->sock_avp_type,
 				partition->sock_avp_name, avp_val)!=0) {
@@ -1568,6 +1577,11 @@ int ds_select_dst(struct sip_msg *msg, ds_select_ctl_p ds_select_ctl,
 				for( ds_id=0 ; ds_id<set_size ; ds_id++ )
 					if (ds_rand<idx->dlist[ds_id].running_weight)
 						break;
+				if (ds_id==set_size) {
+					LM_CRIT("BUG - no node found with weight %d in set %d\n",
+						ds_rand,idx->id);
+					goto error;
+				}
 			} else {
 				/* get a candidate simply based on hash */
 				ds_id = ds_hash % set_size;
@@ -1599,12 +1613,22 @@ int ds_select_dst(struct sip_msg *msg, ds_select_ctl_p ds_select_ctl,
 							if ( dst_is_active(idx->dlist[i]) &&
 							(ds_rand<idx->dlist[i].active_running_weight) )
 								break;
+						if (i==set_size) {
+							LM_CRIT("BUG - no active node found with "
+								"weight %d in set %d\n",ds_rand,idx->id);
+							goto error;
+						}
 					} else {
 						j = ds_hash % cnt;
 						/* translate this index to the full set of dsts */
 						for ( i=0 ; i<set_size ; i++ ) {
 							if ( dst_is_active(idx->dlist[i]) ) j--;
 							if (j<0) break;
+						}
+						if (i==set_size) {
+							LM_CRIT("BUG - no active node found with "
+								"in set %d\n",idx->id);
+							goto error;
 						}
 					}
 				}
@@ -1659,13 +1683,7 @@ int ds_select_dst(struct sip_msg *msg, ds_select_ctl_p ds_select_ctl,
 		LM_ERR("cannot set selected_dst uri\n");
 		goto error;
 	}
-	if (selected->sock) {
-		selected_dst->socket.len = 1 +
-		snprintf( selected_dst->socket.s, PTR_STR_SIZE, "%p", selected->sock );
-	}
-	else {
-		selected_dst->socket.len = 0;
-	}
+	selected_dst->socket = selected->sock;
 
 	LM_DBG("selected [%d-%d/%d] <%.*s>\n",
 		ds_select_ctl->alg, ds_select_ctl->set, ds_id,
@@ -2269,10 +2287,9 @@ void ds_check_timer(unsigned int ticks, void* param)
 			for(j=0; j<list->nr; j++)
 			{
 				/* If list is probed by this proxy and the Flag of
-                                 * the entry has "Probing" set, send a probe:
-                                 */
+				 * the entry has "Probing" set, send a probe: */
 				if ( (!ds_probing_list || in_int_list(ds_probing_list, list->id)==0) &&
-                                ((list->dlist[j].flags&DS_INACTIVE_DST)==0) &&
+				((list->dlist[j].flags&DS_INACTIVE_DST)==0) &&
 				(ds_probing_mode==1 || (list->dlist[j].flags&DS_PROBING_DST)!=0
 				))
 				{
@@ -2282,13 +2299,18 @@ void ds_check_timer(unsigned int ticks, void* param)
 					/* Execute the Dialog using the "request"-Method of the
 					 * TM-Module.*/
 					if (tmb.new_auto_dlg_uac(&ds_ping_from,
-					&list->dlist[j].uri,
+					&list->dlist[j].uri, NULL, NULL,
 					list->dlist[j].sock?list->dlist[j].sock:probing_sock,
 					&dlg) != 0 ) {
 						LM_ERR("failed to create new TM dlg\n");
 						continue;
 					}
 					dlg->state = DLG_CONFIRMED;
+
+					if (ds_ping_maxfwd>=0) {
+						dlg->mf_enforced = 1;
+						dlg->mf_value = (unsigned short)ds_ping_maxfwd;
+					}
 
 					ds_options_callback_param_t *cb_param =
 								shm_malloc(sizeof(*cb_param));

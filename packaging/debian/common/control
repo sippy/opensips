@@ -45,6 +45,7 @@ Depends: adduser, ${misc:Depends}, ${python:Depends}, ${shlibs:Depends}
 Suggests: opensips-b2bua-module,
           opensips-berkeley-module,
           opensips-carrierroute-module,
+          opensips-cgrates-module,
           opensips-compression-module,
           opensips-console,
           opensips-cpl-module,
@@ -63,7 +64,7 @@ Suggests: opensips-b2bua-module,
           opensips-perl-modules,
           opensips-postgres-module,
           opensips-presence-modules,
-          opensips-rabbitmq-module,
+          opensips-rabbitmq-modules,
           opensips-radius-modules,
           opensips-redis-module,
           opensips-regex-module,
@@ -111,7 +112,7 @@ Description: very fast and configurable SIP server [debug symbols]
 Package: opensips-mysql-module
 Architecture: any
 Multi-Arch: same
-Depends: mysql-client,
+Depends: virtual-mysql-client,
          opensips (= ${binary:Version}),
          ${misc:Depends},
          ${shlibs:Depends}
@@ -445,7 +446,7 @@ Description: Interface module to interact with a Redis server
  to either a single Redis server instance, or to a Redis Server inside
  a Redis Cluster. It uses the Key-Value interface exported from the core.
 
-Package: opensips-rabbitmq-module
+Package: opensips-rabbitmq-modules
 Architecture: any
 Multi-Arch: same
 Depends: opensips (= ${binary:Version}), ${misc:Depends}, ${shlibs:Depends}
@@ -456,7 +457,8 @@ Description: Interface module to interact with a RabbitMQ server
  .
  This package provides the implementation of a RabbitMQ client for the Event
  Interface. It is used to send AMQP messages to a RabbitMQ server each time
- the Event Interface triggers an event subscribed for.
+ the Event Interface triggers an event subscribed for. It also provides a
+ module to publish RabbitMQ messages to a RabbitMQ server.
 
 Package: opensips-lua-module
 Architecture: any
@@ -509,7 +511,7 @@ Description: Emerrgency call module for OpenSIPS
  per second even on low-budget hardware.
  .
  The emergency module provides emergency call treatment for OpenSIPS, following
- the architecture i2 specification of the american entity NENA. (National
+ the architecture i2 specification of the American entity NENA. (National
  Emergency Number Association).
 
 Package: opensips-tlsmgm-module
@@ -583,3 +585,14 @@ Description: REST client module for OpenSIPS
  per second even on low-budget hardware.
  .
  This package provides the REST client support for OpenSIPS.
+
+Package: opensips-cgrates-module
+Architecture: any
+Multi-Arch: same
+Depends: opensips (= ${binary:Version}), ${misc:Depends}, ${shlibs:Depends}
+Description: CGRateS connector for OpenSIPS
+ OpenSIPS is a very fast and flexible SIP (RFC3261)
+ server. Written entirely in C, OpenSIPS can handle thousands calls
+ per second even on low-budget hardware.
+ .
+ This package provides a connnector to the CGRateS rating/billing engine.

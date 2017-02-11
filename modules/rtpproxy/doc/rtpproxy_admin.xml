@@ -39,12 +39,9 @@
 		weight value than 0) respond. Default weight is 1.
 	</para>
 	<para>
-		Starting with &osips; 1.11, the set_rtp_proxy_set() function has
-		been removed. The set is now specified for each function. If
-		absend, the default set 0 is used. Also, engage_rtp_proxy(),
-		unforce_rtp_proxy() and start_recording() functions have been deprecated
-		and replaced by rtpproxy_engage(), rtpproxy_unforce() and
-		rtpproxy_start_recording() respectively.
+		Starting with &osips; 2.1, engage_rtp_proxy(), unforce_rtp_proxy()
+		and start_recording() functions have been fully replaced by
+		rtpproxy_engage(), rtpproxy_unforce() and rtpproxy_start_recording().
 	</para>
 	<para>
 		IMPORTANT: if you use multiple sets, make sure you use the same set for
@@ -73,6 +70,19 @@
 		notification is also sent in the call establishment phase.
 		This is a problem since we want to detect rtp timeout fast, but also
 		allow a longer period for call establishment.
+	</para>
+	<para>
+		Note that RTPProxy version
+		<ulink url='http://www.rtpproxy.org/post/v2release/'>v2.0.0</ulink>
+		has integrated this feature upstream, therefore this patch is no
+		longer needed.
+	</para>
+	<para>
+		Starting with commit
+		<ulink url='https://github.com/sippy/rtpproxy/commit/21e59778973c8aa85e26a7ef7a21a02695673656'>
+			21e5977</ulink>, the timeout notification sockets are handled a bit
+		different by RTPProxy. This makes later RTPProxy releases
+		incompatible with &osips;.
 	</para>
 	<para>
 		To enable timeout notification there are several steps that you must follow:
@@ -456,7 +466,6 @@ modparam("rtpproxy", "rtpp_notify_socket", "tcp:10.10.10.10:9999")
 	<title>Exported Functions</title>
 	<section>
 		<title>
-			<function moreinfo="none">engage_rtp_proxy([flags [, ip_address [, set_id [, sock_pvar]]]]) - deprecated</function>,
 			<function moreinfo="none">rtpproxy_engage([flags [, ip_address [, set_id [, sock_pvar]]]])</function>
 		</title>
 
@@ -500,6 +509,12 @@ modparam("rtpproxy", "rtpp_notify_socket", "tcp:10.10.10.10:9999")
 				should use the 'ie' flags. Depending on the scenario, the 'ii'
 				and 'ee' combination are also supported. Only makes sense when
 				RTPProxy is running in the bridge mode.
+				</para><para>
+				<emphasis>NOTE:</emphasis> when using RTPProxy in bridge mode,
+				all sessions are considered asymmetric (as oposed to symmetric
+				if used in normal mode). If you have symmetric clients (this
+				is the most common scenario), you'll have to force the
+				<emphasis>s</emphasis>!
 				</para></listitem>
 				<listitem><para>
 				<emphasis>f</emphasis> - instructs rtpproxy to ignore marks 
@@ -659,7 +674,6 @@ onreply_route[2]
         </section>
 	<section>
 		<title>
-		<function moreinfo="none">unforce_rtp_proxy([set_id [, sock_pvar]]) - deprecated</function>,
 		<function moreinfo="none">rtpproxy_unforce([set_id [, sock_pvar]])</function>
 		</title>
 		<para>
@@ -786,8 +800,7 @@ rtpproxy_unforce();
 	</section>
 	<section>
 		<title>
-		<function moreinfo="none">start_recording([set_id [, sock_pvar]]) - deprecated</function>,
-		<function moreinfo="none">rtpproxy_start_recording([set_id [, sock_pvar]])</function>
+		<function moreinfo="none">rtpproxy_start_recording([set_id [, sock_pvar [, flags]]])</function>
 		</title>
 		<para>
 		This command will send a signal to the RTP-Proxy to record 
@@ -802,6 +815,13 @@ rtpproxy_unforce();
 			<emphasis>sock_pvar(optional)</emphasis> - pvar used to store the RTPProxy
 			socket chosen for this call.
 			</para></listitem>
+			<listitem><para>
+					<emphasis>flags(optional)</emphasis> - a list of flags passed to
+					RTPProxy for the recording. Currently only <emphasis>s</emphasis>
+					is supported, and it indicates that RTPProxy should record both
+					audio legs in a single file. Note that this feature is available
+					starting with RTPProxy 2.0.
+			</para></listitem>
 		</itemizedlist>
 		<para>
 		This function can be used from REQUEST_ROUTE and ONREPLY_ROUTE.
@@ -811,6 +831,53 @@ rtpproxy_unforce();
 		<programlisting format="linespecific">
 ...
 rtpproxy_start_recording();
+...
+		</programlisting>
+		</example>
+	</section>
+	<section>
+		<title>
+		<function moreinfo="none">rtpproxy_stats(up_pvar, down_pvar, sent_pvar, fail_pvar [, set_id [, sock_pvar]])</function>
+		</title>
+		<para>
+		This command gathers call RTP statistics from RTP-Proxy.
+		</para>
+		<para>Meaning of the parameters is as follows:</para>
+		<itemizedlist>
+			<listitem><para>
+					<emphasis>up_pvar</emphasis> - the pseudo-variable used to return the
+					packets sent by <emphasis>upstream</emphasis> for this call.
+			</para></listitem>
+					<emphasis>down_pvar</emphasis> - the pseudo-variable used to return the
+					packets sent by <emphasis>downstream</emphasis> for this call.
+			<listitem><para>
+			</para></listitem>
+					<emphasis>sent_pvar</emphasis> - the pseudo-variable used to return the
+					total number of packets sent for this call.
+			<listitem><para>
+			</para></listitem>
+					<emphasis>up_pvar</emphasis> - the pseudo-variable used to return the
+					number of failed packets for this call.
+			<listitem><para>
+			</para></listitem>
+			<listitem><para>
+			<emphasis>set_id(optional)</emphasis> - the set used for this call.
+			</para></listitem>
+			<listitem><para>
+			<emphasis>sock_pvar(optional)</emphasis> - pvar used to store the RTPProxy
+			socket chosen for this call.
+			</para></listitem>
+		</itemizedlist>
+		<para>
+			This function can be used from REQUEST_ROUTE, FAILURE_ROUTE, ONREPLY_ROUTE,
+			BRANCH_ROUTE and LOCAL_ROUTE.
+		</para>
+		<example>
+		<title><function>rtpproxy_stats</function> usage</title>
+		<programlisting format="linespecific">
+...
+rtpproxy_stats("$var(up)","$var(down)","$var(sent)","$var(fail)");
+xlog("RTP statistics for $ci: up=$var(up) down=$var(down) sent=$var(sent) fail=$var(fail)\n");
 ...
 		</programlisting>
 		</example>

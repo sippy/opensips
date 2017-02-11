@@ -1324,7 +1324,7 @@ static int pv_parse_hep_net_name(pv_spec_p sp, str* in)
 		sp->pvp.pvn.u.isname.name.n = id;
 		sp->pvp.pvn.u.isname.type = 0;
 	} else {
-		e = pkg_malloc(sizeof(pv_spec_p));
+		e = pkg_malloc(sizeof(pv_spec_t));
 		if (e==NULL) {
 			LM_ERR("no more pkg mem!\n");
 			return -1;
@@ -1535,7 +1535,7 @@ static int get_hep_chunk(struct hepv3* h3, unsigned int chunk_id,
 		if (h3->hg.proto_t.chunk.length == 0)
 			goto chunk_not_set;
 
-		if (h3->hg.proto_t.data < 0 || h3->hg.proto_t.data >
+		if (h3->hg.proto_t.data >
 				(sizeof(hep_app_protos)/sizeof(str))-1) {
 			LM_DBG("Not a HEP default defined proto %d\n",
 					h3->hg.ip_proto.data);
@@ -2346,8 +2346,8 @@ int hep_msg_received(void)
 		switch (h->version) {
 		case 1:
 		case 2:
-			msg.buf = h->u.hepv12.payload;
-			msg.len = strlen(msg.buf);
+			msg.buf = h->u.hepv12.payload.s;
+			msg.len = h->u.hepv12.payload.len;
 			break;
 		case 3:
 			msg.buf = h->u.hepv3.payload_chunk.data;
@@ -3094,7 +3094,7 @@ static int w_sip_capture(struct sip_msg *msg, char *table_name,
 
 		sco.ruri = msg->first_line.u.request.uri;
 		sco.ruri_user = msg->parsed_uri.user;
-		sco.ruri_user = msg->parsed_uri.host;
+		sco.ruri_domain = msg->parsed_uri.host;
 	}
 	else if(msg->first_line.type == SIP_REPLY) {
 		sco.method = msg->first_line.u.reply.status;
@@ -3104,7 +3104,7 @@ static int w_sip_capture(struct sip_msg *msg, char *table_name,
 		EMPTY_STR(sco.ruri_user);
 	}
 	else {
-		LM_ERR("unknow type [%i]\n", msg->first_line.type);
+		LM_ERR("unknown type [%i]\n", msg->first_line.type);
 		EMPTY_STR(sco.method);
 		EMPTY_STR(sco.reply_reason);
 		EMPTY_STR(sco.ruri);
@@ -3197,6 +3197,7 @@ static int w_sip_capture(struct sip_msg *msg, char *table_name,
 
               cb = (contact_body_t*)msg->contact->parsed;
 
+              memset(&contact, 0, sizeof(struct sip_uri));
               if(cb && cb->contacts) {
                   if(parse_uri( cb->contacts->uri.s, cb->contacts->uri.len, &contact)<0){
                         LM_ERR("bad contact dropping packet\n");
@@ -3420,21 +3421,25 @@ static int w_sip_capture(struct sip_msg *msg, char *table_name,
 	sco.correlation_id.len = 0;
 
 	/* MSG */
-	if (h && h->version == 3) {
-		for (it=h->u.hepv3.chunk_list; it; it=it->next) {
-			if (it->chunk.type_id == HEP_CORRELATION_ID) {
-				sco.correlation_id.s = it->data;
-				sco.correlation_id.len = it->chunk.length - sizeof(hep_chunk_t);
+	if (h) {
+		if (h->version == 3) {
+			for (it=h->u.hepv3.chunk_list; it; it=it->next) {
+				if (it->chunk.type_id == HEP_CORRELATION_ID) {
+					sco.correlation_id.s = it->data;
+					sco.correlation_id.len = it->chunk.length - sizeof(hep_chunk_t);
 
-				break;
+					break;
+				}
 			}
-		}
 
-		sco.msg.s = h->u.hepv3.payload_chunk.data;
-		sco.msg.len = h->u.hepv3.payload_chunk.chunk.length - sizeof(hep_chunk_t);
+			sco.msg.s = h->u.hepv3.payload_chunk.data;
+			sco.msg.len = h->u.hepv3.payload_chunk.chunk.length - sizeof(hep_chunk_t);
+		} else {
+			sco.msg = h->u.hepv12.payload;
+		}
 	} else {
-		sco.msg.s = h->u.hepv12.payload;
-		sco.msg.len = strlen(h->u.hepv12.payload);
+		sco.msg.s = msg->buf;
+		sco.msg.len = msg->len;
 	}
 	//EMPTY_STR(sco.msg);
 
@@ -4280,7 +4285,7 @@ static void hepv2_to_buf(struct hepv12* h2, char* buf, int *len)
 	}
 
 
-	memcpy(buf + buflen, h2->payload, payload_len);
+	memcpy(buf + buflen, h2->payload.s, payload_len);
 
 
 	*len = buflen + payload_len;
@@ -4321,8 +4326,9 @@ static void hepv3_to_buf(struct hepv3* h3, char* buf, int *len)
 		if (h3->hg.ip_family.data != AF_INET && h3->hg.ip_family.data != AF_INET6) {
 			LM_ERR("Unknown family <%d>! Will use IPv4\n", h3->hg.ip_family.data);
 			af = AF_INET;
+		} else {
+			af = h3->hg.ip_family.data;
 		}
-		af = h3->hg.ip_family.data;
 	}
 
 
@@ -5192,28 +5198,31 @@ int raw_capture_rcv_loop(int rsock, int port1, int port2, int ipip) {
 	                        continue;
         	        }
 	        }
+			/* cleaup previous values in dst and ri */
+			memset(&dst_ip, 0, sizeof(dst_ip));
+			memset(&ri, 0, sizeof(ri));
 
-		/*FIL IPs*/
-		dst_ip.af=AF_INET;
-	        dst_ip.len=4;
-        	dst_ip.u.addr32[0]=iph->ip_dst.s_addr;
-	        /* fill dst_port */
-        	dst_port=ntohs(udph->uh_dport);
-	        ip_addr2su(&to, &dst_ip, dst_port);
-        	/* fill src_port */
-	        src_port=ntohs(udph->uh_sport);
-                src_ip.af=AF_INET;
- 	        src_ip.len=4;
-                src_ip.u.addr32[0]=iph->ip_src.s_addr;
-                ip_addr2su(&from, &src_ip, src_port);
-	        su_setport(&from, src_port);
+			/*FIL IPs*/
+			dst_ip.af=AF_INET;
+			dst_ip.len=4;
+			dst_ip.u.addr32[0]=iph->ip_dst.s_addr;
+			/* fill dst_port */
+			dst_port=ntohs(udph->uh_dport);
+			ip_addr2su(&to, &dst_ip, dst_port);
+			/* fill src_port */
+			src_port=ntohs(udph->uh_sport);
+			src_ip.af=AF_INET;
+			src_ip.len=4;
+			src_ip.u.addr32[0]=iph->ip_src.s_addr;
+			ip_addr2su(&from, &src_ip, src_port);
+			su_setport(&from, src_port);
 
-		ri.src_su=from;
-                su2ip_addr(&ri.src_ip, &from);
-                ri.src_port=src_port;
-                su2ip_addr(&ri.dst_ip, &to);
-                ri.dst_port=dst_port;
-                ri.proto=PROTO_UDP;
+			ri.src_su=from;
+			su2ip_addr(&ri.src_ip, &from);
+			ri.src_port=src_port;
+			su2ip_addr(&ri.dst_ip, &to);
+			ri.dst_port=dst_port;
+			ri.proto=PROTO_UDP;
 
 		/* cut off the offset */
 	        len -= offset;

@@ -47,8 +47,6 @@
 #include "hep.h"
 #include "hep_cb.h"
 
-#define HEP_FIRST 1
-#define HEP_LAST  3
 
 
 static int mod_init(void);
@@ -69,7 +67,7 @@ static void update_recv_info(struct receive_info *ri, struct hep_desc *h);
 
 void free_hep_context(void* ptr);
 
-static int hep_port = 5656;
+static int hep_port = HEP_PORT;
 static int hep_async = 1;
 static int hep_send_timeout = 100;
 static int hep_async_max_postponed_chunks = 32;
@@ -113,6 +111,7 @@ static cmd_export_t cmds[] = {
 	{"proto_init",            (cmd_function)proto_hep_init_udp,        0, 0, 0, 0},
 	{"proto_init",            (cmd_function)proto_hep_init_tcp,        0, 0, 0, 0},
 	{"load_hep",			  (cmd_function)bind_proto_hep,        1, 0, 0, 0},
+	{"trace_bind_api",        (cmd_function)hep_bind_trace_api,    1, 0, 0, 0},
 	{0,0,0,0,0,0}
 };
 
@@ -130,6 +129,7 @@ static param_export_t params[] = {
 	{ "hep_async_local_write_timeout",   INT_PARAM,
 											&hep_async_local_write_timeout  },
 	{ "compressed_payload",				 INT_PARAM, &payload_compression},
+	{ "hep_id",						 STR_PARAM|USE_FUNC_PARAM, parse_hep_id },
 	{0, 0, 0}
 };
 
@@ -178,6 +178,13 @@ struct module_exports exports = {
 
 static int mod_init(void)
 {
+	/* check if any listeners defined for this proto */
+	if ( !protos[PROTO_HEP_UDP].listeners && !protos[PROTO_HEP_TCP].listeners ) {
+		LM_ERR("No HEP listener defined, neither TCP nor UDP!\n");
+		return -1;
+	}
+
+
 	if (payload_compression) {
 		load_compression =
 			(load_compression_f)find_export("load_compression", 1, 0);
@@ -192,7 +199,7 @@ static int mod_init(void)
 		}
 	}
 
-	hep_ctx_idx = context_register_ptr(CONTEXT_GLOBAL, free_hep_context);
+	hep_ctx_idx = context_register_ptr(CONTEXT_GLOBAL, 0);
 
 	return 0;
 }
@@ -388,8 +395,8 @@ again:
 		buf += n;
 		len -= n;
 	} else {
-		/* succesful write from the first try */
-		LM_DBG("Async succesful write from first try on %p\n",c);
+		/* successful write from the first try */
+		LM_DBG("Async successful write from first try on %p\n",c);
 		return len;
 	}
 
@@ -674,7 +681,7 @@ static int hep_tcp_send (struct socket_info* send_sock,
 
 	if (n < 0) {
 		/* error during conn get, return with error too */
-		LM_ERR("failed to aquire connection\n");
+		LM_ERR("failed to acquire connection\n");
 		return -1;
 	}
 
@@ -700,7 +707,7 @@ static int hep_tcp_send (struct socket_info* send_sock,
 				/* connect is still in progress, break the sending
 				 * flow now (the actual write will be done when
 				 * connect will be completed */
-				LM_DBG("Succesfully started async connection \n");
+				LM_DBG("Successfully started async connection \n");
 				tcp_conn_release(c, 0);
 				return len;
 			}
@@ -859,7 +866,7 @@ static inline int hep_handle_req(struct tcp_req *req,
 
 	int ret=0;
 
-	struct hep_context *hep_ctx;
+	struct hep_context *hep_ctx=NULL;
 	context_p ctx=NULL;
 
 	if (req->complete){
@@ -940,6 +947,9 @@ static inline int hep_handle_req(struct tcp_req *req,
 		if (ret != HEP_SCRIPT_SKIP &&
 				receive_msg(msg_buf, msg_len, &local_rcv, ctx) <0)
 				LM_ERR("receive_msg failed \n");
+
+		if (hep_ctx)
+			free_hep_context(hep_ctx);
 
 		if (!size && req != &hep_current_req) {
 			/* if we no longer need this tcp_req
@@ -1119,7 +1129,7 @@ again:
 			/* report back we have more writting to be done */
 			return 1;
 		} else {
-			LM_ERR("Error occured while sending async chunk %d (%s)\n",
+			LM_ERR("Error occurred while sending async chunk %d (%s)\n",
 				   errno,strerror(errno));
 			/* report the conn as broken */
 			return -1;
@@ -1160,7 +1170,6 @@ static int hep_udp_read_req(struct socket_info *si, int* bytes_read)
 #else
 	static char buf [BUF_SIZE+1];
 #endif
-	char *tmp;
 	unsigned int fromlen;
 	str msg;
 
@@ -1225,12 +1234,14 @@ static int hep_udp_read_req(struct socket_info *si, int* bytes_read)
 
 	if (!memcmp(buf, HEP_HEADER_ID, HEP_HEADER_ID_LEN)) {
 		/* HEPv3 */
+		/* coverity[tainted_data] */
 		if (unpack_hepv3(buf, len, &hep_ctx->h)) {
 			LM_ERR("hepv3 unpacking failed\n");
 			return -1;
 		}
 	} else {
 		/* HEPv2 */
+		/* coverity[tainted_data] */
 		if (unpack_hepv12(buf, len, &hep_ctx->h)) {
 			LM_ERR("hepv12 unpacking failed\n");
 			return -1;
@@ -1276,16 +1287,12 @@ static int hep_udp_read_req(struct socket_info *si, int* bytes_read)
 		}
 	}
 
-	if (ri.src_port==0){
-		tmp=ip_addr2a(&ri.src_ip);
-		LM_INFO("dropping 0 port packet for %s\n", tmp);
-		return 0;
-	}
-
 	if (ret != HEP_SCRIPT_SKIP) {
 		/* receive_msg must free buf too!*/
 		receive_msg( msg.s, msg.len, &ri, ctx);
 	}
+
+	free_hep_context(hep_ctx);
 
 	return 0;
 

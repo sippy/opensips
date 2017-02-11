@@ -161,6 +161,14 @@ This module implements a CPL (Call Processing Language) interpreter.
 Support for uploading/downloading/removing scripts via SIP REGISTER method
 is present.
 
+%package  cgrates
+Summary:  CGRateS connector
+Group:    System Environment/Daemons
+Requires: %{name} = %{version}-%{release}
+
+%description	cgrates
+This module implements a connector to the CGRateS billing/rating engine.
+
 %package  db_berkeley
 Summary:  Berkeley DB backend support
 Group:    System Environment/Daemons
@@ -653,6 +661,15 @@ Requires: %{name} = %{version}-%{release}
 
 %description  python
 Helps implement your own OpenSIPS extensions in Python
+
+%package  rabbitmq
+Summary:  RabbitMQ module
+Group:    System Environment/Daemons
+Requires: %{name} = %{version}-%{release}
+BuildRequires:	librabbitmq-devel
+
+%description  rabbitmq
+This module provides the implementation of a RabbitMQ publisher.
 
 %if %{undefined el5}
 %package  redis
@@ -1177,6 +1194,10 @@ fi
 %{_libdir}/opensips/modules/cpl_c.so
 %doc docdir/README.cpl_c
 
+%files cgrates
+%{_libdir}/opensips/modules/cgrates.so
+%doc docdir/README.cgrates
+
 %files db_berkeley
 %{_sbindir}/bdb_recover
 %{_libdir}/opensips/modules/db_berkeley.so
@@ -1411,6 +1432,10 @@ fi
 %{_libdir}/opensips/modules/cachedb_redis.so
 %doc docdir/README.cachedb_redis
 %endif
+
+%files rabbitmq
+%{_libdir}/opensips/modules/rabbitmq.so
+%doc docdir/README.rabbitmq
 
 %files regex
 %{_libdir}/opensips/modules/regex.so

@@ -36,11 +36,12 @@
  * NOTE: all values in this enum must be negative
  */
 enum async_ret_code {
-	ASYNC_NO_IO = -6,
+	ASYNC_NO_IO = -7,
 	ASYNC_SYNC,
 	ASYNC_CONTINUE,
 	ASYNC_CHANGE_FD,
 	ASYNC_DONE_CLOSE_FD,
+	ASYNC_DONE_NO_IO,		/* don't do any I/O related changes */
 	ASYNC_DONE,
 };
 
@@ -90,7 +91,7 @@ typedef int (async_resume_fd)
  * on the fd.
  * The return code of the f resume function dictates when the fd will be
  * removed from the reactor (see async_ret_code).
- * Returns : 0 - on succesfull FD registration
+ * Returns : 0 - on successful FD registration
  *          -1 - failure to register the FD
  * Function to be used by modules seeking to launch async I/O ops
  */
@@ -101,6 +102,16 @@ int register_async_fd(int fd, async_resume_fd *f, void *param);
    Function only for internal usage.
  */
 int async_fd_resume(int *fd, void *param);
+
+
+
+/******** functions related to async launch *******/
+
+int async_script_launch(struct sip_msg *msg, struct action* a,
+		int report_route);
+
+int async_launch_resume(int *fd, void *param);
+
 
 #endif
 

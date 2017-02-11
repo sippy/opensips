@@ -50,6 +50,7 @@
 #include "../../usr_avp.h"
 #include "../../mem/mem.h"
 #include "../../parser/parser_f.h"
+#include "../../parser/parse_body.h"
 #include "t_funcs.h"
 #include "t_hooks.h"
 #include "t_msgbuilder.h"
@@ -60,6 +61,9 @@
 #include "fix_lumps.h"
 #include "config.h"
 #include "../../msg_callbacks.h"
+#include "../../mod_fix.h"
+
+#define NO_BODY_CLONE_MARKER ((struct sip_msg_body*)-1)
 
 /* route to execute for the branches */
 static int goto_on_branch;
@@ -86,7 +90,7 @@ unsigned int get_on_branch(void)
 
 
 static inline int pre_print_uac_request( struct cell *t, int branch,
-		struct sip_msg *request)
+					struct sip_msg *request, struct sip_msg_body **body_clone)
 {
 	int backup_route_type;
 	struct usr_avp **backup_list;
@@ -168,6 +172,11 @@ static inline int pre_print_uac_request( struct cell *t, int branch,
 		memcpy( p, request->new_uri.s, request->new_uri.len);
 		request->new_uri.s = p;
 		request->parsed_uri_ok = 0;
+		/* make a clone of the original body, to restore it later */
+		if (clone_sip_msg_body( request, NULL, body_clone, 0)!=0) {
+			LM_ERR("faile to clone the body, branch route changes will be"
+				" preserved\n");
+		}
 		/* make available the avp list from transaction */
 		backup_list = set_avp_list( &t->user_avps );
 		/* run branch route */
@@ -233,7 +242,7 @@ static inline char *print_uac_request(struct sip_msg *i_req, unsigned int *len,
 
 
 static inline void post_print_uac_request(struct sip_msg *request,
-		str *org_uri, str *org_dst)
+				str *org_uri, str *org_dst, struct sip_msg_body *body_clone)
 {
 	reset_init_lump_flags();
 	/* delete inserted branch lumps */
@@ -253,6 +262,11 @@ static inline void post_print_uac_request(struct sip_msg *request,
 		/* and just to be sure */
 		request->dst_uri.s = 0;
 		request->dst_uri.len = 0;
+	}
+	/* if cloned, restore the original body to the msg */
+	if (body_clone!=NO_BODY_CLONE_MARKER) {
+		free_sip_body(request->body);
+		request->body = body_clone;
 	}
 }
 
@@ -367,6 +381,7 @@ static int add_uac( struct cell *t, struct sip_msg *request, str *uri,
 		str* next_hop, unsigned int bflags, str* path, struct proxy_l *proxy)
 {
 	unsigned short branch;
+	struct sip_msg_body *body_clone=NO_BODY_CLONE_MARKER;
 	int do_free_proxy;
 	int ret;
 
@@ -391,7 +406,7 @@ static int add_uac( struct cell *t, struct sip_msg *request, str *uri,
 	request->path_vec=*path;
 	request->ruri_bflags=bflags;
 
-	if ( pre_print_uac_request( t, branch, request)!= 0 ) {
+	if ( pre_print_uac_request( t, branch, request, &body_clone)!= 0 ) {
 		ret = -1;
 		goto error01;
 	}
@@ -426,6 +441,7 @@ static int add_uac( struct cell *t, struct sip_msg *request, str *uri,
 		&proxy->host, proxy->addr_idx, proxy->port ? proxy->port:SIP_PORT);
 	t->uac[branch].request.dst.proto = proxy->proto;
 
+	/* do print of the uac request */
 	if ( update_uac_dst( request, &t->uac[branch] )!=0) {
 		ret = ser_error;
 		goto error02;
@@ -448,7 +464,7 @@ error02:
 		pkg_free( proxy );
 	}
 error01:
-	post_print_uac_request( request, uri, next_hop);
+	post_print_uac_request( request, uri, next_hop, body_clone);
 	if (ret < 0) {
 		/* destroy all the bavps added, the path vector and the destination,
 		 * since this branch will never be properly added to
@@ -470,81 +486,32 @@ error:
 }
 
 
-int e2e_cancel_branch( struct sip_msg *cancel_msg, struct cell *t_cancel,
-	struct cell *t_invite, int branch )
+static int _reason_avp_id = 0;
+
+int t_add_reason(struct sip_msg *msg, char *val)
 {
-	int ret;
-	char *shbuf;
-	unsigned int len;
-	str bk_dst_uri;
-	str bk_path_vec;
-	str bk_adv_address;
-	str bk_adv_port;
+	str avp_name = str_init("_reason_avp_internal");
+	int_str reason;
 
-	if (t_cancel->uac[branch].request.buffer.s) {
-		LM_CRIT("buffer rewrite attempt\n");
-		ret=ser_error=E_BUG;
-		goto error;
+	if (fixup_get_svalue(msg, (gparam_p)val, &reason.s)!=0) {
+		LM_ERR("invalid reason value\n");
+		return -1;
 	}
 
-	cancel_msg->new_uri = t_invite->uac[branch].uri;
-	cancel_msg->parsed_uri_ok=0;
-	bk_dst_uri = cancel_msg->dst_uri;
-	bk_path_vec = cancel_msg->path_vec;
-	bk_adv_address = cancel_msg->set_global_address;
-	bk_adv_port = cancel_msg->set_global_port;
-
-	/* force same path & advertising as for request */
-	cancel_msg->path_vec = t_invite->uac[branch].path_vec;
-	cancel_msg->set_global_address = t_invite->uac[branch].adv_address;
-	cancel_msg->set_global_port = t_invite->uac[branch].adv_port;
-
-	if ( pre_print_uac_request( t_cancel, branch, cancel_msg)!= 0 ) {
-		ret = -1;
-		goto error01;
+	if (_reason_avp_id==0) {
+		if (parse_avp_spec( &avp_name, &_reason_avp_id) ) {
+			LM_ERR("failed to init the internal AVP\n");
+			return -1;
+		}
 	}
 
-	/* force same uri as in INVITE */
-	if (cancel_msg->new_uri.s!=t_invite->uac[branch].uri.s) {
-		pkg_free(cancel_msg->new_uri.s);
-		cancel_msg->new_uri = t_invite->uac[branch].uri;
-		/* and just to be sure */
-		cancel_msg->parsed_uri_ok = 0;
+	if (add_avp( AVP_VAL_STR, _reason_avp_id, reason)!=0) {
+		LM_ERR("failed to add the internal reason AVP\n");
+		return -1;
 	}
 
-	/* print */
-	shbuf=print_uac_request( cancel_msg, &len,
-		t_invite->uac[branch].request.dst.send_sock,
-		t_invite->uac[branch].request.dst.proto);
-	if (!shbuf) {
-		LM_ERR("printing e2e cancel failed\n");
-		ret=ser_error=E_OUT_OF_MEM;
-		goto error01;
-	}
-
-	/* install buffer */
-	t_cancel->uac[branch].request.dst=t_invite->uac[branch].request.dst;
-	t_cancel->uac[branch].request.buffer.s=shbuf;
-	t_cancel->uac[branch].request.buffer.len=len;
-	t_cancel->uac[branch].uri.s=t_cancel->uac[branch].request.buffer.s+
-		cancel_msg->first_line.u.request.method.len+1;
-	t_cancel->uac[branch].uri.len=t_invite->uac[branch].uri.len;
-	t_cancel->uac[branch].br_flags = cancel_msg->flags;
-
-	/* success */
-	ret=1;
-
-error01:
-	post_print_uac_request( cancel_msg, &t_invite->uac[branch].uri,
-		&bk_dst_uri);
-	cancel_msg->dst_uri = bk_dst_uri;
-	cancel_msg->path_vec = bk_path_vec;
-	cancel_msg->set_global_address = bk_adv_address;
-	cancel_msg->set_global_port = bk_adv_port;
-error:
-	return ret;
+	return 1;
 }
-
 
 
 void cancel_invite(struct sip_msg *cancel_msg,
@@ -556,6 +523,7 @@ void cancel_invite(struct sip_msg *cancel_msg,
 	branch_bm_t cancel_bitmap;
 	str reason;
 	struct hdr_field *hdr;
+	int_str avp_reason;
 
 	cancel_bitmap=0;
 
@@ -566,16 +534,21 @@ void cancel_invite(struct sip_msg *cancel_msg,
 
 	reason.s = NULL;
 	reason.len = 0;
-	/* propagate the REASON flag ? */
-	if ( t_cancel->flags&T_CANCEL_REASON_FLAG ) {
-		/* look for the Reason header */
-		if (parse_headers(cancel_msg, HDR_EOH_F, 0)<0) {
-			LM_ERR("failed to parse all hdrs - ignoring Reason hdr\n");
-		} else {
-			hdr = get_header_by_static_name(cancel_msg, "Reason");
-			if (hdr!=NULL) {
-				reason.s = hdr->name.s;
-				reason.len = hdr->len;
+
+	if (search_first_avp( AVP_VAL_STR, _reason_avp_id, &avp_reason, NULL)) {
+		reason = avp_reason.s;
+	} else {
+		/* propagate the REASON flag ? */
+		if ( t_cancel->flags&T_CANCEL_REASON_FLAG ) {
+			/* look for the Reason header */
+			if (parse_headers(cancel_msg, HDR_EOH_F, 0)<0) {
+				LM_ERR("failed to parse all hdrs - ignoring Reason hdr\n");
+				} else {
+				hdr = get_header_by_static_name(cancel_msg, "Reason");
+				if (hdr!=NULL) {
+					reason.s = hdr->name.s;
+					reason.len = hdr->len;
+				}
 			}
 		}
 	}
@@ -622,6 +595,7 @@ void cancel_invite(struct sip_msg *cancel_msg,
 int t_forward_nonack( struct cell *t, struct sip_msg* p_msg ,
 	struct proxy_l * proxy)
 {
+	str reply_reason_487 = str_init("Request Terminated");
 	str backup_uri;
 	str backup_dst;
 	int branch_ret, lowest_ret;
@@ -653,8 +627,20 @@ int t_forward_nonack( struct cell *t, struct sip_msg* p_msg ,
 	}
 
 	/* do not forward requests which were already cancelled*/
-	if (was_cancelled(t) || no_new_branches(t)) {
-		LM_ERR("discarding fwd for a cancelled/6xx transaction\n");
+	if (no_new_branches(t)) {
+		LM_INFO("discarding fwd for a 6xx transaction\n");
+		ser_error = E_NO_DESTINATION;
+		return -1;
+	}
+	if (was_cancelled(t)) {
+		/* is this the first attempt of sending a branch out ? */
+		if (t->nr_of_outgoings==0) {
+			/* if no other signalling was performed on the transaction
+			 * and the transaction was already canceled, better
+			 * internally generate the 487 reply here */
+			t_reply( t, p_msg , 487 , &reply_reason_487);
+		}
+		LM_INFO("discarding fwd for a cancelled transaction\n");
 		ser_error = E_NO_DESTINATION;
 		return -1;
 	}

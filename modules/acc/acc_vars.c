@@ -135,6 +135,11 @@ int pv_get_acc_extra(struct sip_msg *msg, pv_param_t *param,
  */
 int set_value_shm(pv_value_t* pvt, extra_value_t* extra)
 {
+	if (pvt == NULL) {
+		LM_ERR("bad value!\n");
+		return -1;
+	}
+
 	if (pvt->flags&PV_TYPE_INT || pvt->flags&PV_VAL_STR) {
 		if (pvt->flags&PV_TYPE_INT || pvt->flags&PV_VAL_INT) {
 			/* transform the int value into a string */
@@ -191,6 +196,7 @@ int pv_set_acc_extra(struct sip_msg *msg, pv_param_t *param, int op,
 
 	if (param == NULL || val == NULL) {
 		LM_ERR("bad params!\n");
+		return -1;
 	}
 
 	if (ctx == NULL) {
@@ -396,13 +402,13 @@ int pv_get_acc_leg(struct sip_msg *msg, pv_param_t *param,
 	}
 
 	if (leg_idx < 0) {
-		if (ctx->legs_no + leg_idx < -1) {
+		if ((int)ctx->legs_no + leg_idx < 0) {
 			LM_ERR("invalid leg index %d!\n", leg_idx);
 			return -1;
 		}
 
 		/* -1 will be the last element and so on */
-		leg_idx += (ctx->legs_no + 1);
+		leg_idx += ctx->legs_no;
 	}
 
 	val->flags = PV_VAL_STR;
@@ -480,13 +486,13 @@ int pv_set_acc_leg(struct sip_msg *msg, pv_param_t *param, int flag,
 	}
 
 	if (leg_idx < 0) {
-		if ((int)ctx->legs_no + leg_idx < -1) {
+		if ((int)ctx->legs_no + leg_idx < 0) {
 			LM_ERR("invalid leg index %d!\n", leg_idx);
 			return -1;
 		}
 
-		/* -1 will be the last element  */
-		leg_idx = (int)ctx->legs_no + leg_idx;
+		/* -1 will be the last element and so on */
+		leg_idx += ctx->legs_no;
 	}
 
 	accX_lock(&ctx->lock);

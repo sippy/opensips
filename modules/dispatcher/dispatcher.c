@@ -81,6 +81,8 @@ int probing_threshhold = 3; /* number of failed requests, before a destination
 str ds_ping_method = {"OPTIONS",7};
 str ds_ping_from   = {"sip:dispatcher@localhost", 24};
 static int ds_ping_interval = 0;
+/* no MAX-FWD enforced from the module */
+int ds_ping_maxfwd = -1;
 int ds_probing_mode = 0;
 int ds_persistent_state = 1;
 int_list_t *ds_probing_list = NULL;
@@ -260,6 +262,7 @@ static param_export_t params[]={
 	{"ds_ping_method",        STR_PARAM, &ds_ping_method.s},
 	{"ds_ping_from",          STR_PARAM, &ds_ping_from.s},
 	{"ds_ping_interval",      INT_PARAM, &ds_ping_interval},
+	{"ds_ping_maxfwd",        INT_PARAM, &ds_ping_maxfwd},
 	{"ds_probing_mode",       INT_PARAM, &ds_probing_mode},
 	{"options_reply_codes",   STR_PARAM, &options_reply_codes_str.s},
 	{"ds_probing_sock",       STR_PARAM, &probing_sock_s},
@@ -422,7 +425,7 @@ static int parse_partition_argument(str *arg, ds_db_head_t **found_head)
 
 	ds_db_head_t *new_partition = pkg_malloc(sizeof (ds_db_head_t));
 	if (new_partition == NULL) {
-		LM_ERR("failed to alocate data in shm\n");
+		LM_ERR("failed to allocate data in shm\n");
 		return -1;
 	}
 
@@ -972,9 +975,7 @@ static int w_ds_select(struct sip_msg* msg, char* part_set, char* alg,
 	int _ret;
 	int run_prev_ds_select = 0;
 	ds_select_ctl_t prev_ds_select_ctl, ds_select_ctl;
-	char selected_dst_sock_buf[PTR_STRING_SIZE]; /* a hexa string */
 	ds_selected_dst selected_dst;
-	struct socket_info *sock = NULL;
 
 	if(msg==NULL)
 		return -1;
@@ -986,7 +987,6 @@ static int w_ds_select(struct sip_msg* msg, char* part_set, char* alg,
 	ds_select_ctl.ds_flags = 0;
 
 	memset(&selected_dst, 0, sizeof(ds_selected_dst));
-	selected_dst.socket.s = selected_dst_sock_buf;
 
 	/* Retrieve dispatcher set */
 	ds_param_t *part_set_param = (ds_param_t*)part_set;
@@ -1107,15 +1107,8 @@ static int w_ds_select(struct sip_msg* msg, char* part_set, char* alg,
 	}
 	else {
 		if (selected_dst.uri.s != NULL) {
-			if (selected_dst.socket.len != 0) {
-				if (sscanf( selected_dst.socket.s, "%p", (void**)&sock ) != 1){
-					LM_ERR("unable to read forced destination socket\n");
-					ret = -4;
-					goto error;
-				}
-			}
-			if (ds_update_dst(msg, &selected_dst.uri, sock, ds_select_ctl.mode)
-			!= 0) {
+			if (ds_update_dst(msg, &selected_dst.uri, selected_dst.socket,
+			ds_select_ctl.mode) != 0) {
 				LM_ERR("cannot set dst addr\n");
 				ret = -3;
 				goto error;
@@ -1458,7 +1451,7 @@ static int w_ds_is_in_list(struct sip_msg *msg,char *ip,char *port,char *set,
 					return -1;
 				}
 				if (tmp_lst->next != NULL) {
-					LM_ERR("Only one set is allowd\n");
+					LM_ERR("Only one set is allowed\n");
 					return -1;
 				}
 				i_set = tmp_lst->v.ival;

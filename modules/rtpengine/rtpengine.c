@@ -181,6 +181,8 @@ static struct mi_root* mi_enable_rtp_proxy(struct mi_root* cmd_tree,
 		void* param );
 static struct mi_root* mi_show_rtpengines(struct mi_root* cmd_tree,
 		void* param);
+static struct mi_root* mi_teardown_call(struct mi_root* cmd_tree,
+		void* param);
 
 
 static int rtpengine_disable_tout = 60;
@@ -250,9 +252,9 @@ static cmd_export_t cmds[] = {
 };
 
 static pv_export_t mod_pvs[] = {
-    {{"rtpstat", (sizeof("rtpstat")-1)}, /* RTP-Statistics */
-     1000, pv_get_rtpstat_f, 0, 0, 0, 0, 0},
-    {{0, 0}, 0, 0, 0, 0, 0, 0, 0}
+	{{"rtpstat", (sizeof("rtpstat")-1)}, /* RTP-Statistics */
+		1000, pv_get_rtpstat_f, 0, 0, 0, 0, 0},
+	{{0, 0}, 0, 0, 0, 0, 0, 0, 0}
 };
 
 static param_export_t params[] = {
@@ -261,14 +263,15 @@ static param_export_t params[] = {
 	{"rtpengine_disable_tout", INT_PARAM, &rtpengine_disable_tout },
 	{"rtpengine_retr",         INT_PARAM, &rtpengine_retr         },
 	{"rtpengine_tout",         INT_PARAM, &rtpengine_tout         },
-	{"extra_id_pv",           STR_PARAM, &extra_id_pv_param.s },
-	{"setid_avp",             STR_PARAM, &setid_avp_param },
+	{"extra_id_pv",            STR_PARAM, &extra_id_pv_param.s },
+	{"setid_avp",              STR_PARAM, &setid_avp_param },
 	{0, 0, 0}
 };
 
 static mi_export_t mi_cmds[] = {
-	{MI_ENABLE_RTP_ENGINE,     0, mi_enable_rtp_proxy,  0,                0, 0},
-	{MI_SHOW_RTP_ENGINES,      0, mi_show_rtpengines,   MI_NO_INPUT_FLAG, 0, 0},
+	{MI_ENABLE_RTP_ENGINE,    0, mi_enable_rtp_proxy,  0,                0, 0},
+	{MI_SHOW_RTP_ENGINES,     0, mi_show_rtpengines,   MI_NO_INPUT_FLAG, 0, 0},
+	{"teardown",              0, mi_teardown_call,     0,                0, 0},
 	{ 0, 0, 0, 0, 0, 0}
 };
 
@@ -304,8 +307,7 @@ struct module_exports exports = {
 int msg_has_sdp(struct sip_msg *msg)
 {
 	str body;
-	struct part *p;
-	struct multi_body *m;
+	struct body_part *p;
 
 	if(parse_headers(msg, HDR_CONTENTLENGTH_F,0) < 0) {
 		LM_ERR("cannot parse cseq header");
@@ -316,14 +318,14 @@ int msg_has_sdp(struct sip_msg *msg)
 	if (!body.len)
 		return 0;
 
-	m = get_all_bodies(msg);
-	if (!m) {
-		LM_DBG("cannot parse body\n");
+	if (parse_sip_body(msg)<0 || msg->body==NULL) {
+		LM_DBG("no body found\n");
 		return 0;
 	}
 
-	for (p = m->first; p; p = p->next) {
-		if (p->content_type == ((TYPE_APPLICATION << 16) + SUBTYPE_SDP))
+	for (p = &msg->body->first; p; p = p->next) {
+		if ( is_body_part_received(p) &&
+		p->mime == ((TYPE_APPLICATION << 16) + SUBTYPE_SDP) )
 			return 1;
 	}
 
@@ -748,6 +750,26 @@ error:
 	if (root)
 		free_mi_tree(root);
 	return 0;
+}
+
+
+static struct mi_root* mi_teardown_call(struct mi_root* cmd_tree,
+																void* param)
+{
+	static struct mi_cmd *dlg_end_dlg = NULL;
+
+	/* this MI function is a simple alias to the dlg_end_dlg function
+	 * provided by the dialog module */
+	if (dlg_end_dlg==NULL) {
+		dlg_end_dlg = lookup_mi_cmd("dlg_end_dlg", 11);
+		if (dlg_end_dlg==NULL) {
+			LM_ERR("cannot find 'dlg_end_dlg' MI command - "
+				"is dialog module loaded ??\n");
+			return init_mi_tree( 503, MI_SSTR("Comand not available") );
+		}
+	}
+
+	return run_mi_cmd( dlg_end_dlg, cmd_tree, NULL, param);
 }
 
 
@@ -1786,7 +1808,7 @@ rtpengine_manage(struct sip_msg *msg, const char *flags)
 	if(msg_has_sdp(msg))
 		nosdp = 0;
 	else
-		nosdp = parse_sdp(msg);
+		nosdp = parse_sdp(msg)?0:1;
 
 	if(msg->first_line.type == SIP_REQUEST) {
 		if(method==METHOD_ACK && nosdp==0)

@@ -33,14 +33,17 @@
 #include "../../mem/mem.h"
 #include "../../mem/shm_mem.h"
 #include "../../mod_fix.h"
+#include "../../lib/list.h"
 
 #include "rest_methods.h"
 
 /*
  * Module parameters
  */
-long connection_timeout = 20;
+long connection_timeout = 20; /* s */
+long connect_poll_interval = 20; /* ms */
 long connection_timeout_ms;
+int max_async_transfers = 100;
 long curl_timeout = 20;
 
 char *ssl_capath;
@@ -53,7 +56,6 @@ int ssl_verifyhost = 1;
  * Module initialization and cleanup
  */
 static int mod_init(void);
-static int child_init(int rank);
 static void mod_destroy(void);
 
 /*
@@ -61,6 +63,7 @@ static void mod_destroy(void);
  */
 static int fixup_rest_get(void **param, int param_no);
 static int fixup_rest_post(void **param, int param_no);
+static int fixup_rest_put(void **param, int param_no);
 
 /*
  * Function headers
@@ -69,11 +72,16 @@ static int w_rest_get(struct sip_msg *msg, char *gp_url, char *body_pv,
 				char *ctype_pv, char *code_pv);
 static int w_rest_post(struct sip_msg *msg, char *gp_url, char *gp_body,
 				char *gp_ctype, char *body_pv, char *ctype_pv, char *code_pv);
+static int w_rest_put(struct sip_msg *msg, char *gp_url, char *gp_body,
+				char *gp_ctype, char *body_pv, char *ctype_pv, char *code_pv);
 
 static int w_async_rest_get(struct sip_msg *msg, async_resume_module **resume_f,
 							void **resume_param, char *gp_url,
 							char *body_pv, char *ctype_pv, char *code_pv);
 static int w_async_rest_post(struct sip_msg *msg, async_resume_module **resume_f,
+					 void **resume_param, char *gp_url, char *gp_body,
+					 char *gp_ctype, char *body_pv, char *ctype_pv, char *code_pv);
+static int w_async_rest_put(struct sip_msg *msg, async_resume_module **resume_f,
 					 void **resume_param, char *gp_url, char *gp_body,
 					 char *gp_ctype, char *body_pv, char *ctype_pv, char *code_pv);
 
@@ -83,9 +91,12 @@ static acmd_export_t acmds[] = {
 	{ "rest_get",  (acmd_function)w_async_rest_get,  2, fixup_rest_get },
 	{ "rest_get",  (acmd_function)w_async_rest_get,  3, fixup_rest_get },
 	{ "rest_get",  (acmd_function)w_async_rest_get,  4, fixup_rest_get },
-	{ "rest_post",  (acmd_function)w_async_rest_post,  4, fixup_rest_post },
-	{ "rest_post",  (acmd_function)w_async_rest_post,  5, fixup_rest_post },
-	{ "rest_post",  (acmd_function)w_async_rest_post,  6, fixup_rest_post },
+	{ "rest_post", (acmd_function)w_async_rest_post, 4, fixup_rest_post },
+	{ "rest_post", (acmd_function)w_async_rest_post, 5, fixup_rest_post },
+	{ "rest_post", (acmd_function)w_async_rest_post, 6, fixup_rest_post },
+	{ "rest_put",  (acmd_function)w_async_rest_put,  4, fixup_rest_put },
+	{ "rest_put",  (acmd_function)w_async_rest_put,  5, fixup_rest_put },
+	{ "rest_put",  (acmd_function)w_async_rest_put,  6, fixup_rest_put },
 	{ 0, 0, 0, 0 }
 };
 
@@ -111,6 +122,15 @@ static cmd_export_t cmds[] = {
 	{ "rest_post",(cmd_function)w_rest_post, 6, fixup_rest_post, 0,
 		REQUEST_ROUTE|ONREPLY_ROUTE|FAILURE_ROUTE|BRANCH_ROUTE|
 		ONREPLY_ROUTE|STARTUP_ROUTE|TIMER_ROUTE },
+	{ "rest_put",(cmd_function)w_rest_put, 4, fixup_rest_put, 0,
+		REQUEST_ROUTE|ONREPLY_ROUTE|FAILURE_ROUTE|BRANCH_ROUTE|
+		ONREPLY_ROUTE|STARTUP_ROUTE|TIMER_ROUTE },
+	{ "rest_put",(cmd_function)w_rest_put, 5, fixup_rest_put, 0,
+		REQUEST_ROUTE|ONREPLY_ROUTE|FAILURE_ROUTE|BRANCH_ROUTE|
+		ONREPLY_ROUTE|STARTUP_ROUTE|TIMER_ROUTE },
+	{ "rest_put",(cmd_function)w_rest_put, 6, fixup_rest_put, 0,
+		REQUEST_ROUTE|ONREPLY_ROUTE|FAILURE_ROUTE|BRANCH_ROUTE|
+		ONREPLY_ROUTE|STARTUP_ROUTE|TIMER_ROUTE },
 	{ "rest_append_hf",(cmd_function)w_rest_append_hf, 1, fixup_spve_null, 0,
 		REQUEST_ROUTE|FAILURE_ROUTE|BRANCH_ROUTE|
 		ONREPLY_ROUTE|STARTUP_ROUTE|TIMER_ROUTE },
@@ -123,6 +143,8 @@ static cmd_export_t cmds[] = {
  */
 static param_export_t params[] = {
 	{ "connection_timeout",	INT_PARAM, &connection_timeout	},
+	{ "connect_poll_interval", INT_PARAM, &connect_poll_interval },
+	{ "max_async_transfers", INT_PARAM, &max_async_transfers },
 	{ "curl_timeout",		INT_PARAM, &curl_timeout		},
 	{ "ssl_capath",			STR_PARAM, &ssl_capath			},
 	{ "ssl_verifypeer",		INT_PARAM, &ssl_verifypeer		},
@@ -150,28 +172,51 @@ struct module_exports exports = {
 	mod_init, /* module initialization function */
 	NULL,     /* response function*/
 	mod_destroy,
-	child_init,/* per-child init function */
+	NULL,     /* per-child init function */
 };
+
+/*
+ * Since libcurl's "easy" interface spawns a separate thread to perform each
+ * transfer, we supply it with a set of allocation functions which make
+ * everyone happy:
+ *  - thread-safe
+ *  - faster than libc's malloc()
+ *  - integrated with OpenSIPS's memory usage reporting
+ */
+static gen_lock_t thread_lock;
 
 static void *osips_malloc(size_t size)
 {
-	void *p = pkg_malloc(size);
+	void *p;
+
+	lock_get(&thread_lock);
+	p = pkg_malloc(size);
+	lock_release(&thread_lock);
 
 	return p;
 }
 
 static void *osips_calloc(size_t nmemb, size_t size)
 {
-	void *p = pkg_malloc(nmemb * size);
-	if (p)
+	void *p;
+
+	lock_get(&thread_lock);
+	p = pkg_malloc(nmemb * size);
+	lock_release(&thread_lock);
+	if (p) {
 		memset(p, '\0', nmemb * size);
+	}
 
 	return p;
 }
 
 static void *osips_realloc(void *ptr, size_t size)
 {
-	void *p = pkg_realloc(ptr, size);
+	void *p;
+
+	lock_get(&thread_lock);
+	p = pkg_realloc(ptr, size);
+	lock_release(&thread_lock);
 
 	return p;
 }
@@ -182,9 +227,13 @@ static char *osips_strdup(const char *cp)
 	int len;
 
 	len = strlen(cp) + 1;
+
+	lock_get(&thread_lock);
 	rval = pkg_malloc(len);
-	if (!rval)
+	lock_release(&thread_lock);
+	if (!rval) {
 		return NULL;
+	}
 
 	memcpy(rval, cp, len);
 	return rval;
@@ -192,8 +241,11 @@ static char *osips_strdup(const char *cp)
 
 static void osips_free(void *ptr)
 {
-	if (ptr)
+	lock_get(&thread_lock);
+	if (ptr) {
 		pkg_free(ptr);
+	}
+	lock_release(&thread_lock);
 }
 
 static int mod_init(void)
@@ -202,6 +254,14 @@ static int mod_init(void)
 
 	connection_timeout_ms = connection_timeout * 1000L;
 
+	if (connect_poll_interval < 0) {
+		LM_ERR("Bad connect_poll_interval (%ldms), setting to 20ms\n",
+		       connect_poll_interval);
+		connect_poll_interval = 20;
+	}
+
+	lock_init(&thread_lock);
+
 	curl_global_init_mem(CURL_GLOBAL_ALL,
 						 osips_malloc,
 						 osips_free,
@@ -209,23 +269,9 @@ static int mod_init(void)
 						 osips_strdup,
 						 osips_calloc);
 
-	multi_handle = curl_multi_init();
+	INIT_LIST_HEAD(&multi_pool);
 
 	LM_INFO("Module initialized!\n");
-
-	return 0;
-}
-
-static int child_init(int rank)
-{
-	if (rank <= PROC_MAIN)
-		return 0;
-
-	multi_handle = curl_multi_init();
-	if (!multi_handle) {
-		LM_ERR("failed to init CURLM handle\n");
-		return -1;
-	}
 
 	return 0;
 }
@@ -255,6 +301,24 @@ static int fixup_rest_get(void **param, int param_no)
 }
 
 static int fixup_rest_post(void **param, int param_no)
+{
+	switch (param_no) {
+	case 1:
+	case 2:
+	case 3:
+		return fixup_spve(param);
+	case 4:
+	case 5:
+	case 6:
+		return fixup_pvar(param);
+
+	default:
+		LM_ERR("Too many parameters!\n");
+		return -1;
+	}
+}
+
+static int fixup_rest_put(void **param, int param_no)
 {
 	switch (param_no) {
 	case 1:
@@ -312,6 +376,31 @@ static int w_rest_post(struct sip_msg *msg, char *gp_url, char *gp_body,
 	                        (pv_spec_p)ctype_pv, (pv_spec_p)code_pv);
 }
 
+static int w_rest_put(struct sip_msg *msg, char *gp_url, char *gp_body,
+                   char *gp_ctype, char *body_pv, char *ctype_pv, char *code_pv)
+{
+	str url, body, ctype = { NULL, 0 };
+
+	if (fixup_get_svalue(msg, (gparam_p)gp_url, &url) != 0) {
+		LM_ERR("Invalid HTTP URL pseudo variable!\n");
+		return -1;
+	}
+
+	if (fixup_get_svalue(msg, (gparam_p)gp_body, &body) != 0) {
+		LM_ERR("Invalid HTTP PUT body pseudo variable!\n");
+		return -1;
+	}
+
+	if (gp_ctype && fixup_get_svalue(msg, (gparam_p)gp_ctype, &ctype) != 0) {
+			LM_ERR("Invalid HTTP PUT content type pseudo variable!\n");
+			return -1;
+	}
+
+	return rest_put_method(msg, url.s, body.s, ctype.s, (pv_spec_p)body_pv,
+		                       (pv_spec_p)ctype_pv, (pv_spec_p)code_pv);
+}
+
+
 static void set_output_pv_params(struct sip_msg *msg, str *body_in, pv_spec_p body_pv, str *ctype_in,
 								 pv_spec_p ctype_pv, CURL *handle, pv_spec_p code_pv)
 {
@@ -368,7 +457,7 @@ static int w_async_rest_get(struct sip_msg *msg, async_resume_module **resume_f,
 	memset(param, '\0', sizeof *param);
 
 	read_fd = start_async_http_req(msg, REST_CLIENT_GET, url.s, NULL, NULL,
-				&param->handle, &param->body, ctype_pv ? &param->ctype : NULL);
+				param, &param->body, ctype_pv ? &param->ctype : NULL);
 
 	/* error occurred; no transfer done */
 	if (read_fd == ASYNC_NO_IO) {
@@ -389,7 +478,8 @@ static int w_async_rest_get(struct sip_msg *msg, async_resume_module **resume_f,
 		curl_easy_cleanup(param->handle);
 		pkg_free(param);
 
-		return ASYNC_SYNC;
+		async_status = ASYNC_SYNC;
+		return 1;
 	}
 
 	*resume_f = resume_async_http_req;
@@ -438,7 +528,7 @@ static int w_async_rest_post(struct sip_msg *msg, async_resume_module **resume_f
 	memset(param, '\0', sizeof *param);
 
 	read_fd = start_async_http_req(msg, REST_CLIENT_POST, url.s, body.s, ctype.s,
-				&param->handle, &param->body, ctype_pv ? &param->ctype : NULL);
+				param, &param->body, ctype_pv ? &param->ctype : NULL);
 
 	/* error occurred; no transfer done */
 	if (read_fd == ASYNC_NO_IO) {
@@ -459,12 +549,84 @@ static int w_async_rest_post(struct sip_msg *msg, async_resume_module **resume_f
 		curl_easy_cleanup(param->handle);
 		pkg_free(param);
 
-		return ASYNC_SYNC;
+		async_status = ASYNC_SYNC;
+		return 1;
 	}
 
 	*resume_f = resume_async_http_req;
 
 	param->method = REST_CLIENT_POST;
+	param->body_pv = (pv_spec_p)body_pv;
+	param->ctype_pv = (pv_spec_p)ctype_pv;
+	param->code_pv = (pv_spec_p)code_pv;
+	*resume_param = param;
+	/* async started with success */
+	async_status = read_fd;
+
+	return 1;
+}
+
+static int w_async_rest_put(struct sip_msg *msg, async_resume_module **resume_f,
+                            void **resume_param, char *gp_url, char *gp_body,
+                            char *gp_ctype, char *body_pv, char *ctype_pv, char *code_pv)
+{
+	rest_async_param *param;
+	str url, body, ctype = { NULL, 0 };
+	int read_fd;
+
+	if (fixup_get_svalue(msg, (gparam_p)gp_url, &url) != 0) {
+		LM_ERR("Invalid HTTP URL pseudo variable!\n");
+		return -1;
+	}
+
+	if (fixup_get_svalue(msg, (gparam_p)gp_body, &body) != 0) {
+		LM_ERR("Invalid HTTP PUT body pseudo variable!\n");
+		return -1;
+	}
+
+	if (gp_ctype && fixup_get_svalue(msg, (gparam_p)gp_ctype, &ctype) != 0) {
+		LM_ERR("Invalid HTTP PUT content type pseudo variable!\n");
+		return -1;
+	}
+
+	LM_DBG("async rest put '%.*s' %p %p %p\n", url.len, url.s, body_pv, ctype_pv, code_pv);
+
+	param = pkg_malloc(sizeof *param);
+	if (!param) {
+		LM_ERR("no more shm\n");
+		return -1;
+	}
+	memset(param, '\0', sizeof *param);
+
+	read_fd = start_async_http_req(msg, REST_CLIENT_PUT, url.s, body.s, ctype.s,
+	            param, &param->body, ctype_pv ? &param->ctype : NULL);
+
+	/* error occurred; no transfer done */
+	if (read_fd == ASYNC_NO_IO) {
+		*resume_param = NULL;
+		*resume_f = NULL;
+		/* keep default async status of NO_IO */
+		return -1;
+
+	/* no need for async - transfer already completed! */
+	} else if (read_fd == ASYNC_SYNC) {
+		set_output_pv_params(msg, &param->body, (pv_spec_p)body_pv,
+				&param->ctype, (pv_spec_p)ctype_pv,
+				param->handle, (pv_spec_p)code_pv);
+
+		pkg_free(param->body.s);
+		if (ctype_pv && param->ctype.s)
+			pkg_free(param->ctype.s);
+		curl_easy_cleanup(param->handle);
+		pkg_free(param);
+
+		async_status = ASYNC_SYNC;
+		return 1;
+	}
+
+	*resume_f = resume_async_http_req;
+
+	param->method = REST_CLIENT_PUT;
 	param->body_pv = (pv_spec_p)body_pv;
 	param->ctype_pv = (pv_spec_p)ctype_pv;
 	param->code_pv = (pv_spec_p)code_pv;

@@ -187,6 +187,24 @@
 		function).
 		</para>
 	</section>
+	<section>
+		<title>Usage Scope</title>
+		<para>
+		Transaction functions and pseudo-variables are only designed to be
+		called on SIP request messages where a transaction can be created, or
+		in routes that are transaction aware, such as
+		<emphasis>branch_route[name]</emphasis>,
+		<emphasis>failure_route[name]</emphasis> or
+		<emphasis>onreply_route[name]</emphasis>. Using TM functtions or
+		pseudo-variables in a route that is not transaction aware, such as
+		the generic <emphasis>onreply_route</emphasis>,
+		<emphasis>error_route</emphasis> or
+		<emphasis>timer_route[name, timer]</emphasis> may lead to undefined
+		behavior, and most of the time in bogus or malformed signalling.
+		Therefore it is strongly recommended to avoid using them in non-tm
+		context aware routes.
+		</para>
+	</section>
 	</section>
 
 	<section>
@@ -1427,6 +1445,31 @@ t_add_hdrs("X-origin: 1.1.1.1\r\n");
 </programlisting>
 		</example>
 	</section>
+
+	<section>
+		<title>
+		<function moreinfo="none">t_add_cancel_reason("Reason_hdr")</function>
+		</title>
+		This function is used to enforce from the script level a custom
+		"Reason" header into a CANCEL request. Normally, the Reason header is
+		inherited form the received CANCEL (note that CANCEL propagates in a
+		hop-by-hop manner - it is re-generated at each hop), but this function
+		can overwrite it. It must be called before relaying the CANCEL request
+		and its input must be a fully formated Reason header with name, body 
+		and CRLF.
+		<para>
+		</para>
+		<example>
+		<title><function>t_add_cancel_reason</function> usage</title>
+		<programlisting format="linespecific">
+...
+t_add_cancel_reason('Reason: SIP ;cause=200;text="Call completed elsewhere"\r\n');
+t_relay();
+...
+</programlisting>
+		</example>
+	</section>
+
 
 	<section id="treplicate">
 		<title>

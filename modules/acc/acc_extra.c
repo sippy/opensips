@@ -101,7 +101,7 @@ static inline int add_tag(str* _stag, tag_t** tag_arr, int* tags_len)
 {
 	int ret=-1, i;
 
-	if (tags_len == 0) {
+	if (*tags_len == 0) {
 		(*tag_arr) = pkg_malloc(TAGS_FACTOR * sizeof(tag_t));
 		if ((*tag_arr) == NULL)
 			goto out_nomem;
@@ -523,7 +523,7 @@ int extra2strar( extra_value_t* values, str *val_arr, int idx)
 		/* get the value */
 		/* check for overflow */
 		if (n==MAX_ACC_EXTRA) {
-			LM_WARN("array to short -> ommiting extras for accounting\n");
+			LM_WARN("array to short -> omitting extras for accounting\n");
 			goto done;
 		}
 

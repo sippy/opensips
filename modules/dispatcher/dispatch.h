@@ -171,7 +171,7 @@ typedef struct
 typedef struct _ds_selected_dst
 {
 	str uri;
-	str socket;
+	struct socket_info *socket;
 } ds_selected_dst, *ds_selected_dst_p;
 
 extern str ds_set_id_col;
@@ -192,6 +192,7 @@ extern pv_spec_t ds_setid_pv;
 struct tm_binds tmb;
 extern str ds_ping_method;
 extern str ds_ping_from;
+extern int ds_ping_maxfwd;
 extern int probing_threshhold; /* number of failed requests,
 						before a destination is taken into probing */
 extern int ds_probing_mode;

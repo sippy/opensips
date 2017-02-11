@@ -53,7 +53,9 @@ struct ldap_result_check_params
 
 struct ldap_async_params {
 	int msgid;
+	str ldap_url;
 	struct ld_session *lds;
+	struct ld_conn *conn;
 };
 
 int ldap_search_impl_async(
