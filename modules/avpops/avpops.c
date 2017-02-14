@@ -79,19 +79,19 @@ unsigned buf_size=1024;
 static int avpops_init(void);
 static int avpops_child_init(int rank);
 
-static int fixup_db_load_avp(void** param, int param_no);
-static int fixup_db_delete_avp(void** param, int param_no);
-static int fixup_db_store_avp(void** param, int param_no);
-static int fixup_db_query_avp(void** param, int param_no);
-static int fixup_async_db_query_avp(void** param, int param_no);
-static int fixup_delete_avp(void** param, int param_no);
-static int fixup_copy_avp(void** param, int param_no);
-static int fixup_pushto_avp(void** param, int param_no);
-static int fixup_check_avp(void** param, int param_no);
-static int fixup_op_avp(void** param, int param_no);
-static int fixup_subst(void** param, int param_no);
-static int fixup_is_avp_set(void** param, int param_no);
-static int fixup_insert_avp(void** param, int param_no);
+static int fixup_db_load_avp(void** param, struct fxup_opts fopt);
+static int fixup_db_delete_avp(void** param, struct fxup_opts fopt);
+static int fixup_db_store_avp(void** param, struct fxup_opts fopt);
+static int fixup_db_query_avp(void** param, struct fxup_opts fopt);
+static int fixup_async_db_query_avp(void** param, struct fxup_opts fopt);
+static int fixup_delete_avp(void** param, struct fxup_opts fopt);
+static int fixup_copy_avp(void** param, struct fxup_opts fopt);
+static int fixup_pushto_avp(void** param, struct fxup_opts fopt);
+static int fixup_check_avp(void** param, struct fxup_opts fopt);
+static int fixup_op_avp(void** param, struct fxup_opts fopt);
+static int fixup_subst(void** param, struct fxup_opts fopt);
+static int fixup_is_avp_set(void** param, struct fxup_opts fopt);
+static int fixup_insert_avp(void** param, struct fxup_opts fopt);
 
 static int w_print_avps(struct sip_msg* msg, char* foo, char *bar);
 static int w_dbload_avps(struct sip_msg* msg, char* source,
@@ -527,20 +527,20 @@ static int fixup_db_avp(void** param, int param_no, int allow_scheme)
 }
 
 
-static int fixup_db_load_avp(void** param, int param_no)
+static int fixup_db_load_avp(void** param, struct fxup_opts fopt)
 {
-	return fixup_db_avp( param, param_no, 1/*allow scheme*/);
+	return fixup_db_avp( param, fopt.param_no, 1/*allow scheme*/);
 }
 
-static int fixup_db_delete_avp(void** param, int param_no)
+static int fixup_db_delete_avp(void** param, struct fxup_opts fopt)
 {
-	return fixup_db_avp( param, param_no, 0/*no scheme*/);
+	return fixup_db_avp( param, fopt.param_no, 0/*no scheme*/);
 }
 
 
-static int fixup_db_store_avp(void** param, int param_no)
+static int fixup_db_store_avp(void** param, struct fxup_opts fopt)
 {
-	return fixup_db_avp( param, param_no, 0/*no scheme*/);
+	return fixup_db_avp( param, fopt.param_no, 0/*no scheme*/);
 }
 
 /**
@@ -647,17 +647,17 @@ static int __fixup_db_query_avp(void** param, int param_no, int is_async)
 	return 0;
 }
 
-static int fixup_db_query_avp(void** param, int param_no)
+static int fixup_db_query_avp(void** param, struct fxup_opts fopt)
 {
-	return __fixup_db_query_avp(param, param_no, 0);
+	return __fixup_db_query_avp(param, fopt.param_no, 0);
 }
 
-static int fixup_async_db_query_avp(void** param, int param_no)
+static int fixup_async_db_query_avp(void** param, struct fxup_opts fopt)
 {
-	return __fixup_db_query_avp(param, param_no, 1);
+	return __fixup_db_query_avp(param, fopt.param_no, 1);
 }
 
-static int fixup_delete_avp(void** param, int param_no)
+static int fixup_delete_avp(void** param, struct fxup_opts fopt)
 {
 	struct fis_param *ap=NULL;
 	char *p;
@@ -666,7 +666,7 @@ static int fixup_delete_avp(void** param, int param_no)
 	str s0;
 
 	s = (char*)(*param);
-	if (param_no==1) {
+	if (fopt.param_no==1) {
 		/* attribute name / alias */
 		if ( (p=strchr(s,'/'))!=0 )
 			*(p++)=0;
@@ -760,7 +760,7 @@ static int fixup_delete_avp(void** param, int param_no)
 	return 0;
 }
 
-static int fixup_copy_avp(void** param, int param_no)
+static int fixup_copy_avp(void** param, struct fxup_opts fopt)
 {
 	struct fis_param *ap;
 	char *s;
@@ -770,7 +770,7 @@ static int fixup_copy_avp(void** param, int param_no)
 	ap = 0;
 	p = 0;
 
-	if (param_no==2)
+	if (fopt.param_no==2)
 	{
 		/* avp / flags */
 		if ( (p=strchr(s,'/'))!=0 )
@@ -780,7 +780,7 @@ static int fixup_copy_avp(void** param, int param_no)
 	ap = avpops_parse_pvar(s);
 	if (ap==0)
 	{
-		LM_ERR("unable to get pseudo-variable in P%d\n", param_no);
+		LM_ERR("unable to get pseudo-variable in P%d\n", fopt.param_no);
 		return E_OUT_OF_MEM;
 	}
 
@@ -791,7 +791,7 @@ static int fixup_copy_avp(void** param, int param_no)
 		return E_UNSPEC;
 	}
 
-	if (param_no==2)
+	if (fopt.param_no==2)
 	{
 		/* flags */
 		for( ; p&&*p ; p++ )
@@ -824,7 +824,7 @@ static int fixup_copy_avp(void** param, int param_no)
 	return 0;
 }
 
-static int fixup_pushto_avp(void** param, int param_no)
+static int fixup_pushto_avp(void** param, struct fxup_opts fopt)
 {
 	struct fis_param *ap;
 	char *s;
@@ -833,7 +833,7 @@ static int fixup_pushto_avp(void** param, int param_no)
 	s = (char*)*param;
 	ap = 0;
 
-	if (param_no==1)
+	if (fopt.param_no==1)
 	{
 		if ( *s!='$')
 		{
@@ -891,7 +891,7 @@ static int fixup_pushto_avp(void** param, int param_no)
 						"expected $ru,$du,$br\n",s);
 				return E_UNSPEC;
 		}
-	} else if (param_no==2) {
+	} else if (fopt.param_no==2) {
 		/* attribute name*/
 		if ( *s!='$')
 		{
@@ -936,7 +936,7 @@ static int fixup_pushto_avp(void** param, int param_no)
 	return 0;
 }
 
-static int fixup_check_avp(void** param, int param_no)
+static int fixup_check_avp(void** param, struct fxup_opts fopt)
 {
 	struct fis_param *ap;
 	regex_t* re;
@@ -945,7 +945,7 @@ static int fixup_check_avp(void** param, int param_no)
 	s = (char*)*param;
 	ap = 0;
 
-	if (param_no==1)
+	if (fopt.param_no==1)
 	{
 		ap = avpops_parse_pvar(s);
 		if (ap==0)
@@ -959,7 +959,7 @@ static int fixup_check_avp(void** param, int param_no)
 			LM_ERR("null pseudo-variable in P1\n");
 			return E_UNSPEC;
 		}
-	} else if (param_no==2) {
+	} else if (fopt.param_no==2) {
 		if ( (ap=parse_check_value(s))==0 )
 		{
 			LM_ERR(" failed to parse checked value \n");
@@ -1005,7 +1005,7 @@ static int fixup_check_avp(void** param, int param_no)
 	return 0;
 }
 
-static int fixup_subst(void** param, int param_no)
+static int fixup_subst(void** param, struct fxup_opts fopt)
 {
 	struct subst_expr* se;
 	str subst;
@@ -1014,7 +1014,7 @@ static int fixup_subst(void** param, int param_no)
 	char *s;
 	char *p;
 
-	if (param_no==1) {
+	if (fopt.param_no==1) {
 		s = (char*)*param;
 		ap = 0;
 		p = 0;
@@ -1108,7 +1108,7 @@ static int fixup_subst(void** param, int param_no)
 			}
 		}
 		*param=(void*)av;
-	} else if (param_no==2) {
+	} else if (fopt.param_no==2) {
 		LM_DBG("%s fixing %s\n", exports.name, (char*)(*param));
 		subst.s=*param;
 		subst.len=strlen(*param);
@@ -1126,7 +1126,7 @@ static int fixup_subst(void** param, int param_no)
 	return 0;
 }
 
-static int fixup_op_avp(void** param, int param_no)
+static int fixup_op_avp(void** param, struct fxup_opts fopt)
 {
 	struct fis_param *ap;
 	struct fis_param **av;
@@ -1136,7 +1136,7 @@ static int fixup_op_avp(void** param, int param_no)
 	s = (char*)*param;
 	ap = 0;
 
-	if (param_no==1)
+	if (fopt.param_no==1)
 	{
 		av = (struct fis_param**)pkg_malloc(2*sizeof(struct fis_param*));
 		if(av==NULL)
@@ -1183,7 +1183,7 @@ static int fixup_op_avp(void** param, int param_no)
 		av[1] = ap;
 		*param=(void*)av;
 		return 0;
-	} else if (param_no==2) {
+	} else if (fopt.param_no==2) {
 		if ( (ap=parse_op_value(s))==0 )
 		{
 			LM_ERR("failed to parse the value \n");
@@ -1201,14 +1201,14 @@ static int fixup_op_avp(void** param, int param_no)
 	return -1;
 }
 
-static int fixup_is_avp_set(void** param, int param_no)
+static int fixup_is_avp_set(void** param, struct fxup_opts fopt)
 {
 	struct fis_param *ap;
 	char *p;
 	char *s;
 
 	s = (char*)(*param);
-	if (param_no==1) {
+	if (fopt.param_no==1) {
 		/* attribute name | alias / flags */
 		if ( (p=strchr(s,'/'))!=0 )
 			*(p++)=0;
@@ -1266,12 +1266,12 @@ static int fixup_is_avp_set(void** param, int param_no)
 	return 0;
 }
 
-static int fixup_insert_avp(void** param, int param_no)
+static int fixup_insert_avp(void** param, struct fxup_opts fopt)
 {
 	pv_elem_t* pv_elem;
 	str s;
 
-	if(param_no== 0)
+	if(fopt.param_no== 0)
 		return 0;
 
 	if(!param)
@@ -1282,7 +1282,7 @@ static int fixup_insert_avp(void** param, int param_no)
 
 	s.s = (char*)(*param); s.len = strlen(s.s);
 
-	if(param_no == 3) /* the third argumet in an integer */
+	if(fopt.param_no == 3) /* the third argumet in an integer */
 	{
 		unsigned int* index;
 
@@ -1310,7 +1310,7 @@ static int fixup_insert_avp(void** param, int param_no)
 	*param = (void*)pv_elem;
 
 	/* attr name is mandatory */
-	if (param_no == 1 && pv_elem->spec.type!=PVT_AVP)
+	if (fopt.param_no == 1 && pv_elem->spec.type!=PVT_AVP)
 	{
 		LM_ERR("The first parameter must be an AVP name\n");
 		return E_UNSPEC;

@@ -48,7 +48,7 @@ aaa_prot proto;
 auth_api_t auth_api;
 
 static int mod_init(void);         /* Module initialization function */
-static int auth_fixup(void** param, int param_no); /* char* -> str* */
+static int auth_fixup(void** param, struct fxup_opts fopt); /* char* -> str* */
 
 
 /*
@@ -205,13 +205,13 @@ static int mod_init(void)
 /*
  * Convert char* parameter to pv_elem_t* parameter
  */
-static int auth_fixup(void** param, int param_no)
+static int auth_fixup(void** param, struct fxup_opts fopt)
 {
 	pv_elem_t *model;
 	str s;
 	pv_spec_t *sp;
 
-	if (param_no == 1) { /* realm (string that may contain pvars) */
+	if (fopt.param_no == 1) { /* realm (string that may contain pvars) */
 		s.s = (char*)*param;
 		if (s.s==0 || s.s[0]==0) {
 			model = 0;
@@ -225,7 +225,7 @@ static int auth_fixup(void** param, int param_no)
 		*param = (void*)model;
 	}
 
-	if (param_no == 2) { /* URI user (a pvar) */
+	if (fopt.param_no == 2) { /* URI user (a pvar) */
 		sp = (pv_spec_t*)pkg_malloc(sizeof(pv_spec_t));
 		if (sp == 0) {
 			LM_ERR("no pkg memory left\n");

@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include "compression_helpers.h"
 
+#include "../../sr_module.h"
 #include "../../parser/hf.h"
 #include "../../ut.h"
 #include "../../parser/parse_hname2.h"

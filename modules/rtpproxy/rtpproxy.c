@@ -154,6 +154,7 @@
 #include <stdlib.h>
 #include <sys/uio.h>
 
+#include "../../sr_module.h"
 #include "../../dprint.h"
 #include "../../data_lump.h"
 #include "../../data_lump_rpl.h"
@@ -261,7 +262,7 @@ static char *gencookie();
 static int rtpp_test(struct rtpp_node*, int, int);
 static int unforce_rtp_proxy_f(struct sip_msg *, char *, char *);
 static int engage_rtp_proxy4_f(struct sip_msg *, char *, char *, char *, char *);
-static int fixup_engage(void **param,int param_no);
+static int fixup_engage(void **param, struct fxup_opts fopt);
 static int force_rtp_proxy(struct sip_msg *, char *, char *, char *, char *, int);
 static int start_recording_f(struct sip_msg *, char *, char *, char *);
 static int rtpproxy_answer4_f(struct sip_msg *, char *, char *, char *, char *);
@@ -271,11 +272,11 @@ static int rtpproxy_stats_f(struct sip_msg *, char *, char *, char *, char *,
 
 static int add_rtpproxy_socks(struct rtpp_set * rtpp_list, char * rtpproxy);
 static int fixup_set_id(void ** param);
-static int fixup_stats(void ** param, int param_no);
-static int fixup_stream(void ** param, int param_no);
-static int fixup_offer_answer(void ** param, int param_no);
-static int fixup_two_options(void ** param, int param_no);
-static int fixup_recording(void ** param, int param_no);
+static int fixup_stats(void ** param, struct fxup_opts fopt);
+static int fixup_stream(void ** param, struct fxup_opts fopt);
+static int fixup_offer_answer(void ** param, struct fxup_opts fopt);
+static int fixup_two_options(void ** param, struct fxup_opts fopt);
+static int fixup_recording(void ** param, struct fxup_opts fopt);
 static struct rtpp_set * select_rtpp_set(int id_set);
 
 static int rtpproxy_set_store(modparam_t type, void * val);
@@ -776,45 +777,45 @@ error:
 	return -1;
 }
 
-static int fixup_two_options(void ** param, int param_no)
+static int fixup_two_options(void ** param, struct fxup_opts fopt)
 {
-	if (param_no == 1)
+	if (fopt.param_no == 1)
 		return fixup_set_id(param);
-	if (param_no == 2)
+	if (fopt.param_no == 2)
 		return fixup_pvar(param);
-	LM_ERR("Too many parameters %d\n", param_no);
+	LM_ERR("Too many parameters %d\n", fopt.param_no);
 	return E_CFG;
 }
 
-static int fixup_stats(void ** param, int param_no)
+static int fixup_stats(void ** param, struct fxup_opts fopt)
 {
-	if (param_no < 1 || param_no > 5) {
-		LM_ERR("Too many parameters %d\n", param_no);
+	if (fopt.param_no < 1 || fopt.param_no > 5) {
+		LM_ERR("Too many parameters %d\n", fopt.param_no);
 		return E_CFG;
 	}
-	if (param_no == 5)
+	if (fopt.param_no == 5)
 		return fixup_set_id(param);
 	return fixup_pvar(param);
 }
 
-static int fixup_recording(void ** param, int param_no)
+static int fixup_recording(void ** param, struct fxup_opts fopt)
 {
-	if (param_no == 3)
+	if (fopt.param_no == 3)
 		return fixup_spve(param);
-	return fixup_two_options(param, param_no);
+	return fixup_two_options(param, fopt);
 }
 
-static int fixup_offer_answer(void ** param, int param_no)
+static int fixup_offer_answer(void ** param, struct fxup_opts fopt)
 {
-	if (param_no < 1)
+	if (fopt.param_no < 1)
 		return 0;
-	if (param_no < 3)
+	if (fopt.param_no < 3)
 		return fixup_spve(param);
-	if (param_no == 3)
+	if (fopt.param_no == 3)
 		return fixup_set_id(param);
-	if (param_no == 4)
+	if (fopt.param_no == 4)
 		return fixup_pvar(param);
-	LM_ERR("Too many parameters %d\n", param_no);
+	LM_ERR("Too many parameters %d\n", fopt.param_no);
 	return E_CFG;
 }
 
@@ -874,13 +875,13 @@ static int fixup_set_id(void ** param)
 	}
 }
 
-static int fixup_stream(void **param, int param_no)
+static int fixup_stream(void **param, struct fxup_opts fopt)
 {
 	int ret;
 	pv_elem_t *model;
 	str s;
 
-	if (param_no == 1) {
+	if (fopt.param_no == 1) {
 		model = NULL;
 		s.s = (char *)(*param);
 		s.len = strlen(s.s);
@@ -893,7 +894,7 @@ static int fixup_stream(void **param, int param_no)
 			return E_UNSPEC;
 		}
 		*param = (void *)model;
-	} else if (param_no == 2) {
+	} else if (fopt.param_no == 2) {
 		s.s = (char *)(*param);
 		s.len = strlen(s.s);
 		if (str2sint(&s, &ret) < 0) {
@@ -902,22 +903,22 @@ static int fixup_stream(void **param, int param_no)
 		}
 		pkg_free(*param);
 		*param = (void *)(long)ret;
-	} else if (param_no == 3) {
+	} else if (fopt.param_no == 3) {
 		return fixup_set_id(param);
-	} else if (param_no == 4) {
+	} else if (fopt.param_no == 4) {
 		return fixup_pvar(param);
 	}
 	return 0;
 }
 
-static int fixup_engage(void** param, int param_no)
+static int fixup_engage(void** param, struct fxup_opts fopt)
 {
-	if (param_no < 2 && !dlg_api.create_dlg) {
+	if (fopt.param_no < 2 && !dlg_api.create_dlg) {
 		LM_ERR("Dialog module not loaded. Can't use engage_rtp_proxy function\n");
 		return -1;
 	}
 
-	return fixup_offer_answer(param, param_no);
+	return fixup_offer_answer(param, fopt);
 }
 
 static struct mi_root* mi_enable_rtp_proxy(struct mi_root* cmd_tree,

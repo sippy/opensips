@@ -102,7 +102,7 @@ static int mod_init(void);
 static int mod_child(int);
 
 /* fixup prototype */
-static int fixup_rl_check(void **param, int param_no);
+static int fixup_rl_check(void **param, struct fxup_opts fopt);
 
 struct mi_root* mi_stats(struct mi_root* cmd_tree, void* param);
 struct mi_root* mi_reset_pipe(struct mi_root* cmd_tree, void* param);
@@ -771,9 +771,9 @@ free:
 }
 
 /* fixup functions */
-static int fixup_rl_check(void **param, int param_no)
+static int fixup_rl_check(void **param, struct fxup_opts fopt)
 {
-	switch (param_no) {
+	switch (fopt.param_no) {
 		/* pipe name */
 		case 1:
 			return fixup_spve(param);
@@ -785,7 +785,7 @@ static int fixup_rl_check(void **param, int param_no)
 			return fixup_sgp(param);
 			/* error */
 		default:
-			LM_ERR("[BUG] too many params (%d)\n", param_no);
+			LM_ERR("[BUG] too many params (%d)\n", fopt.param_no);
 	}
 	return E_UNSPEC;
 }

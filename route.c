@@ -450,15 +450,16 @@ static int fix_actions(struct action* a)
 				LM_DBG("fixing %s, %s:%d\n", cmd->name, t->file, t->line);
 				if (cmd->fixup){
 					if (cmd->param_no==0){
-						ret=cmd->fixup( 0, 0);
+						ret=cmd->fixup( 0, ff_zero );
 						if (ret<0) goto error;
 					}
 					else {
-						for (i=1; i<=cmd->param_no; i++) {
+						struct fxup_opts fopt = FFF_INIT(1);
+						for (; fopt.param_no<=cmd->param_no; fopt.param_no++) {
 							/* we only call the fixup for non-null arguments */
-							if (t->elem[i].type != NULLV_ST) {
-								ret=cmd->fixup(&t->elem[i].u.data, i);
-								t->elem[i].type=MODFIXUP_ST;
+							if (t->elem[fopt.param_no].type != NULLV_ST) {
+								ret=cmd->fixup(&t->elem[fopt.param_no].u.data, fopt);
+								t->elem[fopt.param_no].type=MODFIXUP_ST;
 								if (ret<0) goto error;
 							}
 						}
@@ -477,15 +478,16 @@ static int fix_actions(struct action* a)
 				LM_DBG("fixing async %s, %s:%d\n", acmd->name, t->file, t->line);
 				if (acmd->fixup){
 					if (acmd->param_no==0){
-						ret=acmd->fixup( 0, 0);
+						ret=acmd->fixup( 0, ff_zero);
 						if (ret<0) goto error;
 					}
 					else {
-						for (i=1; i<=acmd->param_no; i++) {
+						struct fxup_opts fopt = FFF_INIT(1);
+						for (; fopt.param_no<=acmd->param_no; fopt.param_no++) {
 							/* we only call the fixup for non-null arguments */
-							if (t->elem[i].type != NULLV_ST) {
-								ret=acmd->fixup(&t->elem[i].u.data, i);
-								t->elem[i].type=MODFIXUP_ST;
+							if (t->elem[fopt.param_no].type != NULLV_ST) {
+								ret=acmd->fixup(&t->elem[fopt.param_no].u.data, fopt);
+								t->elem[fopt.param_no].type=MODFIXUP_ST;
 								if (ret<0) goto error;
 							}
 						}

@@ -67,7 +67,7 @@ static int child_init(int rank);
 static int mod_init(void);
 
 
-static int auth_fixup(void** param, int param_no);
+static int auth_fixup(void** param, struct fxup_opts fopt);
 
 /** SIGNALING binds */
 struct sig_binds sigb;
@@ -243,14 +243,14 @@ static void destroy(void)
 /*
  * Convert the char* parameters
  */
-static int auth_fixup(void** param, int param_no)
+static int auth_fixup(void** param, struct fxup_opts fopt)
 {
 	db_con_t* dbh = NULL;
 	str name;
 
-	if (param_no == 1) {
-		return fixup_spve_null(param, 1);
-	} else if (param_no == 2) {
+	if (fopt.param_no == 1) {
+		return fixup_spve_null(param, ff_one);
+	} else if (fopt.param_no == 2) {
 		name.s = (char*)*param;
 		name.len = strlen(name.s);
 

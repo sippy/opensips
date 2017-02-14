@@ -89,9 +89,9 @@ static struct mi_root* mi_lb_resize(struct mi_root *cmd_tree, void *param);
 static struct mi_root* mi_lb_list(struct mi_root *cmd_tree, void *param);
 static struct mi_root* mi_lb_status(struct mi_root *cmd_tree, void *param);
 
-static int fixup_resources(void** param, int param_no);
-static int fixup_is_dst(void** param, int param_no);
-static int fixup_cnt_call(void** param, int param_no);
+static int fixup_resources(void** param, struct fxup_opts fopt);
+static int fixup_is_dst(void** param, struct fxup_opts fopt);
+static int fixup_cnt_call(void** param, struct fxup_opts fopt);
 
 static int w_lb_start(struct sip_msg *req, char *grp, char *rl, char *fl);
 static int w_lb_next(struct sip_msg *req);
@@ -214,7 +214,7 @@ struct lb_grp_param {
 };
 
 
-static int fixup_resources(void** param, int param_no)
+static int fixup_resources(void** param, struct fxup_opts fopt)
 {
 	struct lb_res_str_list *lb_rl;
 	struct lb_grp_param *lbgp;
@@ -222,7 +222,7 @@ static int fixup_resources(void** param, int param_no)
 	pv_elem_t *model=NULL;
 	str s;
 
-	if (param_no==1) {
+	if (fopt.param_no==1) {
 
 		lbgp = (struct lb_grp_param *)pkg_malloc(sizeof(struct lb_grp_param));
 		if (lbgp==NULL) {
@@ -250,7 +250,7 @@ static int fixup_resources(void** param, int param_no)
 		*param=(void *)(unsigned long)lbgp;
 		return 0;
 
-	} else if (param_no==2) {
+	} else if (fopt.param_no==2) {
 
 		/* parameter is string (semi-colon separated list)
 		 * of needed resources */
@@ -286,23 +286,23 @@ static int fixup_resources(void** param, int param_no)
 		*param = (void *)(unsigned long)lbp;
 		return 0;
 
-	} else if (param_no==3) {
+	} else if (fopt.param_no==3) {
 		/* string with flags */
 		return fixup_sgp(param);
 
 	}
 
-	LM_CRIT("error - wrong params count (%d)\n",param_no);
+	LM_CRIT("error - wrong params count (%d)\n",fopt.param_no);
 	return -1;
 }
 
 
-static int fixup_is_dst(void** param, int param_no)
+static int fixup_is_dst(void** param, struct fxup_opts fopt)
 {
-	if (param_no==1) {
+	if (fopt.param_no==1) {
 		/* the ip to test */
 		return fixup_pvar(param);
-	} else if (param_no==2) {
+	} else if (fopt.param_no==2) {
 		/* the port to test */
 		if (*param==NULL) {
 			return 0;
@@ -312,38 +312,38 @@ static int fixup_is_dst(void** param, int param_no)
 			return 0;
 		}
 		return fixup_igp(param);
-	} else if (param_no==3) {
+	} else if (fopt.param_no==3) {
 		/* the group to check in */
 		return fixup_igp(param);
-	} else if (param_no==4) {
+	} else if (fopt.param_no==4) {
 		/*  active only check ? */
 		return fixup_uint(param);
 	} else {
-		LM_CRIT("bug - too many params (%d) in lb_is_dst()\n",param_no);
+		LM_CRIT("bug - too many params (%d) in lb_is_dst()\n",fopt.param_no);
 		return -1;
 	}
 }
 
 
-static int fixup_cnt_call(void** param, int param_no)
+static int fixup_cnt_call(void** param, struct fxup_opts fopt)
 {
-	if (param_no==1)
+	if (fopt.param_no==1)
 		/* IP */
-		return fixup_is_dst(param, 1);
-	if (param_no==2)
+		return fixup_is_dst(param, ff_one);
+	if (fopt.param_no==2)
 		/* port */
-		return fixup_is_dst(param, 2);
-	if (param_no==3)
+		return fixup_is_dst(param, ff_two);
+	if (fopt.param_no==3)
 		/* group id */
-		return fixup_resources(param, 1);
-	if (param_no==4)
+		return fixup_resources(param, ff_one);
+	if (fopt.param_no==4)
 		/* resources */
-		return fixup_resources(param, 2);
-	if (param_no==5)
+		return fixup_resources(param, ff_two);
+	if (fopt.param_no==5)
 		/* count or un-count */
 		return fixup_uint(param);
 
-	LM_CRIT("error - wrong params count (%d)\n",param_no);
+	LM_CRIT("error - wrong params count (%d)\n",fopt.param_no);
 	return -1;
 }
 

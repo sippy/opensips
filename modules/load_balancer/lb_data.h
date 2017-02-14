@@ -29,6 +29,7 @@
 #ifndef LB_LB_DATA_H_
 #define LB_LB_DATA_H_
 
+#include "../../sr_module.h"
 #include "../../mod_fix.h"
 #include "../../str.h"
 #include "../../locking.h"

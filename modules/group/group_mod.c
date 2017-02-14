@@ -71,12 +71,12 @@ static int child_init(int rank);
  */
 static int mod_init(void);
 
-static int aaa_is_user_fixup(void** param, int param_no);
-static int db_is_user_fixup(void** param, int param_no);
-static int db_get_gid_fixup(void** param, int param_no);
+static int aaa_is_user_fixup(void** param, struct fxup_opts fopt);
+static int db_is_user_fixup(void** param, struct fxup_opts fopt);
+static int db_get_gid_fixup(void** param, struct fxup_opts fopt);
 
-static int obsolete_fixup_0(void** param, int param_no);
-static int obsolete_fixup_1(void** param, int param_no);
+static int obsolete_fixup_0(void** param, struct fxup_opts fopt);
+static int obsolete_fixup_1(void** param, struct fxup_opts fopt);
 
 #define TABLE "grp"
 #define TABLE_LEN (sizeof(TABLE) - 1)
@@ -298,7 +298,7 @@ static void destroy(void)
 }
 
 
-static int obsolete_fixup_0(void** param, int param_no) {
+static int obsolete_fixup_0(void** param, struct fxup_opts fopt) {
 
 	LM_ERR("You are using is_user_in function that is now obsolete. \
 If you want to use it with DB support, use db_is_user_in. \
@@ -307,7 +307,7 @@ If you want to use it with AAA support, use aaa_is_user_in.\n");
 	return E_CFG;
 }
 
-static int obsolete_fixup_1(void** param, int param_no) {
+static int obsolete_fixup_1(void** param, struct fxup_opts fopt) {
 
 	LM_ERR("You are get_user_group function that has been renamed\
 into db_get_user_group\n");
@@ -315,7 +315,7 @@ into db_get_user_group\n");
 	return E_CFG;
 }
 
-static int db_get_gid_fixup(void** param, int param_no)
+static int db_get_gid_fixup(void** param, struct fxup_opts fopt)
 {
 	pv_spec_t *sp;
 	str  name;
@@ -325,9 +325,9 @@ static int db_get_gid_fixup(void** param, int param_no)
 		return E_CFG;
 	}
 
-	if (param_no == 1) {
-		return fixup_spve_spve(param, param_no);
-	} else if (param_no == 2) {
+	if (fopt.param_no == 1) {
+		return fixup_spve_spve(param, fopt);
+	} else if (fopt.param_no == 2) {
 		name.s = (char*)*param;
 		name.len = strlen(name.s);
 		sp = (pv_spec_t*)pkg_malloc(sizeof(pv_spec_t));
@@ -349,7 +349,7 @@ static int db_get_gid_fixup(void** param, int param_no)
 }
 
 
-static int aaa_is_user_fixup(void** param, int param_no)
+static int aaa_is_user_fixup(void** param, struct fxup_opts fopt)
 {
 	void* ptr;
 	str* s;
@@ -359,7 +359,7 @@ static int aaa_is_user_fixup(void** param, int param_no)
 		return E_CFG;
 	}
 
-	if (param_no == 1) {
+	if (fopt.param_no == 1) {
 		ptr = *param;
 
 		if (!strcasecmp((char*)*param, "Request-URI")) {
@@ -376,7 +376,7 @@ static int aaa_is_user_fixup(void** param, int param_no)
 		}
 
 		pkg_free(ptr);
-	} else if (param_no == 2) {
+	} else if (fopt.param_no == 2) {
 
 		s = (str*)pkg_malloc(sizeof(str));
 		if (!s) {
@@ -393,10 +393,10 @@ static int aaa_is_user_fixup(void** param, int param_no)
 }
 
 
-static int db_is_user_fixup(void** param, int param_no) {
+static int db_is_user_fixup(void** param, struct fxup_opts fopt) {
 
 	if (db_url.s) {
-		fixup_spve_spve(param, param_no);
+		fixup_spve_spve(param, fopt);
 		return 0;
 	}
 

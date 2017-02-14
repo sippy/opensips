@@ -91,8 +91,8 @@ struct domain_list **hash_table_2 = 0;	/* Pointer to hash table 2 */
 static int is_domain_alias(char* name, int len, unsigned short port,
 														unsigned short proto);
 
-static int fixup_wpvar_null(void **param, int param_no);
-static int fixup_pvar_wpvar(void **param, int param_no);
+static int fixup_wpvar_null(void **param, struct fxup_opts fopt);
+static int fixup_pvar_wpvar(void **param, struct fxup_opts fopt);
 
 /*
  * Exported functions
@@ -187,25 +187,25 @@ static int fixup_wpvar(void **param)
 	return 0;
 }
 
-static int fixup_wpvar_null(void **param, int param_no)
+static int fixup_wpvar_null(void **param, struct fxup_opts fopt)
 {
-	if(param_no != 1)
+	if(fopt.param_no != 1)
 	{
-		LM_ERR("invalid parameter number %d\n", param_no);
+		LM_ERR("invalid parameter number %d\n", fopt.param_no);
 		return E_UNSPEC;
 	}
 	return fixup_wpvar(param);
 }
 
-static int fixup_pvar_wpvar(void **param, int param_no)
+static int fixup_pvar_wpvar(void **param, struct fxup_opts fopt)
 {
-	if (param_no == 1)
+	if (fopt.param_no == 1)
 	{
 		return fixup_pvar(param);
 	}
-	if (param_no != 2)
+	if (fopt.param_no != 2)
 	{
-		LM_ERR("invalid parameter number %d\n", param_no);
+		LM_ERR("invalid parameter number %d\n", fopt.param_no);
 		return E_UNSPEC;
 	}
 	return fixup_wpvar(param);

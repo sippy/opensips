@@ -61,8 +61,8 @@ static int w_set_accept(struct sip_msg* msg, char *dir, char *foo);
 static int w_get_redirect1(struct sip_msg* msg, char *max_c);
 static int w_get_redirect2(struct sip_msg* msg, char *max_c, pv_elem_t *reason);
 static int regexp_compile(char *re_s, regex_t **re);
-static int get_redirect_fixup(void** param, int param_no);
-static int setf_fixup(void** param, int param_no);
+static int get_redirect_fixup(void** param, struct fxup_opts fopt);
+static int setf_fixup(void** param, struct fxup_opts fopt);
 
 
 static cmd_export_t cmds[] = {
@@ -145,7 +145,7 @@ int get_nr_max(char *s, unsigned char *max)
 }
 
 
-static int get_redirect_fixup(void** param, int param_no)
+static int get_redirect_fixup(void** param, struct fxup_opts fopt)
 {
 	unsigned char maxb,maxt;
 	pv_elem_t *reason;
@@ -154,7 +154,7 @@ static int get_redirect_fixup(void** param, int param_no)
 	str s;
 
 	s.s = (char*)*param;
-	if (param_no == 1) {
+	if (fopt.param_no == 1) {
 		if ( (p = strchr(s.s, ':')) != 0 ) {
 			/* have max branch also */
 			*p = 0;
@@ -171,7 +171,7 @@ static int get_redirect_fixup(void** param, int param_no)
 		pkg_free(*param);
 		*param = (void*)(long)( (((unsigned short)maxt) << 8) | maxb);
 
-	} else if (param_no == 2) {
+	} else if (fopt.param_no == 2) {
 		/* acc function loaded? */
 		if (rd_acc_fct != 0)
 			return 0;
@@ -207,14 +207,14 @@ static int get_redirect_fixup(void** param, int param_no)
 }
 
 
-static int setf_fixup(void** param, int param_no)
+static int setf_fixup(void** param, struct fxup_opts fopt)
 {
 	unsigned short nr;
 	regex_t *filter;
 	char *s;
 
 	s = (char*)*param;
-	if (param_no==1) {
+	if (fopt.param_no==1) {
 		/* compile the filter */
 		if (regexp_compile( s, &filter)<0) {
 			LM_ERR("cannot init filter <%s>\n", s);
@@ -222,7 +222,7 @@ static int setf_fixup(void** param, int param_no)
 		}
 		pkg_free(*param);
 		*param = (void*)filter;
-	} else if (param_no==2) {
+	} else if (fopt.param_no==2) {
 		if (s==0 || s[0]==0) {
 			nr = 0;
 		} else if (strcasecmp(s,"reset_all")==0) {

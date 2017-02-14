@@ -61,8 +61,8 @@ static str db_table     = str_init("userblacklist");
 static int use_domain   = 0;
 
 /* ---- fixup functions: */
-static int check_blacklist_fixup(void** param, int param_no);
-static int check_user_blacklist_fixup(void** param, int param_no);
+static int check_blacklist_fixup(void** param, struct fxup_opts fopt);
+static int check_user_blacklist_fixup(void** param, struct fxup_opts fopt);
 
 /* ---- exported commands: */
 static int check_user_blacklist(struct sip_msg *msg, char* str1, char* str2, char* str3, char* str4);
@@ -149,7 +149,7 @@ static struct source_list_t *sources = NULL;
 static struct dt_node_t *dt_root;
 
 
-static int check_user_blacklist_fixup(void** param, int param_no)
+static int check_user_blacklist_fixup(void** param, struct fxup_opts fopt)
 {
 	pv_elem_t *model=NULL;
 	str s;
@@ -158,26 +158,26 @@ static int check_user_blacklist_fixup(void** param, int param_no)
 	s.s = (char*)*param;
 	s.len = strlen(s.s);
 
-	if (param_no > 0 && param_no <= 4) {
-		if(s.len == 0 && param_no != 4) {
-			LM_ERR("no parameter %d\n", param_no);
+	if (fopt.param_no > 0 && fopt.param_no <= 4) {
+		if(s.len == 0 && fopt.param_no != 4) {
+			LM_ERR("no parameter %d\n", fopt.param_no);
 			return E_UNSPEC;
 		}
 
 		if(pv_parse_format(&s, &model) < 0 || !model) {
-			LM_ERR("wrong format [%.*s] for parameter %d\n", s.len, s.s, param_no);
+			LM_ERR("wrong format [%.*s] for parameter %d\n", s.len, s.s, fopt.param_no);
 			return E_UNSPEC;
 		}
 
 		if(!model->spec.getf) {
-			if(param_no == 1) {
+			if(fopt.param_no == 1) {
 				if(str2int(&s, (unsigned int*)&model->spec.pvp.pvn.u.isname.name.n) != 0) {
-					LM_ERR("wrong value [%.*s] for parameter %d\n", s.len, s.s, param_no);
+					LM_ERR("wrong value [%.*s] for parameter %d\n", s.len, s.s, fopt.param_no);
 					return E_UNSPEC;
 				}
 			} else {
-				if(param_no == 2 || param_no == 3) {
-					LM_ERR("wrong value [%.*s] for parameter %d\n", s.len, s.s, param_no);
+				if(fopt.param_no == 2 || fopt.param_no == 3) {
+					LM_ERR("wrong value [%.*s] for parameter %d\n", s.len, s.s, fopt.param_no);
 					return E_UNSPEC;
 				} else {
 					// only a string
@@ -346,11 +346,11 @@ static int add_source(const char *table)
 }
 
 
-static int check_blacklist_fixup(void **arg, int arg_no)
+static int check_blacklist_fixup(void **arg, struct fxup_opts fopt)
 {
 	char *table = (char *)(*arg);
 	struct dt_node_t *node = NULL;
-	if (arg_no != 1) {
+	if (fopt.param_no != 1) {
 		LM_ERR("wrong number of parameters\n");
 		return -1;
 	}

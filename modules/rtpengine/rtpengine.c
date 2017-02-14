@@ -159,7 +159,7 @@ static int parse_flags(struct ng_flags_parse *, struct sip_msg *, enum rtpe_oper
 
 static int rtpengine_offer_answer(struct sip_msg *msg, const char *flags, int op);
 static int add_rtpengine_socks(struct rtpe_set * rtpe_list, char * rtpengine);
-static int fixup_set_id(void ** param, int param_no);
+static int fixup_set_id(void ** param, struct fxup_opts fopt);
 static int set_rtpengine_set_f(struct sip_msg * msg, rtpe_set_link_t *set_param);
 static struct rtpe_set * select_rtpe_set(int id_set);
 static struct rtpe_node *select_rtpe_node(str, int, struct rtpe_set *);
@@ -569,7 +569,7 @@ error:
 }
 
 
-static int fixup_set_id(void ** param, int param_no)
+static int fixup_set_id(void ** param, struct fxup_opts fopt)
 {
 	int int_val, err;
 	struct rtpe_set* rtpe_list;

@@ -199,7 +199,7 @@ void acc_loaded_callback(struct dlg_cell *dlg, int type,
 int w_acc_evi_request(struct sip_msg *rq, pv_elem_t* comment, char *foo);
 
 
-int do_acc_fixup(void** param, int param_no);
+int do_acc_fixup(void** param, struct fxup_opts fopt);
 
 
 int w_do_acc_1(struct sip_msg* msg, char* type);

@@ -25,6 +25,7 @@
 #include <sys/types.h>
 #include <regex.h>
 
+#include "../../sr_module.h"
 #include "../../mod_fix.h"
 #include "../../str.h"
 #include "../../mem/mem.h"

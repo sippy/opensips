@@ -33,6 +33,7 @@
 #include "lookup.h"
 #include "encode.h"
 
+#include "../../sr_module.h"
 #include "../../parser/parse_rr.h"
 #include "../../parser/parse_uri.h"
 #include "../../dset.h"

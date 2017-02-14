@@ -111,10 +111,10 @@ static int async_usleep(struct sip_msg* msg,
 		char *duration);
 #endif
 
-static int fixup_prob( void** param, int param_no);
-static int fixup_pv_set(void** param, int param_no);
-static int fixup_rand_event(void** param, int param_no);
-static int fixup_delta(void** param, int param_no);
+static int fixup_prob( void** param, struct fxup_opts fopt);
+static int fixup_pv_set(void** param, struct fxup_opts fopt);
+static int fixup_rand_event(void** param, struct fxup_opts fopt);
+static int fixup_delta(void** param, struct fxup_opts fopt);
 
 static int mod_init(void);
 static void mod_destroy(void);
@@ -256,13 +256,13 @@ struct module_exports exports = {
 
 
 /**************************** fixup functions ******************************/
-static int fixup_prob( void** param, int param_no)
+static int fixup_prob( void** param, struct fxup_opts fopt)
 {
 	unsigned int myint = 0;
 	str param_str;
 
 	/* we only fix the parameter #1 */
-	if (param_no!=1)
+	if (fopt.param_no!=1)
 		return 0;
 
 	param_str.s=(char*) *param;
@@ -277,11 +277,11 @@ static int fixup_prob( void** param, int param_no)
 	return 0;
 }
 
-static int fixup_delta( void **param, int param_no)
+static int fixup_delta( void **param, struct fxup_opts fopt)
 {
-	if (param_no < 5) {
+	if (fopt.param_no < 5) {
 		return fixup_igp(param);
-	} else if (param_no == 5) {
+	} else if (fopt.param_no == 5) {
 		if (fixup_pvar(param) < 0 && ((pv_spec_p)*param)->setf == 0) {
 			LM_ERR("invalid pvar\n");
 			return E_SCRIPT;
@@ -420,12 +420,12 @@ static int get_prob(struct sip_msg *bar, char *foo1, char *foo2)
 	return *probability;
 }
 
-static int fixup_rand_event(void** param, int param_no)
+static int fixup_rand_event(void** param, struct fxup_opts fopt)
 {
 	pv_elem_t *model;
 	str s;
 
-	if(param_no== 0)
+	if(fopt.param_no== 0)
 		return 0;
 
 	if(*param)
@@ -721,12 +721,12 @@ static void mod_destroy(void)
 	destroy_script_locks();
 }
 
-static int fixup_pv_set(void** param, int param_no)
+static int fixup_pv_set(void** param, struct fxup_opts fopt)
 {
 	pv_elem_t *model;
 	str s;
 
-	if((*param == 0) || (param_no!=1 && param_no!=2))
+	if((*param == 0) || (fopt.param_no!=1 && fopt.param_no!=2))
 	{
 		LM_ERR( "NULL format\n");
 		return E_UNSPEC;

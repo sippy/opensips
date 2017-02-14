@@ -25,6 +25,7 @@
 
 #include <string.h>
 
+#include "../../sr_module.h"
 #include "../../dprint.h"
 #include "../../action.h"
 #include "../../config.h"

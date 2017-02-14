@@ -43,7 +43,7 @@ static int reg_param_stat( modparam_t type, void* val);
 static int mod_init(void);
 static int w_update_stat(struct sip_msg* msg, char* stat, char* n);
 static int w_reset_stat(struct sip_msg* msg, char* stat, char* foo);
-static int fixup_stat(void** param, int param_no);
+static int fixup_stat(void** param, struct fxup_opts fopt);
 
 int pv_parse_name(pv_spec_p sp, str *in);
 int pv_set_stat(struct sip_msg* msg, pv_param_t *param, int op,
@@ -132,7 +132,7 @@ static int mod_init(void)
 
 
 
-static int fixup_stat(void** param, int param_no)
+static int fixup_stat(void** param, struct fxup_opts fopt)
 {
 	struct stat_param *sp;
 	pv_elem_t *format;
@@ -140,7 +140,7 @@ static int fixup_stat(void** param, int param_no)
 
 	s.s = (char*)*param;
 	s.len = strlen(s.s);
-	if (param_no==1) {
+	if (fopt.param_no==1) {
 		/* reference to the statistic name */
 		sp = (struct stat_param *)pkg_malloc(sizeof(struct stat_param));
 		if (sp==NULL) {
@@ -180,7 +180,7 @@ static int fixup_stat(void** param, int param_no)
 		/* do not free the original string, the "format" points inside ! */
 		*param=(void*)sp;
 		return 0;
-	} else if (param_no==2) {
+	} else if (fopt.param_no==2) {
 		/* update value - integer or variable */
 		return fixup_igp(param);
 	}

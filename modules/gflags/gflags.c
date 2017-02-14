@@ -70,7 +70,7 @@ static struct mi_root* mi_reset_gflag(struct mi_root* cmd, void* param );
 static struct mi_root* mi_is_gflag(struct mi_root* cmd, void* param );
 static struct mi_root* mi_get_gflags(struct mi_root* cmd, void* param );
 
-static int fixup_gflags( void** param, int param_no);
+static int fixup_gflags( void** param, struct fxup_opts fopt);
 
 static int  mod_init(void);
 static void mod_destroy(void);
@@ -129,13 +129,13 @@ struct module_exports exports = {
  * convert char* to int and do bitwise right-shift
  * char* must be pkg_alloced and will be freed by the function
  */
-static int fixup_gflags( void** param, int param_no)
+static int fixup_gflags( void** param, struct fxup_opts fopt)
 {
 	unsigned int myint;
 	str param_str;
 
 	/* we only fix the parameter #1 */
-	if (param_no!=1)
+	if (fopt.param_no!=1)
 		return 0;
 
 	param_str.s=(char*) *param;

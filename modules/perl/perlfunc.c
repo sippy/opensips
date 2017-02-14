@@ -25,6 +25,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "../../sr_module.h"
 #include "../../mem/mem.h"
 #include "../../data_lump.h"
 #include "../../parser/parse_param.h"

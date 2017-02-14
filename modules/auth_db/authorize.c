@@ -34,6 +34,7 @@
 
 
 #include <string.h>
+#include "../../sr_module.h"
 #include "../../ut.h"
 #include "../../str.h"
 #include "../../db/db.h"

@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "../../sr_module.h"
 #include "../../dprint.h"
 #include "../../parser/parse_from.h"
 #include "../../parser/parse_content.h"
@@ -1157,7 +1158,7 @@ do_acc_parse(str* in, do_acc_parser parser)
 }
 
 
-int do_acc_fixup(void** param, int param_no)
+int do_acc_fixup(void** param, struct fxup_opts fopt)
 {
 	str s;
 	pv_elem_p el;
@@ -1169,12 +1170,12 @@ int do_acc_fixup(void** param, int param_no)
 
 	do_acc_parser parser;
 
-	if (param_no < 1 || param_no > 3) {
-		LM_ERR("invalid param_no <%d>!\n", param_no);
+	if (fopt.param_no < 1 || fopt.param_no > 3) {
+		LM_ERR("invalid param_no <%d>!\n", fopt.param_no);
 		return -1;
 	}
 
-	switch (param_no) {
+	switch (fopt.param_no) {
 	case 1:
 		parser=do_acc_type_parser;
 		s.s = *param;

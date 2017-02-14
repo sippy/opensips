@@ -52,8 +52,8 @@ static int child_init(int rank);
 static int mod_init(void);
 
 /* Fixup function */
-static int lookup_fixup(void** param, int param_no);
-static int find_fixup(void** param, int param_no);
+static int lookup_fixup(void** param, struct fxup_opts fopt);
+static int find_fixup(void** param, struct fxup_opts fopt);
 
 
 /* Module parameter variables */
@@ -154,32 +154,32 @@ static int alias_flags_fixup(void** param)
 }
 
 
-static int lookup_fixup(void** param, int param_no)
+static int lookup_fixup(void** param, struct fxup_opts fopt)
 {
-	if (param_no==1) {
+	if (fopt.param_no==1) {
 		/* string or pseudo-var - table name */
 		return fixup_spve(param);
-	} else if (param_no==2) {
+	} else if (fopt.param_no==2) {
 		/* string - flags ? */
 		return alias_flags_fixup(param);
 	} else {
-		LM_CRIT(" invalid number of params %d \n",param_no);
+		LM_CRIT(" invalid number of params %d \n",fopt.param_no);
 		return -1;
 	}
 }
 
 
-static int find_fixup(void** param, int param_no)
+static int find_fixup(void** param, struct fxup_opts fopt)
 {
 	pv_spec_t *sp;
 
-	if (param_no==1) {
+	if (fopt.param_no==1) {
 		/* string or pseudo-var - table name */
 		return fixup_spve(param);
-	} else if(param_no==2) {
+	} else if(fopt.param_no==2) {
 		/* string or pseudo-var - source URI */
 		return fixup_spve(param);
-	} else if(param_no==3) {
+	} else if(fopt.param_no==3) {
 		/* pvar (AVP or VAR) - destination URI */
 		if (fixup_pvar(param))
 			return E_CFG;
@@ -190,11 +190,11 @@ static int find_fixup(void** param, int param_no)
 			return E_CFG;
 		}
 		return 0;
-	} else if (param_no==4) {
+	} else if (fopt.param_no==4) {
 		/* string - flags  ? */
 		return alias_flags_fixup(param);
 	} else {
-		LM_CRIT(" invalid number of params %d \n",param_no);
+		LM_CRIT(" invalid number of params %d \n",fopt.param_no);
 		return -1;
 	}
 }

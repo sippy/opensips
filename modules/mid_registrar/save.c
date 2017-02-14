@@ -35,6 +35,7 @@
 #include "save.h"
 #include "gruu.h"
 
+#include "../../sr_module.h"
 #include "../../lib/reg/rerrno.h"
 #include "../../parser/parse_rr.h"
 #include "../../parser/parse_uri.h"

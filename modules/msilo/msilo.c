@@ -168,7 +168,7 @@ int check_message_support(struct sip_msg* msg);
 static void m_tm_callback( struct cell *t, int type, struct tmcb_params *ps);
 
 /* commands wrappers and fixups */
-static int fixup_m_dump(void** param, int param_no);
+static int fixup_m_dump(void** param, struct fxup_opts fopt);
 
 static cmd_export_t cmds[]={
 	{"m_store",  (cmd_function)m_store, 0, 0, 0,
@@ -353,7 +353,7 @@ static int mod_init(void)
 			return -1;
 		}
 		*ms_from_sp = (void*)ms_from;
-		if(fixup_spve_null(ms_from_sp, 1)!=0)
+		if(fixup_spve_null(ms_from_sp, ff_one)!=0)
 		{
 			LM_ERR("bad contact parameter\n");
 			return -1;
@@ -368,7 +368,7 @@ static int mod_init(void)
 			return -1;
 		}
 		*ms_contact_sp = (void*)ms_contact;
-		if(fixup_spve_null(ms_contact_sp, 1)!=0)
+		if(fixup_spve_null(ms_contact_sp, ff_one)!=0)
 		{
 			LM_ERR("bad contact parameter\n");
 			return -1;
@@ -383,7 +383,7 @@ static int mod_init(void)
 			return -1;
 		}
 		*ms_content_type_sp = (void*)ms_content_type;
-		if(fixup_spve_null(ms_content_type_sp, 1)!=0)
+		if(fixup_spve_null(ms_content_type_sp, ff_one)!=0)
 		{
 			LM_ERR("bad content_type parameter\n");
 			return -1;
@@ -398,7 +398,7 @@ static int mod_init(void)
 			return -1;
 		}
 		*ms_offline_message_sp = (void*)ms_offline_message;
-		if(fixup_spve_null(ms_offline_message_sp, 1)!=0)
+		if(fixup_spve_null(ms_offline_message_sp, ff_one)!=0)
 		{
 			LM_ERR("bad offline_message parameter\n");
 			return -1;
@@ -1319,11 +1319,11 @@ int ms_reset_stime(int mid)
 	return 0;
 }
 
-static int fixup_m_dump(void** param, int param_no)
+static int fixup_m_dump(void** param, struct fxup_opts fopt)
 {
-	if (param_no==1) {
+	if (fopt.param_no==1) {
 		return fixup_spve(param);
-	} else if (param_no==2) {
+	} else if (fopt.param_no==2) {
 		return fixup_uint(param);
 	}
 	return 0;

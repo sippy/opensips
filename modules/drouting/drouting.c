@@ -228,7 +228,7 @@ static int add_head_db();
 static int db_load_head(struct head_db*); /* used for populating head_db with
 											 db connections and db funcs */
 static void trim_char(char**);
-static int fixup_dr_disable(void **,int);
+static int fixup_dr_disable(void **, struct fxup_opts fopt);
 //static struct head_db * get_partition(const str *);
 static int _is_dr_gw_w_part(struct sip_msg* , char * , char* ,
 		int , struct ip_addr* , unsigned int);
@@ -250,12 +250,12 @@ static int dr_init(void);
 static int dr_child_init(int rank);
 static int dr_exit(void);
 
-static int fixup_do_routing(void** param, int param_no);
-static int fixup_next_gw(void** param, int param_no);
-static int fixup_from_gw(void** param, int param_no);
-static int fixup_is_gw(void** param, int param_no);
-static int fixup_route2_carrier( void** param, int param_no);
-static int fixup_route2_gw( void** param, int param_no);
+static int fixup_do_routing(void** param, struct fxup_opts fopt);
+static int fixup_next_gw(void** param, struct fxup_opts fopt);
+static int fixup_from_gw(void** param, struct fxup_opts fopt);
+static int fixup_is_gw(void** param, struct fxup_opts fopt);
+static int fixup_route2_carrier( void** param, struct fxup_opts fopt);
+static int fixup_route2_gw( void** param, struct fxup_opts fopt);
 
 static int do_routing(struct sip_msg* msg,dr_part_group_t*, int sort, gparam_t* wl);
 static int do_routing_0(struct sip_msg* msg);
@@ -3549,9 +3549,9 @@ gparam_t * fixup_get_partition(void** param) {
 
 }
 
-static int fixup_dr_disable(void ** param, int param_no) {
+static int fixup_dr_disable(void ** param, struct fxup_opts fopt) {
 	if(use_partitions) {
-		switch(param_no) {
+		switch(fopt.param_no) {
 			case 1:
 				trim_char((char**)param);
 				return fixup_sgp(param);
@@ -3561,7 +3561,7 @@ static int fixup_dr_disable(void ** param, int param_no) {
 	return -1;
 }
 
-static int fixup_do_routing(void** param, int param_no)
+static int fixup_do_routing(void** param, struct fxup_opts fopt)
 {
 	char *s;
 	dr_part_group_t * part_param;
@@ -3569,7 +3569,7 @@ static int fixup_do_routing(void** param, int param_no)
 
 	s = (char*)*param;
 
-	switch (param_no) {
+	switch (fopt.param_no) {
 		/* [partition name':']group ID */
 		case 1:
 			part_param = pkg_malloc(sizeof(dr_part_group_t));
@@ -3629,11 +3629,11 @@ static int fixup_do_routing(void** param, int param_no)
 	return -1;
 }
 
-static int fixup_next_gw( void** param, int param_no)
+static int fixup_next_gw( void** param, struct fxup_opts fopt)
 {
 	dr_partition_t * part;
 	if( !use_partitions ) { /* partition not needed */
-		switch (param_no) {
+		switch (fopt.param_no) {
 			/* rule attrs pvar */
 			case 1: /* first param can be partition name */
 				populate_rule_attrs = 1;
@@ -3652,7 +3652,7 @@ static int fixup_next_gw( void** param, int param_no)
 
 		}
 	} else { /* parition is mandatory => the first param */
-		switch (param_no) {
+		switch (fopt.param_no) {
 			case 1:
 				part = pkg_malloc(sizeof(dr_partition_t));
 				if(part == NULL) {
@@ -3686,11 +3686,11 @@ static int fixup_next_gw( void** param, int param_no)
 }
 
 
-static int fixup_from_gw( void** param, int param_no)
+static int fixup_from_gw( void** param, struct fxup_opts fopt)
 {
 	dr_partition_t * part;
 	if(use_partitions == 0) {
-		switch (param_no) {
+		switch (fopt.param_no) {
 			/* GW type*/
 			case 1:
 				return fixup_sint(param);
@@ -3706,7 +3706,7 @@ static int fixup_from_gw( void** param, int param_no)
 				return -1;
 		}
 	} else {
-		switch (param_no) {
+		switch (fopt.param_no) {
 			/* GW type*/
 			case 1:
 				part = pkg_malloc(sizeof(dr_partition_t));
@@ -3738,11 +3738,11 @@ static int fixup_from_gw( void** param, int param_no)
 }
 
 
-static int fixup_is_gw( void** param, int param_no)
+static int fixup_is_gw( void** param, struct fxup_opts fopt)
 {
 	dr_partition_t * part;
 	if(use_partitions == 0) {
-		switch (param_no) {
+		switch (fopt.param_no) {
 			/* SIP URI pseudo-var */
 			case 1:
 				return fixup_pvar(param);
@@ -3763,7 +3763,7 @@ static int fixup_is_gw( void** param, int param_no)
 				return -1;
 		}
 	} else {
-		switch (param_no) {
+		switch (fopt.param_no) {
 			case 1:
 				part = pkg_malloc(sizeof(dr_partition_t));
 				if(part == NULL) {
@@ -3808,14 +3808,14 @@ static void trim_char(char ** param) {
 	}
 }
 
-static int fixup_route2_carrier( void** param, int param_no)
+static int fixup_route2_carrier( void** param, struct fxup_opts fopt)
 {
 	dr_part_old_t *part_param;
 	char * scnd_param;
 
 
 	int rc;
-	switch (param_no) {
+	switch (fopt.param_no) {
 
 		/* carrier name string - it has partition */
 		case 1:
@@ -3869,12 +3869,12 @@ static int fixup_route2_carrier( void** param, int param_no)
 }
 
 
-static int fixup_route2_gw( void** param, int param_no)
+static int fixup_route2_gw( void** param, struct fxup_opts fopt)
 {
 	int rc;
 	char *gw = 0;
 	dr_part_old_t * part_param; /* partition and gateway */
-	switch (param_no) {
+	switch (fopt.param_no) {
 		/* gateway / gateways (csv) */
 		case 1:
 			part_param = pkg_malloc(sizeof(dr_part_old_t));

@@ -91,16 +91,16 @@ int __set_fr_timer(modparam_t type, void* val);
 int __set_fr_inv_timer(modparam_t type, void* val);
 
 /* fixup functions */
-static int fixup_t_send_reply(void** param, int param_no);
-static int fixup_local_replied(void** param, int param_no);
-static int fixup_t_relay1(void** param, int param_no);
-static int fixup_t_relay2(void** param, int param_no);
-static int fixup_t_replicate(void** param, int param_no);
-static int fixup_cancel_branch(void** param, int param_no);
-static int fixup_froute(void** param, int param_no);
-static int fixup_rroute(void** param, int param_no);
-static int fixup_broute(void** param, int param_no);
-static int fixup_t_new_request(void** param, int param_no);
+static int fixup_t_send_reply(void** param, struct fxup_opts fopt);
+static int fixup_local_replied(void** param, struct fxup_opts fopt);
+static int fixup_t_relay1(void** param, struct fxup_opts fopt);
+static int fixup_t_relay2(void** param, struct fxup_opts fopt);
+static int fixup_t_replicate(void** param, struct fxup_opts fopt);
+static int fixup_cancel_branch(void** param, struct fxup_opts fopt);
+static int fixup_froute(void** param, struct fxup_opts fopt);
+static int fixup_rroute(void** param, struct fxup_opts fopt);
+static int fixup_broute(void** param, struct fxup_opts fopt);
+static int fixup_t_new_request(void** param, struct fxup_opts fopt);
 
 
 /* init functions */
@@ -352,7 +352,7 @@ struct module_exports exports= {
 
 
 /**************************** fixup functions ******************************/
-static int fixup_froute(void** param, int param_no)
+static int fixup_froute(void** param, struct fxup_opts fopt)
 {
 	int rt;
 
@@ -368,7 +368,7 @@ static int fixup_froute(void** param, int param_no)
 }
 
 
-static int fixup_rroute(void** param, int param_no)
+static int fixup_rroute(void** param, struct fxup_opts fopt)
 {
 	int rt;
 
@@ -384,7 +384,7 @@ static int fixup_rroute(void** param, int param_no)
 }
 
 
-static int fixup_broute(void** param, int param_no)
+static int fixup_broute(void** param, struct fxup_opts fopt)
 {
 	int rt;
 
@@ -400,12 +400,12 @@ static int fixup_broute(void** param, int param_no)
 }
 
 
-static int flag_fixup(void** param, int param_no)
+static int flag_fixup(void** param, struct fxup_opts fopt)
 {
 	unsigned int flags;
 	str s;
 
-	if (param_no == 1) {
+	if (fopt.param_no == 1) {
 		s.s = (char*)*param;
 		s.len = strlen(s.s);
 		flags = 0;
@@ -419,25 +419,25 @@ static int flag_fixup(void** param, int param_no)
 }
 
 
-static int fixup_t_replicate(void** param, int param_no)
+static int fixup_t_replicate(void** param, struct fxup_opts fopt)
 {
 	str s;
 	pv_elem_t *model;
 
-	if (param_no == 1) {
+	if (fopt.param_no == 1) {
 		s.s = (char*)*param;
 		s.len = strlen(s.s);
 		model = NULL;
 
 		if(pv_parse_format(&s ,&model) || model==NULL) {
-			LM_ERR("wrong format [%s] for param no %d!\n", s.s, param_no);
+			LM_ERR("wrong format [%s] for param no %d!\n", s.s, fopt.param_no);
 			return E_CFG;
 		}
 
 		*param = (void*)model;
 	} else {
 		/* flags */
-		if (flag_fixup( param, 1)!=0) {
+		if (flag_fixup( param, ff_one)!=0) {
 			LM_ERR("bad flags <%s>\n", (char *)(*param));
 			return E_CFG;
 		}
@@ -446,7 +446,7 @@ static int fixup_t_replicate(void** param, int param_no)
 }
 
 
-static int fixup_phostport2proxy(void** param, int param_no)
+static int fixup_phostport2proxy(void** param, struct fxup_opts fopt)
 {
 	struct proxy_l *proxy;
 	char *s;
@@ -454,7 +454,7 @@ static int fixup_phostport2proxy(void** param, int param_no)
 	int proto;
 	str host;
 
-	if (param_no!=1) {
+	if (fopt.param_no!=1) {
 		LM_CRIT("called with more than one parameter\n");
 		return E_BUG;
 	}
@@ -480,14 +480,14 @@ static int fixup_phostport2proxy(void** param, int param_no)
 }
 
 
-static int fixup_t_relay1(void** param, int param_no)
+static int fixup_t_relay1(void** param, struct fxup_opts fopt)
 {
-	if (flag_fixup( param, 1)==0) {
+	if (flag_fixup( param, ff_one)==0) {
 		/* param is flag -> move it as second param */
 		*((void**)(((char*)param)+sizeof(action_elem_t))) = *param;
 		*param = 0;
 		return 0;
-	} else if (fixup_phostport2proxy( param, 1)==0 ) {
+	} else if (fixup_phostport2proxy( param, ff_one)==0 ) {
 		/* param is OBP -> nothing else to do */
 		return 0;
 	} else {
@@ -497,12 +497,12 @@ static int fixup_t_relay1(void** param, int param_no)
 }
 
 
-static int fixup_t_relay2(void** param, int param_no)
+static int fixup_t_relay2(void** param, struct fxup_opts fopt)
 {
-	if (param_no==1) {
-		return fixup_phostport2proxy( param, param_no);
-	} else if (param_no==2) {
-		if (flag_fixup( param, 1)!=0) {
+	if (fopt.param_no==1) {
+		return fixup_phostport2proxy( param, fopt);
+	} else if (fopt.param_no==2) {
+		if (flag_fixup( param, ff_one)!=0) {
 			LM_ERR("bad flags <%s>\n", (char *)(*param));
 			return E_CFG;
 		}
@@ -511,7 +511,7 @@ static int fixup_t_relay2(void** param, int param_no)
 }
 
 
-static int fixup_t_send_reply(void** param, int param_no)
+static int fixup_t_send_reply(void** param, struct fxup_opts fopt)
 {
 	pv_elem_t *model=NULL;
 	str s;
@@ -520,23 +520,23 @@ static int fixup_t_send_reply(void** param, int param_no)
 	s.s = (char*)*param;
 	s.len = strlen(s.s);
 	if (s.len==0) {
-		LM_ERR("param no. %d is empty!\n", param_no);
+		LM_ERR("param no. %d is empty!\n", fopt.param_no);
 		return E_CFG;
 	}
 
 	model=NULL;
-	if (param_no>0 && param_no<4) {
+	if (fopt.param_no>0 && fopt.param_no<4) {
 		if(pv_parse_format(&s ,&model) || model==NULL) {
-			LM_ERR("wrong format [%s] for param no %d!\n", s.s, param_no);
+			LM_ERR("wrong format [%s] for param no %d!\n", s.s, fopt.param_no);
 			return E_CFG;
 		}
-		if(model->spec.getf==NULL && param_no==1) {
+		if(model->spec.getf==NULL && fopt.param_no==1) {
 			if(str2int(&s,
 			(unsigned int*)&model->spec.pvp.pvn.u.isname.name.n)!=0
 			|| model->spec.pvp.pvn.u.isname.name.n<100
 			|| model->spec.pvp.pvn.u.isname.name.n>699) {
 				LM_ERR("wrong value [%s] for param no %d! - Allowed only"
-					" 1xx - 6xx \n", s.s, param_no);
+					" 1xx - 6xx \n", s.s, fopt.param_no);
 				return E_CFG;
 			}
 		}
@@ -547,12 +547,12 @@ static int fixup_t_send_reply(void** param, int param_no)
 }
 
 
-static int fixup_local_replied(void** param, int param_no)
+static int fixup_local_replied(void** param, struct fxup_opts fopt)
 {
 	char *val;
 	int n = 0;
 
-	if (param_no==1) {
+	if (fopt.param_no==1) {
 		val = (char*)*param;
 		if (strcasecmp(val,"all")==0) {
 			n = 0;
@@ -576,7 +576,7 @@ static int fixup_local_replied(void** param, int param_no)
 }
 
 
-static int fixup_cancel_branch(void** param, int param_no)
+static int fixup_cancel_branch(void** param, struct fxup_opts fopt)
 {
 	char *c;
 	unsigned int flags;
@@ -605,7 +605,7 @@ static int fixup_cancel_branch(void** param, int param_no)
 }
 
 
-static int fixup_t_new_request(void** param, int param_no)
+static int fixup_t_new_request(void** param, struct fxup_opts fopt)
 {
 	/* static string or pv-format for all parameters */
 	return fixup_spve(param);

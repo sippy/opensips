@@ -47,7 +47,7 @@ int tm_loaded = 0;
 
 int sig_send_reply(struct sip_msg* msg, char* str1, char* str2);
 int sig_send_reply_mod(struct sip_msg* msg, int code, str* reason, str* to_tag);
-static int fixup_sig_send_reply(void** param, int param_no);
+static int fixup_sig_send_reply(void** param, struct fxup_opts fopt);
 static int mod_init(void);
 
 /** exported commands */
@@ -221,7 +221,7 @@ sl_reply:
 /* *
  * fixup_sig_send_reply
  */
-static int fixup_sig_send_reply(void** param, int param_no)
+static int fixup_sig_send_reply(void** param, struct fxup_opts fopt)
 {
 	pv_elem_t *model=NULL;
 	str s;
@@ -231,22 +231,22 @@ static int fixup_sig_send_reply(void** param, int param_no)
 	s.len = strlen(s.s);
 
 	model=NULL;
-	if (param_no==1 || param_no==2)
+	if (fopt.param_no==1 || fopt.param_no==2)
 	{
 		if(s.len==0)
 		{
-			LM_ERR("no param %d!\n", param_no);
+			LM_ERR("no param %d!\n", fopt.param_no);
 			return E_UNSPEC;
 		}
 
 		if(pv_parse_format(&s ,&model) || model==NULL)
 		{
-			LM_ERR("wrong format [%s] for param no %d!\n", s.s, param_no);
+			LM_ERR("wrong format [%s] for param no %d!\n", s.s, fopt.param_no);
 			return E_UNSPEC;
 		}
 		if(model->spec.getf==NULL)
 		{
-			if(param_no==1)
+			if(fopt.param_no==1)
 			{
 				if(str2int(&s,
 					(unsigned int*)&model->spec.pvp.pvn.u.isname.name.n)!=0
@@ -254,7 +254,7 @@ static int fixup_sig_send_reply(void** param, int param_no)
 					   || model->spec.pvp.pvn.u.isname.name.n>699)
 				{
 					LM_ERR("wrong value [%s] for param no %d!\n",
-						s.s, param_no);
+						s.s, fopt.param_no);
 					LM_ERR("allowed values: 1xx - 6xx only!\n");
 					return E_UNSPEC;
 				}

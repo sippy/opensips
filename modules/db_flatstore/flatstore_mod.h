@@ -29,6 +29,7 @@
 #define FLATSTORE_MOD_H
 
 #include <time.h>
+#include "../../sr_module.h"
 #include "../../mod_fix.h"
 
 /*

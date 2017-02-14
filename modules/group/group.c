@@ -32,6 +32,7 @@
 
 
 #include <string.h>
+#include "../../sr_module.h"
 #include "../../dprint.h"               /* Logging */
 #include "../../db/db.h"                /* Generic database API */
 #include "../../parser/digest/digest.h" /* get_authorized_cred */

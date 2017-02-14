@@ -59,8 +59,8 @@ inline static int w_async_exec(struct sip_msg* msg,
 		async_resume_module **resume_f, void **resume_param,
 		char *cmd, char* out, char* in, char* err, char* avp_env );
 
-static int exec_avp_fixup(void** param, int param_no);
-static int exec_fixup(void** param, int param_no);
+static int exec_avp_fixup(void** param, struct fxup_opts fopt);
+static int exec_fixup(void** param, struct fxup_opts fopt);
 
 inline static void exec_shutdown(void);
 
@@ -276,33 +276,33 @@ inline static int w_exec_getenv(struct sip_msg* msg, char* cmd, char* avpl)
 }
 
 
-static int exec_avp_fixup(void** param, int param_no)
+static int exec_avp_fixup(void** param, struct fxup_opts fopt)
 {
 	pvname_list_t *anlist = NULL;
 	str s;
 
 	s.s = (char*)(*param);
-	if (param_no==1)
+	if (fopt.param_no==1)
 	{
 		LM_WARN("You are using an obosolete function from the EXEC module!"
 			"Please switch to the new exec() function\n");
 		if(s.s==NULL)
 		{
-			LM_ERR("null format in P%d\n", param_no);
+			LM_ERR("null format in P%d\n", fopt.param_no);
 			return E_UNSPEC;
 		}
-		return fixup_spve_null(param, 1);
-	} else if(param_no==2) {
+		return fixup_spve_null(param, ff_one);
+	} else if(fopt.param_no==2) {
 		if(s.s==NULL)
 		{
-			LM_ERR("null format in P%d\n", param_no);
+			LM_ERR("null format in P%d\n", fopt.param_no);
 			return E_UNSPEC;
 		}
 		s.len =  strlen(s.s);
 		anlist = parse_pvname_list(&s, PVT_AVP);
 		if(anlist==NULL)
 		{
-			LM_ERR("bad format in P%d [%s]\n", param_no, s.s);
+			LM_ERR("bad format in P%d [%s]\n", fopt.param_no, s.s);
 			return E_UNSPEC;
 		}
 		*param = (void*)anlist;
@@ -312,14 +312,14 @@ static int exec_avp_fixup(void** param, int param_no)
 	return 0;
 }
 
-static int exec_fixup(void** param, int param_no)
+static int exec_fixup(void** param, struct fxup_opts fopt)
 {
 	gparam_p out_var;
 	pv_elem_t* model;
 	str s;
 
 	if (*param)
-	switch (param_no) {
+	switch (fopt.param_no) {
 		case 1: /* cmd */
 			return fixup_spve(param);
 		case 2: /* input vars */
@@ -327,7 +327,7 @@ static int exec_fixup(void** param, int param_no)
 			s.len = strlen(s.s);
 			if (pv_parse_format(&s, &model)) {
 				LM_ERR("wrong format [%s] for param no %d!\n",
-						(char*)*param, param_no);
+						(char*)*param, fopt.param_no);
 				pkg_free(s.s);
 				return E_UNSPEC;
 			}
@@ -371,7 +371,7 @@ static int exec_fixup(void** param, int param_no)
 
 			return 0;
 		default:
-			LM_ERR("Invalid parameter number %d\n", param_no);
+			LM_ERR("Invalid parameter number %d\n", fopt.param_no);
 			return -1;
 	}
 	return 0;

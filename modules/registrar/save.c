@@ -43,6 +43,7 @@
  */
 
 
+#include "../../sr_module.h"
 #include "../../str.h"
 #include "../../socket_info.h"
 #include "../../parser/parse_allow.h"

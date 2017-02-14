@@ -19,6 +19,7 @@
  *
  */
 
+#include "../../sr_module.h"
 #include "../../ut.h"
 #include "../../mod_fix.h"
 #include "cgrates_cmd.h"

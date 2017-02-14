@@ -30,7 +30,7 @@
 #include "../../ut.h"
 #include "../../mod_fix.h"
 
-int fixup_static_lock(void **param, int param_no);
+int fixup_static_lock(void **param, struct fxup_opts fopt);
 int create_dynamic_locks(void);
 
 int get_static_lock(struct sip_msg *msg, char *lock);
