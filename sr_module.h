@@ -59,11 +59,11 @@ struct fxup_opts {
 	int param_no:4;
 	int freeparam:1;
 };
-#define FFF_INIT(i)	{.param_no = (i), .freeparam = 1}
-static const struct fxup_opts ff_zero = FFF_INIT(0);
-static const struct fxup_opts ff_one = FFF_INIT(1);
-static const struct fxup_opts ff_two = FFF_INIT(2);
-static const struct fxup_opts ff_three = FFF_INIT(3);
+#define FXUP_OINIT(i)	{.param_no = (i), .freeparam = 1}
+static const struct fxup_opts ff_zero = FXUP_OINIT(0);
+static const struct fxup_opts ff_one = FXUP_OINIT(1);
+static const struct fxup_opts ff_two = FXUP_OINIT(2);
+static const struct fxup_opts ff_three = FXUP_OINIT(3);
 
 typedef  struct module_exports* (*module_register)();
 typedef  int (*cmd_function)(struct sip_msg*, char*, char*, char*, char*,
