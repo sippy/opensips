@@ -31,6 +31,7 @@
 
 
 #include <string.h>
+#include "../../sr_module.h"
 #include "../../ut.h"
 #include "../../dset.h"
 #include "../../str.h"

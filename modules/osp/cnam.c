@@ -32,6 +32,7 @@
  *  2016-06-01  CNAM related functions.
  */
 
+#include "../../sr_module.h"
 #include "../../mod_fix.h"
 #include "../../parser/parse_from.h"
 #include "../../parser/parse_event.h"

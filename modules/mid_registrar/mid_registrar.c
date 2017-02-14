@@ -110,7 +110,7 @@ int reg_use_domain = 0;
 static int mod_init(void);
 
 static int domain_fixup(void** param);
-static int registrar_fixup(void** param, int param_no);
+static int registrar_fixup(void** param, struct fxup_opts fopt);
 
 /* 
  * Working modes:
@@ -237,9 +237,9 @@ static int mid_reg_post_script(struct sip_msg *foo, void *bar)
 /*! \brief
  * Fixup for "save"+"lookup" functions - domain, flags, AOR params
  */
-static int registrar_fixup(void** param, int param_no)
+static int registrar_fixup(void** param, struct fxup_opts fopt)
 {
-	switch (param_no) {
+	switch (fopt.param_no) {
 	case 1:
 		/* table name */
 		return domain_fixup(param);

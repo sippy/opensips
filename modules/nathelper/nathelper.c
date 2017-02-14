@@ -58,6 +58,7 @@
 #include <netinet/udp.h>
 #include <arpa/inet.h>
 
+#include "../../sr_module.h"
 #include "../../data_lump.h"
 #include "../../data_lump_rpl.h"
 #include "../../forward.h"
@@ -72,7 +73,6 @@
 #include "../usrloc/ul_mod.h"
 #include "sip_pinger.h"
 #include "../../parser/parse_content.h"
-#include "../../sr_module.h"
 
 #include "nh_table.h"
 
@@ -101,8 +101,8 @@ static int nat_uac_test_f(struct sip_msg* msg, char* str1, char* str2);
 static int fix_nated_contact_f(struct sip_msg *, char *, char *);
 static int fix_nated_sdp_f(struct sip_msg *, char *, char *);
 static int fix_nated_register_f(struct sip_msg *, char *, char *);
-static int fixup_fix_nated_register(void** param, int param_no);
-static int fixup_fix_sdp(void** param, int param_no);
+static int fixup_fix_nated_register(void** param, struct fxup_opts fopt);
+static int fixup_fix_sdp(void** param, struct fxup_opts fopt);
 static int add_rcv_param_f(struct sip_msg *, char *, char *);
 static int get_oldip_fields_value(modparam_t type, void* val);
 
@@ -330,14 +330,14 @@ get_oldip_fields_value(modparam_t type, void* val)
 }
 
 static int
-fixup_fix_sdp(void** param, int param_no)
+fixup_fix_sdp(void** param, struct fxup_opts fopt)
 {
 	pv_elem_t *model;
 	str s;
 
-	if (param_no==1) {
+	if (fopt.param_no==1) {
 		/* flags */
-		return fixup_uint_null( param, param_no);
+		return fixup_uint_null( param, fopt);
 	}
 	/* new IP */
 	model=NULL;
@@ -354,7 +354,7 @@ fixup_fix_sdp(void** param, int param_no)
 	return 0;
 }
 
-static int fixup_fix_nated_register(void** param, int param_no)
+static int fixup_fix_nated_register(void** param, struct fxup_opts fopt)
 {
 	if (rcv_avp_name < 0) {
 		LM_ERR("you must set 'received_avp' parameter. Must be same value as"

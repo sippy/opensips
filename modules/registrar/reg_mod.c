@@ -78,15 +78,15 @@ static int  mod_init(void);
 static int  child_init(int);
 static void mod_destroy(void);
 /*! \brief Fixup functions */
-static int registrar_fixup(void** param, int param_no);
-static int fixup_remove(void** param, int param_no);
+static int registrar_fixup(void** param, struct fxup_opts fopt);
+static int fixup_remove(void** param, struct fxup_opts fopt);
 /*! \brief Functions */
 static int add_sock_hdr(struct sip_msg* msg, char *str, char *foo);
 
-static int fixup_is_registered(void **param, int param_no);
-static int fixup_is_aor_registered(void **param, int param_no);
-static int fixup_is_contact_registered(void **param, int param_no);
-static int fixup_is_ip_registered(void **param, int param_no);
+static int fixup_is_registered(void **param, struct fxup_opts fopt);
+static int fixup_is_aor_registered(void **param, struct fxup_opts fopt);
+static int fixup_is_contact_registered(void **param, struct fxup_opts fopt);
+static int fixup_is_ip_registered(void **param, struct fxup_opts fopt);
 
 int default_expires = 3600; 			/*!< Default expires value in seconds */
 qvalue_t default_q  = Q_UNSPECIFIED;	/*!< Default q value multiplied by 1000 */
@@ -411,9 +411,9 @@ static int domain_fixup(void** param)
 /*! \brief
  * @params: domain, AOR, contact/domain
  */
-static int fixup_remove(void** param, int param_no)
+static int fixup_remove(void** param, struct fxup_opts fopt)
 {
-	switch (param_no) {
+	switch (fopt.param_no) {
 	case 1:
 		return domain_fixup(param);
 	case 2:
@@ -424,7 +424,7 @@ static int fixup_remove(void** param, int param_no)
 		return fixup_spve(param);
 
 	default:
-		LM_ERR("maximum 3 params! given at least %d\n", param_no);
+		LM_ERR("maximum 3 params! given at least %d\n", fopt.param_no);
 		return E_INVALID_PARAMS;
 	}
 }
@@ -432,12 +432,12 @@ static int fixup_remove(void** param, int param_no)
 /*! \brief
  * Fixup for "save"+"lookup" functions - domain, flags, AOR params
  */
-static int registrar_fixup(void** param, int param_no)
+static int registrar_fixup(void** param, struct fxup_opts fopt)
 {
-	if (param_no == 1) {
+	if (fopt.param_no == 1) {
 		/* name of the table */
 		return domain_fixup(param);
-	} else if (param_no == 2) {
+	} else if (fopt.param_no == 2) {
 		/* flags */
 		return fixup_spve(param);
 	} else {
@@ -525,11 +525,11 @@ error:
 /*
  * fixup for domain and aor
  */
-static int fixup_is_registered(void **param, int param_no)
+static int fixup_is_registered(void **param, struct fxup_opts fopt)
 {
 	udomain_t *d;
 
-	if (param_no == 1) {
+	if (fopt.param_no == 1) {
 		if (ul.register_udomain((char*)*param, &d) < 0) {
 	        LM_ERR("failed to register domain\n");
 			return E_UNSPEC;
@@ -541,33 +541,33 @@ static int fixup_is_registered(void **param, int param_no)
 	return fixup_pvar(param);
 }
 
-static int fixup_is_aor_registered(void **param, int param_no)
+static int fixup_is_aor_registered(void **param, struct fxup_opts fopt)
 {
-	if (param_no > 2) {
+	if (fopt.param_no > 2) {
 		LM_ERR("invalid param number\n");
 		return E_UNSPEC;
 	}
 
-	return fixup_is_registered(param, param_no);
+	return fixup_is_registered(param, fopt);
 }
 
-static int fixup_is_contact_registered(void **param, int param_no)
+static int fixup_is_contact_registered(void **param, struct fxup_opts fopt)
 {
-	if (param_no > 4) {
+	if (fopt.param_no > 4) {
 		LM_ERR("invalid param number\n");
 		return E_UNSPEC;
 	}
 
-	return fixup_is_registered(param, param_no);
+	return fixup_is_registered(param, fopt);
 }
 
 
-static int fixup_is_ip_registered(void **param, int param_no)
+static int fixup_is_ip_registered(void **param, struct fxup_opts fopt)
 {
-	if (param_no > 3) {
+	if (fopt.param_no > 3) {
 		LM_ERR("invalid param number\n");
 		return E_UNSPEC;
 	}
 
-	return fixup_is_registered(param, param_no);
+	return fixup_is_registered(param, fopt);
 }

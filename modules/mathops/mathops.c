@@ -59,9 +59,9 @@ int decimal_digits = 6; /* default number of decimal digits written into pvs */
 /**
  * Fixup functions
  */
-static int fixup_evaluate_exp(void **param, int param_no);
-static int fixup_binary_op(void **param, int param_no);
-static int fixup_round_op(void **param, int param_no);
+static int fixup_evaluate_exp(void **param, struct fxup_opts fopt);
+static int fixup_binary_op(void **param, struct fxup_opts fopt);
+static int fixup_round_op(void **param, struct fxup_opts fopt);
 
 /**
  * Function headers
@@ -155,12 +155,12 @@ static int mod_init(void)
 /**************************** Fixup functions ********************************/
 
 
-static int fixup_binary_op(void **param, int param_no)
+static int fixup_binary_op(void **param, struct fxup_opts fopt)
 {
 	pv_spec_p sp;
 	str s;
 
-	switch (param_no) {
+	switch (fopt.param_no) {
 	case 1:
 		return fixup_sgp(param);
 
@@ -182,40 +182,40 @@ static int fixup_binary_op(void **param, int param_no)
 		return 0;
 
 	default:
-		LM_ERR("Invalid parameter number: %d\n", param_no);
+		LM_ERR("Invalid parameter number: %d\n", fopt.param_no);
 		return E_UNSPEC;
 	}
 }
 
 
-static int fixup_round_op(void **param, int param_no)
+static int fixup_round_op(void **param, struct fxup_opts fopt)
 {
-	switch (param_no) {
+	switch (fopt.param_no) {
 	case 1:
 	case 2:
-		return fixup_binary_op(param, param_no);
+		return fixup_binary_op(param, fopt);
 	case 3:
 		return fixup_igp(param);
 
 	default:
-		LM_ERR("Invalid parameter number: %d\n", param_no);
+		LM_ERR("Invalid parameter number: %d\n", fopt.param_no);
 		return E_UNSPEC;
 	}
 }
 
 
-static int fixup_evaluate_exp(void **param, int param_no)
+static int fixup_evaluate_exp(void **param, struct fxup_opts fopt)
 {
 	pv_elem_p ep;
 	pv_spec_p sp;
 	str s;
 
-	if (param_no != 1 && param_no != 2) {
-		LM_ERR("Invalid parameter number: %d\n", param_no);
+	if (fopt.param_no != 1 && fopt.param_no != 2) {
+		LM_ERR("Invalid parameter number: %d\n", fopt.param_no);
 		return E_UNSPEC;
 	}
 
-	if (param_no == 1) {
+	if (fopt.param_no == 1) {
 
     	s.s = (char*)(*param); s.len = strlen(s.s);
 

@@ -130,29 +130,29 @@ static int pv_get_dlg_count( struct sip_msg *msg, pv_param_t *param,
 		pv_value_t *res);
 
 /* commands wrappers and fixups */
-static int fixup_profile(void** param, int param_no);
-static int fixup_get_profile2(void** param, int param_no);
-static int fixup_get_profile3(void** param, int param_no);
+static int fixup_profile(void** param, struct fxup_opts fopt);
+static int fixup_get_profile2(void** param, struct fxup_opts fopt);
+static int fixup_get_profile3(void** param, struct fxup_opts fopt);
 static int w_create_dialog(struct sip_msg*);
 static int w_create_dialog2(struct sip_msg*,char *);
 static int w_match_dialog(struct sip_msg*);
-static int fixup_create_dlg2(void **param,int param_no);
+static int fixup_create_dlg2(void **param, struct fxup_opts fopt);
 static int w_validate_dialog(struct sip_msg*);
 static int w_fix_route_dialog(struct sip_msg*);
 static int w_set_dlg_profile(struct sip_msg*, char*, char*);
 static int w_unset_dlg_profile(struct sip_msg*, char*, char*);
 static int w_is_in_profile(struct sip_msg*, char*, char*);
 static int w_get_profile_size(struct sip_msg*, char*, char*, char*);
-static int fixup_dlg_flag(void** param, int param_no);
+static int fixup_dlg_flag(void** param, struct fxup_opts fopt);
 static int w_set_dlg_flag(struct sip_msg*, char*);
 static int w_reset_dlg_flag(struct sip_msg*, char*);
 static int w_is_dlg_flag_set(struct sip_msg*, char*);
-static int fixup_dlg_sval(void** param, int param_no);
-static int fixup_dlg_fval(void** param, int param_no);
+static int fixup_dlg_sval(void** param, struct fxup_opts fopt);
+static int fixup_dlg_fval(void** param, struct fxup_opts fopt);
 static int w_store_dlg_value(struct sip_msg*, char*, char*);
 static int w_fetch_dlg_value(struct sip_msg*, char*, char*);
-static int fixup_get_info(void** param, int param_no);
-static int fixup_get_vals(void** param, int param_no);
+static int fixup_get_info(void** param, struct fxup_opts fopt);
+static int fixup_get_vals(void** param, struct fxup_opts fopt);
 static int w_get_dlg_info(struct sip_msg*, char*, char*, char*, char*);
 static int w_get_dlg_vals(struct sip_msg*, char*, char*, char*);
 static int w_tsl_dlg_flag(struct sip_msg *msg, char *_idx, char *_val);
@@ -413,7 +413,7 @@ struct module_exports exports= {
 };
 
 
-static int fixup_profile(void** param, int param_no)
+static int fixup_profile(void** param, struct fxup_opts fopt)
 {
 	struct dlg_profile_table *profile;
 	pv_elem_t *model=NULL;
@@ -422,11 +422,11 @@ static int fixup_profile(void** param, int param_no)
 	s.s = (char*)(*param);
 	s.len = strlen(s.s);
 	if(s.len==0) {
-		LM_ERR("param %d is empty string!\n", param_no);
+		LM_ERR("param %d is empty string!\n", fopt.param_no);
 		return E_CFG;
 	}
 
-	if (param_no==1) {
+	if (fopt.param_no==1) {
 		profile = search_dlg_profile( &s );
 		if (profile==NULL) {
 			LM_CRIT("profile <%s> not defined\n",s.s);
@@ -435,7 +435,7 @@ static int fixup_profile(void** param, int param_no)
 		pkg_free(*param);
 		*param = (void*)profile;
 		return 0;
-	} else if (param_no==2) {
+	} else if (fopt.param_no==2) {
 		if(pv_parse_format(&s ,&model) || model==NULL) {
 			LM_ERR("wrong format [%s] for value param!\n", s.s);
 			return E_CFG;
@@ -447,16 +447,16 @@ static int fixup_profile(void** param, int param_no)
 
 
 
-static int fixup_get_profile2(void** param, int param_no)
+static int fixup_get_profile2(void** param, struct fxup_opts fopt)
 {
 	pv_spec_t *sp;
 	int ret;
 	action_elem_t * p;
 
 
-	if (param_no==1) {
-		return fixup_profile(param, 1);
-	} else if (param_no==2) {
+	if (fopt.param_no==1) {
+		return fixup_profile(param, ff_one);
+	} else if (fopt.param_no==2) {
 
 
 		ret = fixup_pvar(param);
@@ -479,16 +479,16 @@ static int fixup_get_profile2(void** param, int param_no)
 }
 
 
-static int fixup_get_profile3(void** param, int param_no)
+static int fixup_get_profile3(void** param, struct fxup_opts fopt)
 {
 	int ret;
 	pv_spec_t *sp;
 
-	if (param_no==1) {
-		return fixup_profile(param, 1);
-	} else if (param_no==2) {
-		return fixup_profile(param, 2);
-	} else if (param_no==3) {
+	if (fopt.param_no==1) {
+		return fixup_profile(param, ff_one);
+	} else if (fopt.param_no==2) {
+		return fixup_profile(param, ff_two);
+	} else if (fopt.param_no==3) {
 
 		ret = fixup_pvar(param);
 		if (ret<0) return ret;
@@ -504,7 +504,7 @@ static int fixup_get_profile3(void** param, int param_no)
 }
 
 
-static int fixup_dlg_flag(void** param, int param_no)
+static int fixup_dlg_flag(void** param, struct fxup_opts fopt)
 {
 	unsigned int ui;
 	str s;
@@ -525,22 +525,22 @@ static int fixup_dlg_flag(void** param, int param_no)
 	return 0;
 }
 
-static int fixup_create_dlg2(void **param, int param_no)
+static int fixup_create_dlg2(void **param, struct fxup_opts fopt)
 {
 	return fixup_sgp(param);
 }
 
-static int fixup_dlg_sval(void** param, int param_no)
+static int fixup_dlg_sval(void** param, struct fxup_opts fopt)
 {
 	pv_elem_t *model=NULL;
 	str s;
 
 	s.s = (char*)*param;
 	s.len = strlen(s.s);
-	if (param_no==1) {
+	if (fopt.param_no==1) {
 		/* name of the value */
 		return fixup_str(param);
-	} else if (param_no==2) {
+	} else if (fopt.param_no==2) {
 		/* value */
 		if(pv_parse_format(&s ,&model) || model==NULL) {
 			LM_ERR("wrong format [%s] for value param!\n", s.s);
@@ -553,15 +553,15 @@ static int fixup_dlg_sval(void** param, int param_no)
 }
 
 
-static int fixup_dlg_fval(void** param, int param_no)
+static int fixup_dlg_fval(void** param, struct fxup_opts fopt)
 {
 	pv_spec_t *sp;
 	int ret;
 
-	if (param_no==1) {
+	if (fopt.param_no==1) {
 		/* name of the value */
 		return fixup_str(param);
-	} else if (param_no==2) {
+	} else if (fopt.param_no==2) {
 		/* var to store the value */
 		ret = fixup_pvar(param);
 		if (ret<0) return ret;
@@ -576,17 +576,17 @@ static int fixup_dlg_fval(void** param, int param_no)
 }
 
 
-static int fixup_get_info(void** param, int param_no)
+static int fixup_get_info(void** param, struct fxup_opts fopt)
 {
 	pv_elem_t *model=NULL;
 	pv_spec_t *sp;
 	str s;
 	int ret;
 
-	if (param_no==1) {
+	if (fopt.param_no==1) {
 		/* name of the dlg val to be returned  */
 		return fixup_str(param);
-	} else if (param_no==2) {
+	} else if (fopt.param_no==2) {
 		/* var to store the dlg_val value */
 		ret = fixup_pvar(param);
 		if (ret<0) return ret;
@@ -595,10 +595,10 @@ static int fixup_get_info(void** param, int param_no)
 			LM_ERR("return must be an AVP or SCRIPT VAR!\n");
 			return E_SCRIPT;
 		}
-	} else if (param_no==3) {
+	} else if (fopt.param_no==3) {
 		/* name of the dlg val to identify the dialog */
 		return fixup_str(param);
-	} else if (param_no==4) {
+	} else if (fopt.param_no==4) {
 		/* var to hold the value of the indeification dlg val */
 		s.s = (char*)*param;
 		s.len = strlen(s.s);
@@ -612,12 +612,12 @@ static int fixup_get_info(void** param, int param_no)
 	return 0;
 }
 
-static int fixup_get_vals(void** param, int param_no)
+static int fixup_get_vals(void** param, struct fxup_opts fopt)
 {
 	pv_spec_t *sp;
 	int ret;
 
-	if (param_no==1 || param_no==2) {
+	if (fopt.param_no==1 || fopt.param_no==2) {
 		/* variables to be populated with the name:value of the 
 		 * found dialog ; we accept only AVPs are they are the
 		 * only one able to hold arrays */
@@ -628,7 +628,7 @@ static int fixup_get_vals(void** param, int param_no)
 			LM_ERR("return must be an AVP!\n");
 			return E_SCRIPT;
 		}
-	} else if (param_no==3) {
+	} else if (fopt.param_no==3) {
 		/* the callid of the dialog to be looked up */
 		return fixup_sgp(param);
 	}

@@ -33,7 +33,7 @@
 
 extern int tm_unix_tx_timeout;
 
-int fixup_t_write( void** param, int param_no);
+int fixup_t_write( void** param, struct fxup_opts fopt);
 
 int parse_tw_append( modparam_t type, void* val);
 

@@ -36,6 +36,7 @@
 #include <sys/resource.h>
 */
 #include <sys/wait.h>
+#include "../../sr_module.h"
 #include "../../mem/mem.h"
 #include "../../error.h"
 #include "../../config.h"

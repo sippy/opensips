@@ -31,8 +31,8 @@
 
 int codec_init();
 
-int fixup_codec(void** param, int param_no);
-int fixup_codec_regexp(void** param, int param_no);
+int fixup_codec(void** param, struct fxup_opts fopt);
+int fixup_codec_regexp(void** param, struct fxup_opts fopt);
 
 int codec_find (struct sip_msg* msg, char* str1 );
 int codec_delete (struct sip_msg* msg, char* str1 );

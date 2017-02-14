@@ -42,7 +42,7 @@ static int mod_init(void);
 static void destroy(void);
 static int child_init(int rank);
 static int scriptroute_fetch(struct sip_msg *msg, char *list);
-static int fixup_scriptroute_fetch(void **param, int param_no);
+static int fixup_scriptroute_fetch(void **param, struct fxup_opts fopt);
 
 
 /**
@@ -502,7 +502,7 @@ static int scriptroute_fetch(struct sip_msg *msg, char *_list)
 	return nr ? nr : -3;
 }
 
-static int fixup_scriptroute_fetch(void **param, int param_no)
+static int fixup_scriptroute_fetch(void **param, struct fxup_opts fopt)
 {
 	char *end, *p, *e;
 	str s, name;
@@ -512,8 +512,8 @@ static int fixup_scriptroute_fetch(void **param, int param_no)
 	struct scriptroute_params *next = NULL;
 
 
-	if (param_no != 1) {
-		LM_ERR("BUG: No such parameters %d\n", param_no);
+	if (fopt.param_no != 1) {
+		LM_ERR("BUG: No such parameters %d\n", fopt.param_no);
 		return E_BUG;
 	}
 

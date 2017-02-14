@@ -102,7 +102,7 @@ tlist_elem_p trace_list=NULL;
  * SIPTRACE FUNCTIONS
  *
  * **/
-static int sip_trace_fixup(void **param, int param_no);
+static int sip_trace_fixup(void **param, struct fxup_opts fopt);
 static int sip_trace_w(struct sip_msg*, char*, char*, char*, char*);
 static int sip_trace(struct sip_msg*, trace_info_p);
 
@@ -1226,7 +1226,7 @@ static tlist_elem_p get_list_start(str *name)
  * build a list with only those elements that belong to this
  * id
  */
-static int sip_trace_fixup(void **param, int param_no)
+static int sip_trace_fixup(void **param, struct fxup_opts fopt)
 {
 	int _flags;
 
@@ -1237,12 +1237,12 @@ static int sip_trace_fixup(void **param, int param_no)
 	pv_elem_p el;
 	tid_param_p tparam;
 
-	if (param_no < 1 || param_no > 4) {
+	if (fopt.param_no < 1 || fopt.param_no > 4) {
 		LM_ERR("bad param number!\n");
 		return -1;
 	}
 
-	switch (param_no) {
+	switch (fopt.param_no) {
 	case 1:
 		if (fixup_spve(param) < 0) {
 			LM_ERR("trace id fixup failed!\n");

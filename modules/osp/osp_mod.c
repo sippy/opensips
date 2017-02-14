@@ -33,8 +33,8 @@
  */
 
 #include <osp/osp.h>
-#include "../../mod_fix.h"
 #include "../../sr_module.h"
+#include "../../mod_fix.h"
 #include "../rr/api.h"
 #include "../auth/api.h"
 #include "osp_mod.h"

@@ -33,6 +33,7 @@
  */
 
 #include <osp/osp.h>
+#include "../../sr_module.h"
 #include "../rr/api.h"
 #include "../../usr_avp.h"
 #include "../../mod_fix.h"

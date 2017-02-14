@@ -57,7 +57,7 @@ static int w_as_relay_sl(struct sip_msg *msg, char *as_name, char *foo);
 static int seas_init(void);
 static int seas_child_init(int rank);
 static int seas_exit();
-static int fixup_as_relay(void** param, int param_no);
+static int fixup_as_relay(void** param, struct fxup_opts fopt);
 
 /*utility functions*/
 static void seas_init_tags();
@@ -133,7 +133,7 @@ struct module_exports exports=
    (child_init_function) seas_child_init  /* per-child init function */
 };
 
-static int fixup_as_relay(void** param, int param_no)
+static int fixup_as_relay(void** param, struct fxup_opts fopt)
 {
    int len;
    char *parameter;
@@ -141,7 +141,7 @@ static int fixup_as_relay(void** param, int param_no)
 
    parameter=(char *)(*param);
 
-   if (param_no!=1)
+   if (fopt.param_no!=1)
       return 0;
    len=strlen(parameter);
 

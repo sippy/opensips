@@ -50,7 +50,7 @@
 
 static int max_limit = MAXFWD_UPPER_LIMIT;
 
-static int fixup_maxfwd_header(void** param, int param_no);
+static int fixup_maxfwd_header(void** param, struct fxup_opts fopt);
 static int w_process_maxfwd_header(struct sip_msg* msg,char* str,char* str2);
 static int is_maxfwd_lt(struct sip_msg *msg, char *slimit, char *foo);
 static int mod_init(void);
@@ -108,12 +108,12 @@ static int mod_init(void)
 
 
 
-static int fixup_maxfwd_header(void** param, int param_no)
+static int fixup_maxfwd_header(void** param, struct fxup_opts fopt)
 {
 	unsigned long code;
 	int err;
 
-	if (param_no==1){
+	if (fopt.param_no==1){
 		code=str2s(*param, strlen(*param), &err);
 		if (err==0){
 			if (code<1 || code>MAXFWD_UPPER_LIMIT){

@@ -32,6 +32,7 @@
 
 
 #include "dispatch.h"
+#include "../../sr_module.h"
 #include "../../mod_fix.h"
 
 #define MAX_LIST_TYPE_STR (1<<0)
@@ -93,11 +94,11 @@ int fixup_partition_sets(void **param);
 int fixup_partition_one_set(void **param);
 int fixup_int_list(void **param);
 
-int ds_next_fixup(void **param, int param_no);
-int ds_mark_fixup(void **param, int param_no);
-int in_list_fixup(void** param, int param_no);
-int ds_select_fixup(void** param, int param_no);
-int ds_count_fixup(void** param, int param_no);
+int ds_next_fixup(void **param, struct fxup_opts fopt);
+int ds_mark_fixup(void **param, struct fxup_opts fopt);
+int in_list_fixup(void** param, struct fxup_opts fopt);
+int ds_select_fixup(void** param, struct fxup_opts fopt);
+int ds_count_fixup(void** param, struct fxup_opts fopt);
 int fixup_flags(str* param);
 int set_list_from_string(str input, int_list_t **result);
 

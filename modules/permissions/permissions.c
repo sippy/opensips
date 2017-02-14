@@ -80,24 +80,24 @@ static int check_all_branches = 1;
 /*
  * Convert the name of the files into table index
  */
-static int load_fixup(void** param, int param_no);
+static int load_fixup(void** param, struct fxup_opts fopt);
 
 /*
  * Convert the name of the file into table index, this
  * function takes just one name, appends .allow and .deny
  * to and and the rest is same as in load_fixup
  */
-static int single_fixup(void** param, int param_no);
+static int single_fixup(void** param, struct fxup_opts fopt);
 
 
 /*
  * Parse pseudo variable parameter
  */
-static int double_fixup(void** param, int param_no);
+static int double_fixup(void** param, struct fxup_opts fopt);
 
-static int check_addr_fixup(void** param, int param_no);
-static int check_src_addr_fixup(void** param, int param_no);
-static int get_src_grp_fixup(void** param, int param_no);
+static int check_addr_fixup(void** param, struct fxup_opts fopt);
+static int check_src_addr_fixup(void** param, struct fxup_opts fopt);
+static int get_src_grp_fixup(void** param, struct fxup_opts fopt);
 
 static int allow_routing_0(struct sip_msg* msg, char* str1, char* str2);
 static int allow_routing_1(struct sip_msg* msg, char* basename, char* str2);
@@ -210,7 +210,7 @@ struct module_exports exports = {
 };
 
 
-static int get_src_grp_fixup(void** param, int param_no)
+static int get_src_grp_fixup(void** param, struct fxup_opts fopt)
 {
 	int ret;
 	str s;
@@ -224,7 +224,7 @@ static int get_src_grp_fixup(void** param, int param_no)
 	}
 
 
-	if(param_no==1) {
+	if(fopt.param_no==1) {
 		pv = pkg_malloc(sizeof(struct part_var));
 		if (pv == NULL) {
 			LM_ERR("no more pkg mem\n");
@@ -493,13 +493,13 @@ static int check_routing(struct sip_msg* msg, int idx)
 /*
  * Convert the name of the files into table index
  */
-static int load_fixup(void** param, int param_no)
+static int load_fixup(void** param, struct fxup_opts fopt)
 {
 	char* pathname;
 	int idx;
 	rule_file_t* table;
 
-	if (param_no == 1) {
+	if (fopt.param_no == 1) {
 		table = allow;
 	} else {
 		table = deny;
@@ -518,7 +518,7 @@ static int load_fixup(void** param, int param_no)
 			LM_INFO("file (%s) not found => empty rule set\n", pathname);
 		}
 		*param = (void*)(long)rules_num;
-		if (param_no == 2) rules_num++;
+		if (fopt.param_no == 2) rules_num++;
 	} else {
 		     /* File already parsed, re-use it */
 		LM_DBG("file (%s) already loaded, re-using\n", pathname);
@@ -533,13 +533,13 @@ static int load_fixup(void** param, int param_no)
 /*
  * Convert the name of the file into table index
  */
-static int single_fixup(void** param, int param_no)
+static int single_fixup(void** param, struct fxup_opts fopt)
 {
 	char* buffer;
 	void* tmp;
 	int param_len, ret, suffix_len;
 
-	if (param_no != 1) return 0;
+	if (fopt.param_no != 1) return 0;
 
 	param_len = strlen((char*)*param);
 	if (strlen(allow_suffix) > strlen(deny_suffix)) {
@@ -557,11 +557,11 @@ static int single_fixup(void** param, int param_no)
 	strcpy(buffer, (char*)*param);
 	strcat(buffer, allow_suffix);
 	tmp = buffer;
-	ret = load_fixup(&tmp, 1);
+	ret = load_fixup(&tmp, ff_one);
 
 	strcpy(buffer + param_len, deny_suffix);
 	tmp = buffer;
-	ret |= load_fixup(&tmp, 2);
+	ret |= load_fixup(&tmp, ff_two);
 
 	*param = tmp;
 
@@ -574,7 +574,7 @@ static int single_fixup(void** param, int param_no)
  * Convert the name of the file into table index and pvar into parsed pseudo
  * variable specification
  */
-static int double_fixup(void** param, int param_no)
+static int double_fixup(void** param, struct fxup_opts fopt)
 {
 	char* buffer;
 	void* tmp;
@@ -582,7 +582,7 @@ static int double_fixup(void** param, int param_no)
 	pv_spec_t *sp;
 	str s;
 
-	if (param_no == 1) { /* basename */
+	if (fopt.param_no == 1) { /* basename */
 	    param_len = strlen((char*)*param);
 	    if (strlen(allow_suffix) > strlen(deny_suffix)) {
 		suffix_len = strlen(allow_suffix);
@@ -599,18 +599,18 @@ static int double_fixup(void** param, int param_no)
 	    strcpy(buffer, (char*)*param);
 	    strcat(buffer, allow_suffix);
 	    tmp = buffer;
-	    ret = load_fixup(&tmp, 1);
+	    ret = load_fixup(&tmp, ff_one);
 
 	    strcpy(buffer + param_len, deny_suffix);
 	    tmp = buffer;
-	    ret |= load_fixup(&tmp, 2);
+	    ret |= load_fixup(&tmp, ff_two);
 
 	    *param = tmp;
 	    pkg_free(buffer);
 
 	    return 0;
 
-	} else if (param_no == 2) { /* pseudo variable */
+	} else if (fopt.param_no == 2) { /* pseudo variable */
 
 	    sp = (pv_spec_t*)pkg_malloc(sizeof(pv_spec_t));
 	    if (sp == 0) {
@@ -1015,7 +1015,7 @@ int allow_test(char *file, char *uri, char *contact)
 }
 
 
-static int check_addr_fixup(void** param, int param_no) {
+static int check_addr_fixup(void** param, struct fxup_opts fopt) {
 	int ret;
 	gparam_p gp;
 	struct part_var *pv;
@@ -1026,7 +1026,7 @@ static int check_addr_fixup(void** param, int param_no) {
 	}
 
 	/* grp ip port proto info pattern*/
-	switch (param_no) {
+	switch (fopt.param_no) {
 		case 1:
 			ret = fixup_spve(param);
 
@@ -1068,7 +1068,7 @@ static int check_addr_fixup(void** param, int param_no) {
 }
 
 
-static int check_src_addr_fixup(void** param, int param_no) {
+static int check_src_addr_fixup(void** param, struct fxup_opts fopt) {
 	int ret;
 	gparam_p gp;
 	struct part_var *pv;
@@ -1079,7 +1079,7 @@ static int check_src_addr_fixup(void** param, int param_no) {
 	}
 
 	/* grp info pattern */
-	switch (param_no) {
+	switch (fopt.param_no) {
 		case 1:
 			ret = fixup_spve(param);
 

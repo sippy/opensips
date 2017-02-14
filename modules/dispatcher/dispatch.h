@@ -38,6 +38,7 @@
 #define _DISPATCH_H_
 
 #include <stdio.h>
+#include "../../sr_module.h"
 #include "../../pvar.h"
 #include "../../mod_fix.h"
 #include "../../parser/msg_parser.h"

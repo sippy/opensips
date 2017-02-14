@@ -44,11 +44,11 @@ int create_dynamic_locks(void)
 	return 0;
 }
 
-int fixup_static_lock(void **param, int param_no)
+int fixup_static_lock(void **param, struct fxup_opts fopt)
 {
 	static_lock *lock_entry;
 
-	if (param_no != 1) {
+	if (fopt.param_no != 1) {
 		LM_ERR("Invalid parameter!\n");
 		return -1;
 	}

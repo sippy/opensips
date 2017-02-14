@@ -148,7 +148,7 @@ int acc_flags_ctx_idx;
 int acc_tm_flags_ctx_idx;
 
 /* ------------- fixup function --------------- */
-static int acc_fixup(void** param, int param_no);
+static int acc_fixup(void** param, struct fxup_opts fopt);
 static int free_acc_fixup(void** param, int param_no);
 
 
@@ -304,7 +304,7 @@ struct module_exports exports= {
 /************************** FIXUP functions ****************************/
 
 
-static int acc_fixup(void** param, int param_no)
+static int acc_fixup(void** param, struct fxup_opts fopt)
 {
 	str s;
 
@@ -317,10 +317,10 @@ static int acc_fixup(void** param, int param_no)
 		return E_SCRIPT;
 	}
 
-	if (param_no == 1) {
+	if (fopt.param_no == 1) {
 		if (s.s==NULL) {
 			LM_ERR("null format in P%d\n",
-					param_no);
+					fopt.param_no);
 		}
 
 		s.len = strlen(s.s);
@@ -332,7 +332,7 @@ static int acc_fixup(void** param, int param_no)
 
 		*param = (void*)model;
 		return 0;
-	} else if (param_no == 2) {
+	} else if (fopt.param_no == 2) {
 		/* only for db acc - the table name */
 		if (db_url.s==0) {
 			pkg_free(s.s);

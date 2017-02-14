@@ -39,6 +39,7 @@
 #include <netdb.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include "../../sr_module.h"
 #include "../proto_hep/hep.h"
 #include "../proto_hep/hep_cb.h"
 #include "../../context.h"
@@ -59,7 +60,6 @@
 #define __FAVOR_BSD /* on linux use bsd version of udphdr (more portable) */
 #include <netinet/udp.h>
 
-#include "../../sr_module.h"
 #include "../../dprint.h"
 #include "../../net/proto_udp/proto_udp.h"
 #include "../../ut.h"
@@ -230,19 +230,19 @@ static void destroy(void);
 static int sip_capture(struct sip_msg *msg, char *s1, char *s2);
 static int async_sip_capture(struct sip_msg* msg, async_resume_module **resume_f,
 		void **resume_param, char* s1, char* s2);
-static int sip_capture_fixup(void** param, int param_no);
-static int sip_capture_async_fixup(void** param, int param_no);
+static int sip_capture_fixup(void** param, struct fxup_opts fopt);
+static int sip_capture_async_fixup(void** param, struct fxup_opts fopt);
 static int w_sip_capture(struct sip_msg *msg, char *table_name,
 				async_resume_module **resume_f, void **resume_param);
 
 
 static void set_rtcp_keys(void);
 
-static int rc_fixup_1(void** param, int param_no);
-static int rc_async_fixup_1(void** param, int param_no);
+static int rc_fixup_1(void** param, struct fxup_opts fopt);
+static int rc_async_fixup_1(void** param, struct fxup_opts fopt);
 
-static int rc_fixup(void** param, int param_no);
-static int rc_async_fixup(void** param, int param_no);
+static int rc_fixup(void** param, struct fxup_opts fopt);
+static int rc_async_fixup(void** param, struct fxup_opts fopt);
 
 
 static int w_report_capture_1(struct sip_msg* msg, char* cor_id_p);
@@ -281,14 +281,14 @@ db_async_store(db_val_t* vals, db_key_t* keys, int num_keys,
 int resume_async_dbquery(int fd, struct sip_msg *msg, void *_param);
 
 /* setter functions */
-static int set_hep_generic_fixup(void** param, int param_no);
-static int set_hep_fixup(void** param, int param_no);
+static int set_hep_generic_fixup(void** param, struct fxup_opts fopt);
+static int set_hep_fixup(void** param, struct fxup_opts fopt);
 static int w_set_hep_generic(struct sip_msg* msg, char* id, char* data);
 static int w_set_hep(struct sip_msg* msg,  char* id, char* vid, char* data, char* type);
 
 /* getter functions */
-static int get_hep_fixup(void** param, int param_no);
-static int get_hep_generic_fixup(void** param, int param_no);
+static int get_hep_fixup(void** param, struct fxup_opts fopt);
+static int get_hep_generic_fixup(void** param, struct fxup_opts fopt);
 static int
 w_get_hep(struct sip_msg* msg, char* type, char* id, char* vid, char* data);
 static int
@@ -299,7 +299,7 @@ static int parse_hep_route(char *val);
 
 
 /* remove chunk functions */
-static int del_hep_fixup(void** param, int param_no);
+static int del_hep_fixup(void** param, struct fxup_opts fopt);
 static int w_del_hep(struct sip_msg* msg, char *id);
 
 static int pv_get_hep_net(struct sip_msg *msg, pv_param_t *param,
@@ -2490,9 +2490,9 @@ shm_err:
 
 }
 
-static int sip_capture_fixup(void** param, int param_no)
+static int sip_capture_fixup(void** param, struct fxup_opts fopt)
 {
-	if (param_no != 1) {
+	if (fopt.param_no != 1) {
 		LM_ERR("Invalid param number!\n");
 		return -1;
 	}
@@ -2500,10 +2500,10 @@ static int sip_capture_fixup(void** param, int param_no)
 	return fixup_tz_table(param, &tz_list);
 }
 
-static int sip_capture_async_fixup(void** param, int param_no)
+static int sip_capture_async_fixup(void** param, struct fxup_opts fopt)
 {
 
-	if (param_no != 1) {
+	if (fopt.param_no != 1) {
 		LM_ERR("Invalid param number!\n");
 		return -1;
 	}
@@ -3539,12 +3539,12 @@ error:
 
 }
 
-static int set_hep_generic_fixup(void** param, int param_no)
+static int set_hep_generic_fixup(void** param, struct fxup_opts fopt)
 {
 	int type;
 	gparam_p gp;
 
-	switch (param_no) {
+	switch (fopt.param_no) {
 		case 1:
 		/* chunk id */
 			if (fixup_sgp(param) < 0) {
@@ -3574,12 +3574,12 @@ static int set_hep_generic_fixup(void** param, int param_no)
 
 
 
-static int set_hep_fixup(void** param, int param_no)
+static int set_hep_fixup(void** param, struct fxup_opts fopt)
 {
 	int type;
 	gparam_p gp;
 
-	switch (param_no) {
+	switch (fopt.param_no) {
 		/* type */
 		case 1:
 			if (fixup_sgp(param) < 0) {
@@ -3629,12 +3629,12 @@ static int set_hep_fixup(void** param, int param_no)
 	return 0;
 }
 
-static int get_hep_generic_fixup(void** param, int param_no)
+static int get_hep_generic_fixup(void** param, struct fxup_opts fopt)
 {
 	int type;
 	gparam_p gp;
 
-	switch (param_no) {
+	switch (fopt.param_no) {
 		case 1:
 			if (fixup_sgp(param) < 0) {
 				LM_ERR("fixup for chunk type failed!\n");
@@ -3660,7 +3660,7 @@ static int get_hep_generic_fixup(void** param, int param_no)
 		case 3:
 			return fixup_pvar(param);
 		default:
-			LM_ERR("Invalid param number <%d>\n", param_no);
+			LM_ERR("Invalid param number <%d>\n", fopt.param_no);
 			return -1;
 	}
 
@@ -3669,12 +3669,12 @@ static int get_hep_generic_fixup(void** param, int param_no)
 
 
 
-static int get_hep_fixup(void** param, int param_no)
+static int get_hep_fixup(void** param, struct fxup_opts fopt)
 {
 	int type;
 	gparam_p gp;
 
-	switch (param_no) {
+	switch (fopt.param_no) {
 		/* type */
 		case 1:
 			if (fixup_sgp(param) < 0) {
@@ -3720,19 +3720,19 @@ static int get_hep_fixup(void** param, int param_no)
 		case 4:
 			return fixup_pvar(param);
 		default:
-			LM_ERR("Invalid param number <%d>\n", param_no);
+			LM_ERR("Invalid param number <%d>\n", fopt.param_no);
 			return -1;
 	}
 
 	return 0;
 }
 
-static int del_hep_fixup(void** param, int param_no)
+static int del_hep_fixup(void** param, struct fxup_opts fopt)
 {
 	int type;
 	gparam_p gp;
 
-	if (param_no == 1) {
+	if (fopt.param_no == 1) {
 		if (fixup_sgp(param) < 0) {
 			LM_ERR("fixup for chunk type failed!\n");
 			return -1;
@@ -3752,7 +3752,7 @@ static int del_hep_fixup(void** param, int param_no)
 		return 0;
 	}
 
-	LM_ERR("Invalid param number <%d>\n", param_no);
+	LM_ERR("Invalid param number <%d>\n", fopt.param_no);
 	return -1;
 }
 
@@ -4656,9 +4656,9 @@ static void set_rtcp_keys(void)
 	} while(0);
 
 
-static int rc_fixup_1(void** param, int param_no)
+static int rc_fixup_1(void** param, struct fxup_opts fopt)
 {
-	if (param_no != 1) {
+	if (fopt.param_no != 1) {
 		LM_ERR("Invalid param number!\n");
 		return -1;
 	}
@@ -4666,21 +4666,21 @@ static int rc_fixup_1(void** param, int param_no)
 	return fixup_sgp(param);
 }
 
-static int rc_fixup(void** param, int param_no)
+static int rc_fixup(void** param, struct fxup_opts fopt)
 {
-	if (param_no < 1 || param_no > 3) {
+	if (fopt.param_no < 1 || fopt.param_no > 3) {
 		LM_ERR("Invalid param number!\n");
 		return -1;
 	}
 
-	FIXUP_RC_PARAMS(param, fixup_tz_table, param_no);
+	FIXUP_RC_PARAMS(param, fixup_tz_table, fopt.param_no);
 
 	return 0;
 }
 
-static int rc_async_fixup_1(void** param, int param_no)
+static int rc_async_fixup_1(void** param, struct fxup_opts fopt)
 {
-	if (param_no != 1) {
+	if (fopt.param_no != 1) {
 		LM_ERR("Invalid param number!\n");
 		return -1;
 	}
@@ -4688,14 +4688,14 @@ static int rc_async_fixup_1(void** param, int param_no)
 	return fixup_sgp(param);
 }
 
-static int rc_async_fixup(void** param, int param_no)
+static int rc_async_fixup(void** param, struct fxup_opts fopt)
 {
-	if (param_no < 1 || param_no > 3) {
+	if (fopt.param_no < 1 || fopt.param_no > 3) {
 		LM_ERR("Invalid param number!\n");
 		return -1;
 	}
 
-	FIXUP_RC_PARAMS(param, fixup_async_tz_table, param_no);
+	FIXUP_RC_PARAMS(param, fixup_async_tz_table, fopt.param_no);
 
 	return 0;
 }

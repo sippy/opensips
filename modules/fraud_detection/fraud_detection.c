@@ -24,6 +24,7 @@
  *  2014-09-26  initial version (Andrei Datcu)
 */
 
+#include "../../sr_module.h"
 #include "../../ut.h"
 #include "../../db/db.h"
 #include "../../time_rec.h"
@@ -77,7 +78,7 @@ static int child_init(int);
 static void destroy(void);
 
 static int check_fraud(struct sip_msg *msg, char *user, char *number, char *pid);
-static int fixup_check_fraud(void **param, int param_no);
+static int fixup_check_fraud(void **param, struct fxup_opts fopt);
 static struct mi_root* mi_show_stats(struct mi_root *cmd_tree, void *param);
 static struct mi_root* mi_reload(struct mi_root *cmd_tree, void *param);
 
@@ -245,9 +246,9 @@ static void destroy(void)
 	frd_destroy_data();
 }
 
-static int fixup_check_fraud(void **param, int param_no)
+static int fixup_check_fraud(void **param, struct fxup_opts fopt)
 {
-	switch (param_no) {
+	switch (fopt.param_no) {
 
 		case 1:
 		case 2:

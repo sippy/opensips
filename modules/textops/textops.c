@@ -79,7 +79,7 @@ static int subst_body_f(struct sip_msg*, char*, char*);
 static int search_append_f(struct sip_msg*, char*, char*);
 static int search_append_body_f(struct sip_msg*, char*, char*);
 
-static int fixup_substre(void**, int);
+static int fixup_substre(void**, struct fxup_opts fopt);
 
 
 static int mod_init(void);
@@ -651,13 +651,13 @@ error:
 	return ret;
 }
 
-static int fixup_substre(void** param, int param_no)
+static int fixup_substre(void** param, struct fxup_opts fopt)
 {
 	struct subst_expr* se;
 	str subst;
 
 	LM_DBG("%s module -- fixing %s\n", exports.name, (char*)(*param));
-	if (param_no!=1) return 0;
+	if (fopt.param_no!=1) return 0;
 	subst.s=*param;
 	subst.len=strlen(*param);
 	se=subst_parser(&subst);

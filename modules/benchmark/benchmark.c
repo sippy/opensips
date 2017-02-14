@@ -94,7 +94,7 @@ typedef struct bm_cfg {
 
 bm_cfg_t *bm_mycfg = 0;
 
-static inline int fixup_bm_timer(void** param, int param_no);
+static inline int fixup_bm_timer(void** param, struct fxup_opts fopt);
 
 /*
  * Exported functions
@@ -702,10 +702,10 @@ static int bm_get_time_diff(struct sip_msg *msg, pv_param_t *param,
 }
 
 
-static inline int fixup_bm_timer(void** param, int param_no)
+static inline int fixup_bm_timer(void** param, struct fxup_opts fopt)
 {
 	unsigned int tid = 0;
-	if (param_no == 1)
+	if (fopt.param_no == 1)
 	{
 		if((_bm_register_timer((char*)(*param), 1, &tid))!=0)
 		{

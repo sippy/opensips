@@ -83,8 +83,8 @@ static int w_replace_to(struct sip_msg* msg, char* p1, char* p2);
 static int w_restore_to(struct sip_msg* msg);
 
 static int w_uac_auth(struct sip_msg* msg, char* str, char* str2);
-static int fixup_replace_uri(void** param, int param_no);
-static int fixup_replace_disp_uri(void** param, int param_no);
+static int fixup_replace_uri(void** param, struct fxup_opts fopt);
+static int fixup_replace_disp_uri(void** param, struct fxup_opts fopt);
 static int mod_init(void);
 static void mod_destroy(void);
 
@@ -333,7 +333,7 @@ static void mod_destroy(void)
 
 /************************** fixup functions ******************************/
 
-static int fixup_replace_uri(void** param, int param_no)
+static int fixup_replace_uri(void** param, struct fxup_opts fopt)
 {
 	pv_elem_t *model;
 	str s;
@@ -356,7 +356,7 @@ static int fixup_replace_uri(void** param, int param_no)
 }
 
 
-static int fixup_replace_disp_uri(void** param, int param_no)
+static int fixup_replace_disp_uri(void** param, struct fxup_opts fopt)
 {
 	pv_elem_t *model;
 	char *p;
@@ -367,7 +367,7 @@ static int fixup_replace_disp_uri(void** param, int param_no)
 	s.len = strlen(s.s);
 
 	model=NULL;
-	if (param_no==1 && s.len) {
+	if (fopt.param_no==1 && s.len) {
 		/* check to see if it is already quoted */
 		if ((s.s[0] == '\"' && s.s[s.len - 1] == '\"') ||
 				str_check_token(&s))
@@ -389,7 +389,7 @@ static int fixup_replace_disp_uri(void** param, int param_no)
 	}
 unquoted:
 	if(pv_parse_format(&s ,&model)<0) {
-		LM_ERR("wrong format [%s] for param no %d!\n", s.s, param_no);
+		LM_ERR("wrong format [%s] for param no %d!\n", s.s, fopt.param_no);
 		pkg_free(s.s);
 		return E_UNSPEC;
 	}

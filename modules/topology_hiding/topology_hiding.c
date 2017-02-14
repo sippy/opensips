@@ -43,7 +43,7 @@ str th_contact_encode_param = str_init("thinfo");
 
 static int mod_init(void);
 static void mod_destroy(void);
-static int fixup_topo_hiding(void **param, int param_no);
+static int fixup_topo_hiding(void **param, struct fxup_opts fopt);
 int w_topology_hiding1(struct sip_msg *req,char *param);
 int w_topology_hiding(struct sip_msg *req);
 int w_topology_hiding_match(struct sip_msg *req);
@@ -178,7 +178,7 @@ static void mod_destroy(void)
 	return;
 }
 
-static int fixup_topo_hiding(void **param, int param_no)
+static int fixup_topo_hiding(void **param, struct fxup_opts fopt)
 {
 	return fixup_sgp(param);
 }

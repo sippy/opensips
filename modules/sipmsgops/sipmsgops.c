@@ -126,19 +126,19 @@ static int add_body_part_f(struct sip_msg *msg, char *str1, char *str2 );
 static int is_audio_on_hold_f(struct sip_msg *msg, char *str1, char *str2 );
 static int w_sip_validate(struct sip_msg *msg, char *flags_s, char* pv_result);
 
-static int hname_fixup(void** param, int param_no);
+static int hname_fixup(void** param, struct fxup_opts fopt);
 static int free_hname_fixup(void** param, int param_no);
-static int hname_match_fixup(void** param, int param_no);
+static int hname_match_fixup(void** param, struct fxup_opts fopt);
 static int free_hname_match_fixup(void** param, int param_no);
 
-static int fixup_method(void** param, int param_no);
-static int add_header_fixup(void** param, int param_no);
-static int fixup_body_type(void** param, int param_no);
-static int fixup_privacy(void** param, int param_no);
-static int fixup_sip_validate(void** param, int param_no);
+static int fixup_method(void** param, struct fxup_opts fopt);
+static int add_header_fixup(void** param, struct fxup_opts fopt);
+static int fixup_body_type(void** param, struct fxup_opts fopt);
+static int fixup_privacy(void** param, struct fxup_opts fopt);
+static int fixup_sip_validate(void** param, struct fxup_opts fopt);
 
 static int change_reply_status_f(struct sip_msg*, char*, char *);
-static int change_reply_status_fixup(void** param, int param_no);
+static int change_reply_status_fixup(void** param, struct fxup_opts fopt);
 
 static int mod_init(void);
 
@@ -743,7 +743,7 @@ static int is_method_f(struct sip_msg *msg, char *meth, char *str2 )
 /*
  * Convert char* header_name to str* parameter
  */
-static int hname_fixup(void** param, int param_no)
+static int hname_fixup(void** param, struct fxup_opts fopt)
 {
 	char *c;
 	int len;
@@ -804,14 +804,14 @@ static int free_hname_fixup(void** param, int param_no)
 	return 0;
 }
 
-static int hname_match_fixup(void** param, int param_no)
+static int hname_match_fixup(void** param, struct fxup_opts fopt)
 {
 	char * type_param = NULL;
 	char * type_str = NULL;
 	char type = 0;
 	char * matchstr = *(char**)param;
 
-	if(param_no == 1){
+	if(fopt.param_no == 1){
 		if(strlen(matchstr)==0){
 			LM_ERR("Empty match string parameter.\n");
 			return E_UNSPEC;
@@ -831,7 +831,7 @@ static int hname_match_fixup(void** param, int param_no)
 		if(type == 'r'){
 			/* regex fixup code here */
 			LM_DBG("processing param1: %s as regex\n", *(char**)param);
-			fixup_regexp_null(param, param_no);
+			fixup_regexp_null(param, fopt);
 		}else if(type == 'g'){
 			/* glob fixup code here */
 			LM_DBG("processing param1: %s as glob\n", *(char**)param);
@@ -882,7 +882,7 @@ static int free_hname_match_fixup(void** param, int param_no)
 /*
  * Convert char* method to str* parameter
  */
-static int fixup_method(void** param, int param_no)
+static int fixup_method(void** param, struct fxup_opts fopt)
 {
 	str* s;
 	char *p;
@@ -952,7 +952,7 @@ static int fixup_method(void** param, int param_no)
 /*
  * Convert char* privacy value to corresponding bit value
  */
-static int fixup_privacy(void** param, int param_no)
+static int fixup_privacy(void** param, struct fxup_opts fopt)
 {
 	str p;
 	unsigned int val;
@@ -974,13 +974,13 @@ static int fixup_privacy(void** param, int param_no)
 	return 0;
 }
 
-static int add_header_fixup(void** param, int param_no)
+static int add_header_fixup(void** param, struct fxup_opts fopt)
 {
-	if(param_no==1)
+	if(fopt.param_no==1)
 	{
-		return fixup_spve_null(param, param_no);
-	} else if(param_no==2) {
-		return hname_fixup(param, param_no);
+		return fixup_spve_null(param, fopt);
+	} else if(fopt.param_no==2) {
+		return hname_fixup(param, fopt);
 	} else {
 		LM_ERR("wrong number of parameters\n");
 		return E_UNSPEC;
@@ -988,13 +988,13 @@ static int add_header_fixup(void** param, int param_no)
 }
 
 
-static int fixup_body_type(void** param, int param_no)
+static int fixup_body_type(void** param, struct fxup_opts fopt)
 {
 	char *p;
 	char *r;
 	unsigned int type;
 
-	if(param_no==1) {
+	if(fopt.param_no==1) {
 		p = (char*)*param;
 		if (p==0 || p[0]==0) {
 			type = 0;
@@ -1011,7 +1011,7 @@ static int fixup_body_type(void** param, int param_no)
 		}
 		pkg_free(*param);
 		*param = (void*)(long)type;
-	} else if(param_no==2) {
+	} else if(fopt.param_no==2) {
 		/* only by remove_body_part() */
 		p = (char*)*param;
 		if (p && strcmp(p,"revert")==0) {
@@ -1184,14 +1184,14 @@ static int is_audio_on_hold_f(struct sip_msg *msg, char *str1, char *str2 )
 #define SIP_PARSE_FROM 0x20
 #define SIP_PARSE_CONTACT 0x40
 
-static int fixup_sip_validate(void** param, int param_no)
+static int fixup_sip_validate(void** param, struct fxup_opts fopt)
 {
 	char *flags_s, *end;
 	unsigned long flags = 0;
 	pv_elem_t *pvar;
 	str s;
 
-	if (param_no==1) {
+	if (fopt.param_no==1) {
 		if (!param)
 			return -1;
 		flags_s = (char*)*param;
@@ -1241,7 +1241,7 @@ static int fixup_sip_validate(void** param, int param_no)
 		}
 		*param = (void *)(unsigned long)flags;
 		return 0;
-	} else if (param_no==2) {
+	} else if (fopt.param_no==2) {
 		s.s = (char*)(*param);
 		s.len = strlen(s.s);
 		if (pv_parse_format(&s, &pvar)<0)
@@ -1252,7 +1252,7 @@ static int fixup_sip_validate(void** param, int param_no)
 		*param = (void*)pvar;
 		return 0;
 	} else {
-		LM_ERR("invalid parameter number %d\n", param_no);
+		LM_ERR("invalid parameter number %d\n", fopt.param_no);
 		return E_UNSPEC;
 	}
 }
@@ -1917,12 +1917,12 @@ failed:
 
 
 /* Change_reply_status config parsing function (supports AVPs) */
-static int change_reply_status_fixup(void** param, int param_no)
+static int change_reply_status_fixup(void** param, struct fxup_opts fopt)
 {
-	if(param_no == 1)
+	if(fopt.param_no == 1)
 		return fixup_igp(param);
 
-	if(param_no == 2)
+	if(fopt.param_no == 2)
 		return fixup_spve(param);
 
 	return 0;

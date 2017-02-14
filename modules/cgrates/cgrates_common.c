@@ -20,6 +20,7 @@
  */
 
 #include <string.h>
+#include "../../sr_module.h"
 #include "../../dprint.h"
 #include "../../str.h"
 #include "../../async.h"

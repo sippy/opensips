@@ -79,8 +79,8 @@ int enable_socket_mismatch_warning = 1; /* Enable socket mismatch warning */
 static int  mod_init(void);
 static void mod_destroy(void);
 /* fixup functions */
-static int direction_fixup(void** param, int param_no);
-static int it_list_fixup(void** param, int param_no);
+static int direction_fixup(void** param, struct fxup_opts fopt);
+static int it_list_fixup(void** param, struct fxup_opts fopt);
 /* wrapper functions */
 static int w_record_route(struct sip_msg *,char *, char *);
 static int w_record_route_preset(struct sip_msg *,char *, char *);
@@ -204,7 +204,7 @@ static void mod_destroy(void)
 }
 
 
-static int it_list_fixup(void** param, int param_no)
+static int it_list_fixup(void** param, struct fxup_opts fopt)
 {
 	pv_elem_t *model;
 	str s;
@@ -222,7 +222,7 @@ static int it_list_fixup(void** param, int param_no)
 }
 
 
-static int direction_fixup(void** param, int param_no)
+static int direction_fixup(void** param, struct fxup_opts fopt)
 {
 	char *s;
 	int n;
@@ -232,7 +232,7 @@ static int direction_fixup(void** param, int param_no)
 				"\"append_fromtag\" enabled!!");
 		return E_CFG;
 	}
-	if (param_no==1) {
+	if (fopt.param_no==1) {
 		n = 0;
 		s = (char*) *param;
 		if ( strcasecmp(s,"downstream")==0 ) {

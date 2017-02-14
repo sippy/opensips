@@ -60,15 +60,15 @@ static int stream_process(struct sip_msg * msg, struct sdp_stream_cell *cell,
 
 
 
-int fixup_codec(void** param, int param_no)
+int fixup_codec(void** param, struct fxup_opts fopt)
 {
-	return fixup_sgp_sgp(param,param_no);
+	return fixup_sgp_sgp(param, fopt);
 }
 
 
-int fixup_codec_regexp(void** param, int param_no)
+int fixup_codec_regexp(void** param, struct fxup_opts fopt)
 {
-	return fixup_regexp_dynamic_null(param, param_no);
+	return fixup_regexp_dynamic_null(param, fopt);
 }
 
 

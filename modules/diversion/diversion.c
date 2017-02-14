@@ -52,7 +52,7 @@ str suffix = {"", 0};
 
 int add_diversion(struct sip_msg* msg, char* _s1, char* _s2, char* _s3);
 
-static int fixup_diversion_params(void **param, int param_no);
+static int fixup_diversion_params(void **param, struct fxup_opts fopt);
 
 /*
  * Module initialization function prototype
@@ -114,12 +114,12 @@ static int mod_init(void)
 }
 
 
-static int fixup_diversion_params(void** param, int param_no)
+static int fixup_diversion_params(void** param, struct fxup_opts fopt)
 {
-	if (param_no == 1) {
+	if (fopt.param_no == 1) {
 		/* diversion reason */
 		return fixup_str(param);
-	} else if (param_no == 2) {
+	} else if (fopt.param_no == 2) {
 		/* diversion uri */
 		return fixup_spve(param);
 	} else {

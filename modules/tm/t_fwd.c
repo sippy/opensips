@@ -37,6 +37,7 @@
  *  2007-01-25  DNS failover at transaction level added (bogdan)
  */
 
+#include "../../sr_module.h"
 #include "../../dprint.h"
 #include "../../config.h"
 #include "../../ut.h"

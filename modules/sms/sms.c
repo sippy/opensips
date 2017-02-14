@@ -55,7 +55,7 @@ static int sms_init(void);
 static int sms_exit(void);
 static int w_sms_send_msg(struct sip_msg*, char*, char* );
 static int w_sms_send_msg_to_net(struct sip_msg*, char*, char*);
-static int fixup_sms_send_msg_to_net(void** param, int param_no);
+static int fixup_sms_send_msg_to_net(void** param, struct fxup_opts fopt);
 static void sms_process(int);
 
 
@@ -136,11 +136,11 @@ struct module_exports exports= {
 
 
 
-static int fixup_sms_send_msg_to_net(void** param, int param_no)
+static int fixup_sms_send_msg_to_net(void** param, struct fxup_opts fopt)
 {
 	long net_nr,i;
 
-	if (param_no==1) {
+	if (fopt.param_no==1) {
 		for(net_nr=-1,i=0;i<nr_of_networks&&net_nr==-1;i++)
 			if (!strcasecmp(networks[i].name,*param))
 				net_nr = i;

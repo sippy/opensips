@@ -24,6 +24,7 @@
 #include <stdlib.h>
 
 #include "enum.h"
+#include "../../sr_module.h"
 #include "../../parser/parse_uri.h"
 #include "../../parser/parse_from.h"
 #include "../../ut.h"

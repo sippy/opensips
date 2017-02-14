@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "sr_module.h"
 #include "mem/mem.h"
 #include "str.h"
 #include "ut.h"
@@ -94,11 +95,11 @@ int fixup_free_str(void** param)
  * fixup for functions that get one parameter
  * - first parameter is converted to str*
  */
-int fixup_str_null(void** param, int param_no)
+int fixup_str_null(void** param, struct fxup_opts fopt)
 {
-	if(param_no != 1)
+	if(fopt.param_no != 1)
 	{
-		LM_ERR("invalid parameter number %d\n", param_no);
+		LM_ERR("invalid parameter number %d\n", fopt.param_no);
 		return E_UNSPEC;
 	}
 	return fixup_str(param);
@@ -109,11 +110,11 @@ int fixup_str_null(void** param, int param_no)
  * - first parameter is converted to str*
  * - second parameter is converted to str*
  */
-int fixup_str_str(void** param, int param_no)
+int fixup_str_str(void** param, struct fxup_opts fopt)
 {
-	if (param_no != 1 && param_no != 2 )
+	if (fopt.param_no != 1 && fopt.param_no != 2 )
 	{
-		LM_ERR("invalid parameter number %d\n", param_no);
+		LM_ERR("invalid parameter number %d\n", fopt.param_no);
 		return E_UNSPEC;
 	}
 	return fixup_str(param);
@@ -175,11 +176,11 @@ int fixup_uint(void** param)
  * fixup for functions that get one parameter
  * - first parameter is converted to unsigned int
  */
-int fixup_uint_null(void** param, int param_no)
+int fixup_uint_null(void** param, struct fxup_opts fopt)
 {
-	if(param_no != 1)
+	if(fopt.param_no != 1)
 	{
-		LM_ERR("invalid parameter number %d\n", param_no);
+		LM_ERR("invalid parameter number %d\n", fopt.param_no);
 		return E_UNSPEC;
 	}
 	return fixup_uint(param);
@@ -190,11 +191,11 @@ int fixup_uint_null(void** param, int param_no)
  * - first parameter is converted to unsigned int
  * - second parameter is converted to unsigned int
  */
-int fixup_uint_uint(void** param, int param_no)
+int fixup_uint_uint(void** param, struct fxup_opts fopt)
 {
-	if (param_no != 1 && param_no != 2 )
+	if (fopt.param_no != 1 && fopt.param_no != 2 )
 	{
-		LM_ERR("invalid parameter number %d\n", param_no);
+		LM_ERR("invalid parameter number %d\n", fopt.param_no);
 		return E_UNSPEC;
 	}
 	return fixup_uint(param);
@@ -227,11 +228,11 @@ int fixup_sint( void** param)
  * fixup for functions that get one parameter
  * - first parameter is converted to signed int
  */
-int fixup_sint_null(void** param, int param_no)
+int fixup_sint_null(void** param, struct fxup_opts fopt)
 {
-	if(param_no != 1)
+	if(fopt.param_no != 1)
 	{
-		LM_ERR("invalid parameter number %d\n", param_no);
+		LM_ERR("invalid parameter number %d\n", fopt.param_no);
 		return E_UNSPEC;
 	}
 	return fixup_sint(param);
@@ -242,11 +243,11 @@ int fixup_sint_null(void** param, int param_no)
  * - first parameter is converted to signed int
  * - second parameter is converted to signed int
  */
-int fixup_sint_sint(void** param, int param_no)
+int fixup_sint_sint(void** param, struct fxup_opts fopt)
 {
-	if (param_no != 1 && param_no != 2 )
+	if (fopt.param_no != 1 && fopt.param_no != 2 )
 	{
-		LM_ERR("invalid parameter number %d\n", param_no);
+		LM_ERR("invalid parameter number %d\n", fopt.param_no);
 		return E_UNSPEC;
 	}
 	return fixup_sint(param);
@@ -363,11 +364,11 @@ int fixup_free_regexp(void** param)
  * fixup for functions that get one parameter
  * - first parameter is converted to regular expression structure
  */
-int fixup_regexp_null(void** param, int param_no)
+int fixup_regexp_null(void** param, struct fxup_opts fopt)
 {
-	if(param_no != 1)
+	if(fopt.param_no != 1)
 	{
-		LM_ERR("invalid parameter number %d\n", param_no);
+		LM_ERR("invalid parameter number %d\n", fopt.param_no);
 		return E_UNSPEC;
 	}
 	return fixup_regexp(param, 0);
@@ -377,11 +378,11 @@ int fixup_regexp_null(void** param, int param_no)
  * fixup for functions that get one parameter
  * - first parameter is converted to regular expression structure   - accepts non-plaintext input
  */
-int fixup_regexp_dynamic_null(void** param, int param_no)
+int fixup_regexp_dynamic_null(void** param, struct fxup_opts fopt)
 {
-	if(param_no != 1)
+	if(fopt.param_no != 1)
 	{
-		LM_ERR("invalid parameter number %d\n", param_no);
+		LM_ERR("invalid parameter number %d\n", fopt.param_no);
 		return E_UNSPEC;
 	}
 	return fixup_regexp_dynamic(param, 0);
@@ -455,11 +456,11 @@ build_re:
  * - first parameter is converted to regular expression structure
  *   where "match-any-character" operators also match a newline
  */
-int fixup_regexpNL_null(void** param, int param_no)
+int fixup_regexpNL_null(void** param, struct fxup_opts fopt)
 {
-	if(param_no != 1)
+	if(fopt.param_no != 1)
 	{
-		LM_ERR("invalid parameter number %d\n", param_no);
+		LM_ERR("invalid parameter number %d\n", fopt.param_no);
 		return E_UNSPEC;
 	}
 	return fixup_regexp(param, REG_NEWLINE);
@@ -484,14 +485,14 @@ int fixup_free_regexp_null(void** param, int param_no)
  * - first parameter is converted to regular expression structure
  * - second parameter is not converted
  */
-int fixup_regexp_none(void** param, int param_no)
+int fixup_regexp_none(void** param, struct fxup_opts fopt)
 {
-	if (param_no != 1 && param_no != 2 )
+	if (fopt.param_no != 1 && fopt.param_no != 2 )
 	{
-		LM_ERR("invalid parameter number %d\n", param_no);
+		LM_ERR("invalid parameter number %d\n", fopt.param_no);
 		return E_UNSPEC;
 	}
-	if (param_no == 1)
+	if (fopt.param_no == 1)
 		return fixup_regexp(param, 0);
 	return 0;
 }
@@ -502,14 +503,14 @@ int fixup_regexp_none(void** param, int param_no)
  *   where "match-any-character" operators also match a newline
  * - second parameter is not converted
  */
-int fixup_regexpNL_none(void** param, int param_no)
+int fixup_regexpNL_none(void** param, struct fxup_opts fopt)
 {
-	if (param_no != 1 && param_no != 2 )
+	if (fopt.param_no != 1 && fopt.param_no != 2 )
 	{
-		LM_ERR("invalid parameter number %d\n", param_no);
+		LM_ERR("invalid parameter number %d\n", fopt.param_no);
 		return E_UNSPEC;
 	}
-	if (param_no == 1)
+	if (fopt.param_no == 1)
 		return fixup_regexp(param, REG_NEWLINE);
 	return 0;
 }
@@ -577,11 +578,11 @@ int fixup_free_pvar(void** param)
  * fixup for functions that get one parameter
  * - first parameter is converted to PV spec
  */
-int fixup_pvar_null(void** param, int param_no)
+int fixup_pvar_null(void** param, struct fxup_opts fopt)
 {
-	if(param_no != 1)
+	if(fopt.param_no != 1)
 	{
-		LM_ERR("invalid parameter number %d\n", param_no);
+		LM_ERR("invalid parameter number %d\n", fopt.param_no);
 		return E_UNSPEC;
 	}
 	return fixup_pvar(param);
@@ -605,15 +606,15 @@ int fixup_free_pvar_null(void** param, int param_no)
  * fixup for functions that get two parameters
  * - both parameters are converted to PV spec
  */
-int fixup_pvar_pvar(void** param, int param_no)
+int fixup_pvar_pvar(void** param, struct fxup_opts fopt)
 {
-	if (param_no == 1)
+	if (fopt.param_no == 1)
 	{
 	    return fixup_pvar(param);
 	}
-	if (param_no != 2)
+	if (fopt.param_no != 2)
 	{
-	    LM_ERR("invalid parameter number %d\n", param_no);
+	    LM_ERR("invalid parameter number %d\n", fopt.param_no);
 	    return E_UNSPEC;
 	}
 	return fixup_pvar(param);
@@ -642,15 +643,15 @@ int fixup_free_pvar_pvar(void** param, int param_no)
  * - first parameter is converted to PV spec
  * - second parameter is converted to str*
  */
-int fixup_pvar_str(void** param, int param_no)
+int fixup_pvar_str(void** param, struct fxup_opts fopt)
 {
-	if (param_no == 1)
+	if (fopt.param_no == 1)
 	{
 	    return fixup_pvar(param);
 	}
-	if (param_no != 2)
+	if (fopt.param_no != 2)
 	{
-	    LM_ERR("invalid parameter number %d\n", param_no);
+	    LM_ERR("invalid parameter number %d\n", fopt.param_no);
 	    return E_UNSPEC;
 	}
 	return fixup_str(param);
@@ -681,15 +682,15 @@ int fixup_free_pvar_str(void** param, int param_no)
  * - second parameter is converted to str*
  * - third parameter is converted to str*
  */
-int fixup_pvar_str_str(void** param, int param_no)
+int fixup_pvar_str_str(void** param, struct fxup_opts fopt)
 {
-	if (param_no == 1)
+	if (fopt.param_no == 1)
 	{
 	    return fixup_pvar(param);
 	}
-	if (param_no != 2 && param_no != 3)
+	if (fopt.param_no != 2 && fopt.param_no != 3)
 	{
-	    LM_ERR("invalid parameter number %d\n", param_no);
+	    LM_ERR("invalid parameter number %d\n", fopt.param_no);
 	    return E_UNSPEC;
 	}
 	return fixup_str(param);
@@ -816,11 +817,11 @@ int fixup_igp_null(void** param, int param_no)
 	return fixup_igp(param);
 }
 
-int fixup_sgp_null(void** param, int param_no)
+int fixup_sgp_null(void** param, struct fxup_opts fopt)
 {
-	if (param_no != 1)
+	if (fopt.param_no != 1)
 	{
-		LM_ERR("invalid parameter number %d\n", param_no);
+		LM_ERR("invalid parameter number %d\n", fopt.param_no);
 		return E_UNSPEC;
 	}
 	return fixup_sgp(param);
@@ -857,11 +858,11 @@ int fixup_igp_igp_igp(void** param, int param_no)
 	return fixup_igp(param);
 }
 
-int fixup_sgp_sgp(void** param, int param_no)
+int fixup_sgp_sgp(void** param, struct fxup_opts fopt)
 {
-	if (param_no != 1 && param_no != 2 )
+	if (fopt.param_no != 1 && fopt.param_no != 2 )
 	{
-		LM_ERR("invalid parameter number %d\n", param_no);
+		LM_ERR("invalid parameter number %d\n", fopt.param_no);
 		return E_UNSPEC;
 	}
 	return fixup_sgp(param);
@@ -965,11 +966,11 @@ int fixup_spve(void** param)
  * fixup for functions that get one parameter
  * - first parameter is converted to gparam_t (str or pv_elem_t)
  */
-int fixup_spve_null(void** param, int param_no)
+int fixup_spve_null(void** param, struct fxup_opts fopt)
 {
-	if (param_no != 1)
+	if (fopt.param_no != 1)
 	{
-		LM_ERR("invalid parameter number %d\n", param_no);
+		LM_ERR("invalid parameter number %d\n", fopt.param_no);
 		return E_UNSPEC;
 	}
 	return fixup_spve(param);
@@ -980,11 +981,11 @@ int fixup_spve_null(void** param, int param_no)
  * - first parameter is converted to gparam_t (str or pv_elem_t)
  * - second parameter is converted to gparam_t (str or pv_elem_t)
  */
-int fixup_spve_spve(void** param, int param_no)
+int fixup_spve_spve(void** param, struct fxup_opts fopt)
 {
-	if (param_no != 1 && param_no != 2 )
+	if (fopt.param_no != 1 && fopt.param_no != 2 )
 	{
-		LM_ERR("invalid parameter number %d\n", param_no);
+		LM_ERR("invalid parameter number %d\n", fopt.param_no);
 		return E_UNSPEC;
 	}
 	return fixup_spve(param);
@@ -995,14 +996,14 @@ int fixup_spve_spve(void** param, int param_no)
  * - first parameter is converted to gparam_t (str or pv_elem_t)
  * - second parameter is converted to uint
  */
-int fixup_spve_uint(void** param, int param_no)
+int fixup_spve_uint(void** param, struct fxup_opts fopt)
 {
-	if (param_no != 1 && param_no != 2 )
+	if (fopt.param_no != 1 && fopt.param_no != 2 )
 	{
-		LM_ERR("invalid parameter number %d\n", param_no);
+		LM_ERR("invalid parameter number %d\n", fopt.param_no);
 		return E_UNSPEC;
 	}
-	if (param_no == 1)
+	if (fopt.param_no == 1)
 		return fixup_spve(param);
 
 	return fixup_uint(param);

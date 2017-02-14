@@ -91,16 +91,16 @@ str uridb_uriuser_col     = {URI_USER_COL, URI_USER_COL_LEN};
 int use_uri_table = 0;     /* Should uri table be used */
 int use_domain = 0;        /* Should does_uri_exist honor the domain part ? */
 
-static int db_checks_fixup1(void** param, int param_no);
-static int db_checks_fixup2(void** param, int param_no);
-static int db_fixup_get_auth_id(void** param, int param_no);
+static int db_checks_fixup1(void** param, struct fxup_opts fopt);
+static int db_checks_fixup2(void** param, struct fxup_opts fopt);
+static int db_fixup_get_auth_id(void** param, struct fxup_opts fopt);
 
-static int aaa_fixup_0(void** param, int param_no);
-static int aaa_fixup_1(void** param, int param_no);
+static int aaa_fixup_0(void** param, struct fxup_opts fopt);
+static int aaa_fixup_1(void** param, struct fxup_opts fopt);
 
-static int obsolete_fixup_0(void** param, int param_no);
-static int obsolete_fixup_1(void** param, int param_no);
-static int obsolete_fixup_2(void** param, int param_no);
+static int obsolete_fixup_0(void** param, struct fxup_opts fopt);
+static int obsolete_fixup_1(void** param, struct fxup_opts fopt);
+static int obsolete_fixup_2(void** param, struct fxup_opts fopt);
 /*
  * Exported functions
  */
@@ -361,7 +361,7 @@ static void destroy(void)
 }
 
 
-static int db_checks_fixup1(void** param, int param_no)
+static int db_checks_fixup1(void** param, struct fxup_opts fopt)
 {
 	if (db_url.len == 0) {
 		LM_ERR("configuration error - no database URL is configured!\n");
@@ -370,7 +370,7 @@ static int db_checks_fixup1(void** param, int param_no)
 	return 0;
 }
 
-static int db_checks_fixup2(void** param, int param_no)
+static int db_checks_fixup2(void** param, struct fxup_opts fopt)
 {
 	if (use_uri_table && db_url.len == 0) {
 		LM_ERR("configuration error - no database URL is configured!\n");
@@ -381,7 +381,7 @@ static int db_checks_fixup2(void** param, int param_no)
 
 
 
-static int obsolete_fixup_0(void** param, int param_no) {
+static int obsolete_fixup_0(void** param, struct fxup_opts fopt) {
 
 	LM_ERR("You are using one of these obsolete functions\
 : \"check_to\", \"check_from\", \"does_uri_exist\",\"get_auth_id\".\
@@ -390,7 +390,7 @@ static int obsolete_fixup_0(void** param, int param_no) {
 	return E_CFG;
 }
 
-static int obsolete_fixup_1(void** param, int param_no) {
+static int obsolete_fixup_1(void** param, struct fxup_opts fopt) {
 
 	LM_ERR("You are using does_uri_exist function that is now obsolete. \
 If you want to use it with DB support, use db_does_uri_exist. \
@@ -399,7 +399,7 @@ If you want to use it with AAA support, use aaa_does_uri_exist.\n");
 	return E_CFG;
 }
 
-static int obsolete_fixup_2(void** param, int param_no) {
+static int obsolete_fixup_2(void** param, struct fxup_opts fopt) {
 
 	LM_ERR("You are using does_uri_user_exist function that has been renamed\
 into aaa_does_uri_user_exist.\n");
@@ -410,7 +410,7 @@ into aaa_does_uri_user_exist.\n");
 /**
  * Check proper configuration for 'get_auth_id()' and convert function parameters.
  */
-static int db_fixup_get_auth_id(void** param, int param_no)
+static int db_fixup_get_auth_id(void** param, struct fxup_opts fopt)
 {
 	pv_elem_t *model = NULL;
 	pv_spec_t *sp;
@@ -419,20 +419,20 @@ static int db_fixup_get_auth_id(void** param, int param_no)
 
 	// just to avoid doing the folowing checks multiple times
 	// currently unnecessary because only one check is done
-	//if (param_no == 1) {
+	//if (fopt.param_no == 1) {
 		if (db_url.len == 0) {
 			LM_ERR("configuration error - 'get_auth_id()' requires a configured database backend");
 			return E_CFG;
 		}
 	//}
 
-	if (param_no > 0 && param_no <= 3) {
-		switch (param_no) {
+	if (fopt.param_no > 0 && fopt.param_no <= 3) {
+		switch (fopt.param_no) {
 			case 1:		// pv which contains the sip id searched for
 				s.s = (char*) (*param);
 				s.len = strlen(s.s);
 				if (s.len == 0) {
-					LM_ERR("param %d is empty string!\n", param_no);
+					LM_ERR("param %d is empty string!\n", fopt.param_no);
 					return E_CFG;
 				}
 				if(pv_parse_format(&s ,&model) || model == NULL) {
@@ -462,7 +462,7 @@ static int db_fixup_get_auth_id(void** param, int param_no)
 	return 0;
 }
 
-static int aaa_fixup_0(void** param, int param_no) {
+static int aaa_fixup_0(void** param, struct fxup_opts fopt) {
 
 	if (!aaa_proto_url) {
 		LM_ERR("configuration error - no aaa protocol url\n");
@@ -472,14 +472,14 @@ static int aaa_fixup_0(void** param, int param_no) {
 	return 0;
 }
 
-static int aaa_fixup_1(void** param, int param_no) {
+static int aaa_fixup_1(void** param, struct fxup_opts fopt) {
 
 	if (!aaa_proto_url) {
 		LM_ERR("configuration error - no aaa protocol url\n");
 		return E_CFG;
 	}
 
-	return fixup_pvar_null(param, param_no);
+	return fixup_pvar_null(param, fopt);
 }
 
 

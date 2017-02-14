@@ -27,6 +27,7 @@
  * 2006-03-01 pseudo variables support for domain name (bogdan)
  */
 
+#include "../../sr_module.h"
 #include "../../data_lump.h"
 #include "../../mem/mem.h"
 #include "../../parser/digest/digest.h"

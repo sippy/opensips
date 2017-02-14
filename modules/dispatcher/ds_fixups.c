@@ -637,9 +637,9 @@ int fixup_get_partition_set(struct sip_msg *msg, const ds_param_t *param,
 }
 
 /* Fixup function for ds_next_dst and ds_next_domain functions */
-int ds_next_fixup(void **param, int param_no)
+int ds_next_fixup(void **param, struct fxup_opts fopt)
 {
-	if (param_no > 1) {
+	if (fopt.param_no > 1) {
 		LM_CRIT ("Too many parameters for ds_next_dst/ds_next_domain\n");
 		return -1;
 	}
@@ -648,23 +648,23 @@ int ds_next_fixup(void **param, int param_no)
 }
 
 /* Fixup function for ds_mark_dst command */
-int ds_mark_fixup(void **param, int param_no)
+int ds_mark_fixup(void **param, struct fxup_opts fopt)
 {
-	if (param_no == 1)
+	if (fopt.param_no == 1)
 		return fixup_partition(param);
-	else if (param_no == 2)
+	else if (fopt.param_no == 2)
 		return fixup_sgp(param);
 	else
 		return -1;
 }
 
 /* Fixup function for ds_is_in_list command */
-int in_list_fixup(void** param, int param_no)
+int in_list_fixup(void** param, struct fxup_opts fopt)
 {
-	if (param_no==1) {
+	if (fopt.param_no==1) {
 		/* the ip to test */
 		return fixup_sgp(param);
-	} else if (param_no==2) {
+	} else if (fopt.param_no==2) {
 		/* the port to test */
 		if (*param==NULL) {
 			return 0;
@@ -674,7 +674,7 @@ int in_list_fixup(void** param, int param_no)
 			return 0;
 		}
 		return fixup_igp(param);
-	} else if (param_no==3) {
+	} else if (fopt.param_no==3) {
 		if (fixup_partition_sets_null(param) != 0)
 			return -1;
 		int_list_t *sets = ((ds_param_t*)*param)->sets;
@@ -683,20 +683,20 @@ int in_list_fixup(void** param, int param_no)
 			return -1;
 		}
 		return 0;
-	} else if (param_no==4) {
+	} else if (fopt.param_no==4) {
 		/*  active only check ? */
 		return fixup_sint(param);
 	} else {
-		LM_CRIT("bug - too many params (%d) in is_in_list()\n",param_no);
+		LM_CRIT("bug - too many params (%d) in is_in_list()\n",fopt.param_no);
 		return -1;
 	}
 }
 
 
 /* Fixup function for ds_select_dst and ds_select_domain commands */
-int ds_select_fixup(void** param, int param_no)
+int ds_select_fixup(void** param, struct fxup_opts fopt)
 {
-	if (param_no > 3) {
+	if (fopt.param_no > 3) {
 		LM_CRIT("Too many params for ds_select_*\n");
 		return -1;
 	}
@@ -706,7 +706,7 @@ int ds_select_fixup(void** param, int param_no)
 	max_list_param_p maxlst = NULL;
 	int rc = 0;
 
-	switch (param_no) {
+	switch (fopt.param_no) {
 		case 1:
 			return fixup_partition_sets(param);
 		case 2:
@@ -724,7 +724,7 @@ int ds_select_fixup(void** param, int param_no)
 
 			if (pv_parse_format(&s, &elem)) {
 				LM_ERR("wrong format [%s] for param no %d!\n",
-						(char*)(*param), param_no);
+						(char*)(*param), fopt.param_no);
 			}
 
 			maxlst = pkg_malloc(sizeof(max_list_param_t));
@@ -753,18 +753,18 @@ int ds_select_fixup(void** param, int param_no)
 }
 
 /* Fixup function for ds_count command */
-int ds_count_fixup(void** param, int param_no)
+int ds_count_fixup(void** param, struct fxup_opts fopt)
 {
 	char *s;
 	int i, code = 0;
 
-	if (param_no > 3)
+	if (fopt.param_no > 3)
 		return 0;
 
 	s = (char *)*param;
 	i = strlen(s);
 
-	switch (param_no)
+	switch (fopt.param_no)
 	{
 		case 1:
 			return fixup_partition_one_set(param);

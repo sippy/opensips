@@ -32,6 +32,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
+#include "../../sr_module.h"
 #include "../../config.h"
 #include "../../db/db.h"
 #include "../../ip_addr.h"

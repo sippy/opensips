@@ -55,41 +55,41 @@ typedef struct _gparam
 	} v;
 } gparam_t, *gparam_p;
 
-int fixup_str_null(void** param, int param_no);
-int fixup_str_str(void** param, int param_no);
+int fixup_str_null(void** param, struct fxup_opts fopt);
+int fixup_str_str(void** param, struct fxup_opts fopt);
 
 int fixup_free_str_null(void** param, int param_no);
 int fixup_free_str_str(void** param, int param_no);
 
-int fixup_uint_null(void** param, int param_no);
-int fixup_uint_uint(void** param, int param_no);
+int fixup_uint_null(void** param, struct fxup_opts fopt);
+int fixup_uint_uint(void** param, struct fxup_opts fopt);
 
-int fixup_sint_null(void** param, int param_no);
-int fixup_sint_sint(void** param, int param_no);
+int fixup_sint_null(void** param, struct fxup_opts fopt);
+int fixup_sint_sint(void** param, struct fxup_opts fopt);
 #if 0
 int fixup_sint_uint(void** param, int param_no);
 int fixup_uint_sint(void** param, int param_no);
 #endif
 
-int fixup_regexp_null(void** param, int param_no);
-int fixup_regexp_dynamic_null(void** param, int param_no);
-int fixup_regexpNL_null(void** param, int param_no);
+int fixup_regexp_null(void** param, struct fxup_opts fopt);
+int fixup_regexp_dynamic_null(void** param, struct fxup_opts fopt);
+int fixup_regexpNL_null(void** param, struct fxup_opts fopt);
 int fixup_free_regexp_null(void** param, int param_no);
-int fixup_regexp_none(void** param, int param_no);
-int fixup_regexpNL_none(void** param, int param_no);
+int fixup_regexp_none(void** param, struct fxup_opts fopt);
+int fixup_regexpNL_none(void** param, struct fxup_opts fopt);
 int fixup_free_regexp_none(void** param, int param_no);
 int fixup_free_regexp(void** param);
 
-int fixup_pvar_null(void **param, int param_no);
+int fixup_pvar_null(void **param, struct fxup_opts fopt);
 int fixup_free_pvar_null(void** param, int param_no);
 
-int fixup_pvar_pvar(void **param, int param_no);
+int fixup_pvar_pvar(void **param, struct fxup_opts fopt);
 int fixup_free_pvar_pvar(void** param, int param_no);
 
-int fixup_pvar_str(void** param, int param_no);
+int fixup_pvar_str(void** param, struct fxup_opts fopt);
 int fixup_free_pvar_str(void** param, int param_no);
 
-int fixup_pvar_str_str(void** param, int param_no);
+int fixup_pvar_str_str(void** param, struct fxup_opts fopt);
 int fixup_free_pvar_str_str(void** param, int param_no);
 
 int fixup_igp_igp(void** param, int param_no);
@@ -100,9 +100,9 @@ int fixup_get_ivalue(struct sip_msg* msg, gparam_p gp, int *val);
 int fixup_igp_pvar_pvar(void** param, int param_no);
 int fixup_free_igp_pvar_pvar(void** param, int param_no);
 
-int fixup_spve_spve(void** param, int param_no);
-int fixup_spve_null(void** param, int param_no);
-int fixup_spve_uint(void** param, int param_no);
+int fixup_spve_spve(void** param, struct fxup_opts fopt);
+int fixup_spve_null(void** param, struct fxup_opts fopt);
+int fixup_spve_uint(void** param, struct fxup_opts fopt);
 int fixup_get_svalue(struct sip_msg* msg, gparam_p gp, str *val);
 
 int fixup_get_isvalue(struct sip_msg* msg, gparam_p gp,
@@ -117,6 +117,6 @@ int fixup_sint(void** param);
 int fixup_igp(void** param);
 
 int fixup_sgp(void** param);
-int fixup_sgp_null(void** param, int param_no);
-int fixup_sgp_sgp(void** param, int param_no);
+int fixup_sgp_null(void** param, struct fxup_opts fopt);
+int fixup_sgp_sgp(void** param, struct fxup_opts fopt);
 #endif
