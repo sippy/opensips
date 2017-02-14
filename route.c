@@ -454,7 +454,7 @@ static int fix_actions(struct action* a)
 						if (ret<0) goto error;
 					}
 					else {
-						struct fxup_opts fopt = FFF_INIT(1);
+						struct fxup_opts fopt = FXUP_OINIT(1);
 						for (; fopt.param_no<=cmd->param_no; fopt.param_no++) {
 							/* we only call the fixup for non-null arguments */
 							if (t->elem[fopt.param_no].type != NULLV_ST) {
@@ -482,7 +482,7 @@ static int fix_actions(struct action* a)
 						if (ret<0) goto error;
 					}
 					else {
-						struct fxup_opts fopt = FFF_INIT(1);
+						struct fxup_opts fopt = FXUP_OINIT(1);
 						for (; fopt.param_no<=acmd->param_no; fopt.param_no++) {
 							/* we only call the fixup for non-null arguments */
 							if (t->elem[fopt.param_no].type != NULLV_ST) {
