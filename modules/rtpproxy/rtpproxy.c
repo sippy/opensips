@@ -789,12 +789,14 @@ static int fixup_two_options(void ** param, struct fxup_opts fopt)
 
 static int fixup_stats(void ** param, struct fxup_opts fopt)
 {
-	if (fopt.param_no < 1 || fopt.param_no > 5) {
+	if (fopt.param_no < 1 || fopt.param_no > 6) {
 		LM_ERR("Too many parameters %d\n", fopt.param_no);
 		return E_CFG;
 	}
-	if (fopt.param_no == 5)
-		return fixup_set_id(param);
+	if (fopt.param_no > 4) {
+		fopt.param_no += 4;
+		return fixup_two_options(param, fopt);
+	}
 	return fixup_pvar(param);
 }
 
