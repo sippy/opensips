@@ -1193,9 +1193,12 @@ static int parse_flags(struct ng_flags_parse *ng_flags, struct sip_msg *msg,
 				break;
 
 			case 14:
-				if (str_eq(&key, "replace-origin"))
-					BCHECK(bencode_list_add_string(ng_flags->replace, "origin"));
-				else if (str_eq(&key, "address-family")) {
+				if (str_eq(&key, "replace-origin")) {
+					if (!ng_flags->replace)
+						LM_DBG("%.*s not supported for %d op\n", key.len, key.s, *op);
+					else
+						BCHECK(bencode_list_add_string(ng_flags->replace, "origin"));
+				} else if (str_eq(&key, "address-family")) {
 					err = "missing value";
 					if (!val.s)
 						goto error;
@@ -1237,9 +1240,12 @@ static int parse_flags(struct ng_flags_parse *ng_flags, struct sip_msg *msg,
 				continue;
 
 			case 26:
-				if (str_eq(&key, "replace-session-connection"))
-					BCHECK(bencode_list_add_string(ng_flags->replace, "session-connection"));
-				else
+				if (str_eq(&key, "replace-session-connection")) {
+					if (!ng_flags->replace)
+						LM_DBG("%.*s not supported for %d op\n", key.len, key.s, *op);
+					else
+						BCHECK(bencode_list_add_string(ng_flags->replace, "session-connection"));
+				} else
 					break;
 				continue;
 		}
@@ -1585,8 +1591,16 @@ send_rtpe_command(struct rtpe_node *node, bencode_item_t *dict, int *outlen)
 		/* Drain input buffer */
 		while ((poll(fds, 1, 0) == 1) &&
 		    ((fds[0].revents & POLLIN) != 0)) {
-			recv(rtpe_socks[node->idx], buf, sizeof(buf) - 1, 0);
+			if (fds[0].revents & (POLLERR|POLLNVAL|POLLHUP)) {
+				LM_WARN("error on rtpengine socket %d!\n", rtpe_socks[node->idx]);
+				break;
+			}
 			fds[0].revents = 0;
+			if (recv(rtpe_socks[node->idx], buf, sizeof(buf) - 1, 0) < 0 &&
+					errno != EINTR) {
+				LM_WARN("error while draining rtpengine %d!\n", errno);
+				break;
+			}
 		}
 		v[0].iov_base = gencookie();
 		v[0].iov_len = strlen(v[0].iov_base);

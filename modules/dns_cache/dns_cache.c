@@ -805,15 +805,22 @@ void* get_dnscache_value(char *name,int r_type,int name_len)
 }
 
 /* Pushes internal structure ( hostent or rdata ) to a cache backend
- * Params :
- * name - what query to be saved - binary IP for PTR and strings for other queries
- * r_type - type of DNS query
- * record - pointer to hostent or rdata
- * rdata_len - If rdata record, rdata_len holds the actual length of rdata buf,
-		in order to avoid double iterations on the rdata struct. If it's a
-		PTR record, rdata_len is used to differentiate between IP and IPv6
- * failure - should we blacklist or not
- * ttl - seconds the key should be kept in cache */
+ *
+ * Params:
+ *	name - what query to be saved - binary IP for PTR and strings for other queries
+ *	r_type - type of DNS query
+ *	record - pointer to hostent or rdata
+ *	rdata_len - If rdata record, rdata_len holds the actual length of rdata buf,
+ *		in order to avoid double iterations on the rdata struct. If it's a
+ *		PTR record, rdata_len is used to differentiate between IP and IPv6
+ *	failure - should we blacklist or not
+ *	ttl - seconds the key should be kept in cache
+ *
+ * Returns:
+ *	0  - sucess
+ *	1  - cache not initialized yet
+ *	-1 - internal failure
+ */
 int put_dnscache_value(char *name,int r_type,void *record,int rdata_len,
 				int failure,int ttl)
 {
@@ -822,7 +829,15 @@ int put_dnscache_value(char *name,int r_type,void *record,int rdata_len,
 
 	if (cdbc == NULL) {
 		/* assume dns request before forking - cache is not ready yet */
-		return -1;
+		return 1;
+	}
+
+	/* avoid caching records with TTL=0 */
+	if (!failure && ttl==0) {
+		/* RFC1035 states : "Zero TTL values are interpreted to mean that
+		   the RR can only be used for the transaction in progress, and
+		   should not be cached." */
+		return 1;
 	}
 
 	/* generate key */
@@ -860,7 +875,8 @@ int put_dnscache_value(char *name,int r_type,void *record,int rdata_len,
 		key_ttl = ttl;
 	}
 
-	LM_DBG("putting value [%.*s] with ttl = %d\n",key.len,key.s,key_ttl);
+	LM_INFO("putting key [%.*s] with value [%.*s] ttl = %d\n",
+		key.len,key.s,value.len,value.s,key_ttl);
 	if (cdbf.set(cdbc,&key,&value,key_ttl) < 0) {
 		LM_ERR("failed to set dns key\n");
 		return -1;

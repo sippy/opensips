@@ -36,7 +36,6 @@
 
 static struct dlg_head_cbl* create_cbs = 0;
 
-static int dlg_load_cbs_run = 0;
 static struct dlg_head_cbl* load_cbs = 0;
 
 static struct dlg_cb_params params = {NULL, DLG_DIR_NONE, NULL, NULL};
@@ -78,11 +77,6 @@ void destroy_dlg_callbacks_list(struct dlg_callback *cb)
 		}
 		shm_free(cb_t);
 	}
-}
-
-void mark_dlg_loaded_callbacks_run(void)
-{
-	dlg_load_cbs_run = 1;
 }
 
 
@@ -127,6 +121,12 @@ int register_dlgcb(struct dlg_cell *dlg, int types, dialog_cb f,
 			return -1;
 		}
 	}
+	/* XXX: do not register callbacks in DELETED state */
+	if (dlg && dlg->state == DLG_STATE_DELETED) {
+		LM_WARN("Cannot register callbacks in DELETED state (type %x)!\n", types);
+		return -1;
+	}
+
 	cb = (struct dlg_callback*)shm_malloc(sizeof(struct dlg_callback));
 	if (cb==0) {
 		LM_ERR("no more shm mem\n");
@@ -155,11 +155,9 @@ int register_dlgcb(struct dlg_cell *dlg, int types, dialog_cb f,
 		create_cbs->first = cb;
 		create_cbs->types |= types;
 	} else if (types==DLGCB_LOADED) {
-		if (dlg_load_cbs_run) {
-			/* run the callback on the spot */
-			run_load_callback(cb);
-			return 0;
-		}
+		/* run the callback on the spot */
+		run_load_callback(cb);
+		/* also insert callback in list to be able to run it later */
 		if (load_cbs==0) {
 			/* not initialized yet */
 			if ( (load_cbs=init_dlg_callback())==NULL ) {

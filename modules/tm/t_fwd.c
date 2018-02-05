@@ -515,7 +515,7 @@ int t_add_reason(struct sip_msg *msg, char *val)
 
 
 void cancel_invite(struct sip_msg *cancel_msg,
-								struct cell *t_cancel, struct cell *t_invite )
+					struct cell *t_cancel, struct cell *t_invite, int locked)
 {
 #define CANCEL_REASON_SIP_487  \
 	"Reason: SIP;cause=487;text=\"ORIGINATOR_CANCEL\"" CRLF
@@ -530,7 +530,10 @@ void cancel_invite(struct sip_msg *cancel_msg,
 	/* send back 200 OK as per RFC3261 */
 	reason.s = CANCELING;
 	reason.len = sizeof(CANCELING)-1;
-	t_reply( t_cancel, cancel_msg, 200, &reason );
+	if (locked)
+		t_reply_unsafe( t_cancel, cancel_msg, 200, &reason );
+	else
+		t_reply( t_cancel, cancel_msg, 200, &reason );
 
 	reason.s = NULL;
 	reason.len = 0;
@@ -593,7 +596,7 @@ void cancel_invite(struct sip_msg *cancel_msg,
  *      -1 - error during forward
  */
 int t_forward_nonack( struct cell *t, struct sip_msg* p_msg ,
-	struct proxy_l * proxy)
+						struct proxy_l * proxy, int reset_bcounter, int locked)
 {
 	str reply_reason_487 = str_init("Request Terminated");
 	str backup_uri;
@@ -621,7 +624,7 @@ int t_forward_nonack( struct cell *t, struct sip_msg* p_msg ,
 		t_invite=t_lookupOriginalT(  p_msg );
 		if (t_invite!=T_NULL_CELL) {
 			t_invite->flags |= T_WAS_CANCELLED_FLAG;
-			cancel_invite( p_msg, t, t_invite );
+			cancel_invite( p_msg, t, t_invite, locked );
 			return 1;
 		}
 	}
@@ -638,7 +641,10 @@ int t_forward_nonack( struct cell *t, struct sip_msg* p_msg ,
 			/* if no other signalling was performed on the transaction
 			 * and the transaction was already canceled, better
 			 * internally generate the 487 reply here */
-			t_reply( t, p_msg , 487 , &reply_reason_487);
+			if (locked)
+				t_reply_unsafe( t, p_msg , 487 , &reply_reason_487);
+			else
+				t_reply( t, p_msg , 487 , &reply_reason_487);
 		}
 		LM_INFO("discarding fwd for a cancelled transaction\n");
 		ser_error = E_NO_DESTINATION;
@@ -765,17 +771,210 @@ int t_forward_nonack( struct cell *t, struct sip_msg* p_msg ,
 			set_kr(REQ_FWDED);
 
 			/* successfully sent out -> run callbacks */
-			if ( has_tran_tmcbs( t, TMCB_REQUEST_BUILT) ) {
+			if ( has_tran_tmcbs( t, TMCB_REQUEST_BUILT|TMCB_MSG_SENT_OUT) ) {
 				set_extra_tmcb_params( &t->uac[i].request.buffer,
 					&t->uac[i].request.dst);
-				run_trans_callbacks( TMCB_REQUEST_BUILT, t, p_msg,0,
-					-p_msg->REQ_METHOD);
+				run_trans_callbacks( TMCB_REQUEST_BUILT|TMCB_MSG_SENT_OUT, t,
+					p_msg, 0, 0);
 			}
 
 		}
 	}
 
 	return (success_branch>0)?1:-1;
+}
+
+
+static int ul_contact_event_to_msg(struct sip_msg *req)
+{
+	static enum ul_attrs { UL_URI, UL_RECEIVED, UL_PATH, UL_QVAL,
+		UL_SOCKET, UL_BFLAGS, UL_MAX } ul_attr;
+	/* keep the names of the AVPs aligned with the contact-related events
+	 * from USRLOC module !!!! */
+	static str ul_names[UL_MAX]= {str_init("uri"),str_init("received"),
+	                              str_init("path"),str_init("qval"),
+	                              str_init("socket"),str_init("bflags")};
+	static int avp_ids[UL_MAX] = { -1, -1, -1, -1, -1, -1};
+	int_str vals[UL_MAX];
+	int proto, port;
+	str host;
+	str path_dst;
+
+	if (avp_ids[0]==-1) {
+		/* init the avp IDs mapping us on the UL event */
+		for( ul_attr=0 ; ul_attr<UL_MAX ; ul_attr++ ){
+			if (parse_avp_spec( &ul_names[ul_attr], &avp_ids[ul_attr])<0) {
+				LM_ERR("failed to init UL AVP %d/%s\n",
+					ul_attr,ul_names[ul_attr].s);
+				avp_ids[0] = -1;
+				return -1;
+			}
+		}
+	}
+
+	/* fetch the AVP values one by one */
+	for( ul_attr=0 ; ul_attr<UL_MAX ; ul_attr++ ) {
+		if (search_first_avp(0, avp_ids[ul_attr], &vals[ul_attr], NULL)==NULL){
+			LM_ERR("cannot find AVP(%d) for event attr %d/%s\n",
+				avp_ids[ul_attr], ul_attr, ul_names[ul_attr].s);
+			return -1;
+		}
+	}
+
+	/* OK, we have the values, lets inject them into the SIP msg */
+	LM_DBG("injecting new branch: uri=<%.*s>, received=<%.*s>,"
+		"path=<%.*s>, qval=%d, socket=<%.*s>, bflags=%X\n",
+		vals[UL_URI].s.len, vals[UL_URI].s.s,
+		vals[UL_RECEIVED].s.len, vals[UL_RECEIVED].s.s,
+		vals[UL_PATH].s.len, vals[UL_PATH].s.s,
+		vals[UL_QVAL].n,
+		vals[UL_SOCKET].s.len, vals[UL_SOCKET].s.s,
+		vals[UL_BFLAGS].n);
+
+	/* contact URI goes as RURI */
+	if (set_ruri( req, &vals[UL_URI].s)<0) {
+		LM_ERR("failed to set new RURI\n");
+		return -1;
+	}
+
+	/* contact PATH goes as path */
+	if (vals[UL_PATH].s.len) {
+		if (get_path_dst_uri(&vals[UL_PATH].s, &path_dst) < 0) {
+			LM_ERR("failed to get dst_uri for Path\n");
+			return -1;
+		}
+		if (set_dst_uri( req, &path_dst) < 0) {
+			LM_ERR("failed to set dst_uri of Path\n");
+			return -1;
+		}
+
+		if (set_path_vector( req, &vals[UL_PATH].s)<0) {
+			LM_ERR("failed to set PATH\n");
+			return -1;
+		}
+	} else
+	/* contact RECEIVED goes as DURI */
+	if (vals[UL_RECEIVED].s.len) {
+		if (set_dst_uri( req, &vals[UL_RECEIVED].s)<0) {
+			LM_ERR("failed to set DST URI\n");
+			return -1;
+		}
+	}
+
+	/* contact Qval goes as RURI Qval */
+	set_ruri_q( req, vals[UL_QVAL].n);
+
+	/* contact BFLAGS goes as RURI bflags */
+	setb0flags( req, vals[UL_BFLAGS].n);
+
+	/* socket info */
+	if (vals[UL_SOCKET].s.len) {
+		if ( parse_phostport( vals[UL_SOCKET].s.s, vals[UL_SOCKET].s.len,
+		&host.s, &host.len, &port, &proto) < 0) {
+			LM_ERR("failed to parse socket from Event attr <%.*s>\n",
+				vals[UL_SOCKET].s.len, vals[UL_SOCKET].s.s);
+		} else {
+			req->force_send_socket = grep_sock_info( &host,
+				(unsigned short)port, (unsigned short)proto);
+		}
+	}
+
+	return 0;
+}
+
+
+static int dst_to_msg(struct sip_msg *s_msg, struct sip_msg *d_msg)
+{
+	/* move RURI */
+	if (set_ruri( d_msg, GET_RURI(s_msg))<0) {
+		LM_ERR("failed to set new RURI\n");
+		return -1;
+	}
+
+	/* move DURI (empty is accepted as reset) */
+	if (set_dst_uri( d_msg, &s_msg->dst_uri)<0) {
+		LM_ERR("failed to set DST URI\n");
+		return -1;
+	}
+
+	/* move PATH  (empty is accepted as reset) */
+	if (set_path_vector( d_msg, & s_msg->path_vec)<0) {
+		LM_ERR("failed to set PATH\n");
+		return -1;
+	}
+
+	/* Qval */
+	set_ruri_q( d_msg, get_ruri_q(s_msg) );
+
+	/* BFLAGS */
+	setb0flags( d_msg, getb0flags(s_msg) );
+
+	/* socket info */
+	d_msg->force_send_socket = s_msg->force_send_socket;
+
+	return 0;
+}
+
+
+int t_inject_branch( struct cell *t, struct sip_msg *msg, int flags)
+{
+	static struct sip_msg faked_req;
+	branch_bm_t cancel_bm;
+	str reason = str_init(CANCEL_REASON_200);
+	int rc;
+
+	/* does the transaction state still accept new branches ? */
+	if (t->uas.status >= 200) {
+		LM_DBG("cannot add branches to a transaction with %d UAS\n",
+			t->uas.status);
+		return -2;
+	}
+
+	if (!fake_req( &faked_req, t->uas.request, &t->uas, NULL, 0)) {
+		LM_ERR("fake_req failed\n");
+		return -1;
+	}
+
+	/* do we have the branches to be injected ? */
+	if (flags&TM_INJECT_SRC_EVENT) {
+		/* get the branch from Event AVPs, as populated by EVI/EBR */
+		if (ul_contact_event_to_msg( &faked_req )<0) {
+			LM_ERR("failed to grab new branch from Event\n");
+			goto error;
+		}
+	} else {
+		/* use the dset array, but fetch the first branch for script msg 
+		 * into the faked msg (that will be used by inject function) */
+		if (dst_to_msg( msg, &faked_req )<0) {
+			LM_ERR("failed to grab new branch from Event\n");
+			goto error;
+		}
+	}
+
+	/* do we have to cancel the existing branches before injecting new ones? */
+	if (flags&TM_INJECT_FLAG_CANCEL) {
+		which_cancel( t, &cancel_bm );
+	}
+
+	/* generated the new branches, without branch counter reset */
+	rc = t_forward_nonack( t, &faked_req , NULL, 0, 1/*locked*/ );
+
+	/* do we have to cancel the existing branches before injecting new ones? */
+	if (flags&TM_INJECT_FLAG_CANCEL) {
+		set_cancel_extra_hdrs( reason.s, reason.len);
+		cancel_uacs( t, cancel_bm );
+		set_cancel_extra_hdrs( NULL, 0);
+	}
+
+	/* cleanup the faked request */
+	free_faked_req( &faked_req, t);
+
+	return (rc==1)?1:-3;
+
+error:
+	/* cleanup the faked request */
+	free_faked_req( &faked_req, t);
+	return -1;
 }
 
 
@@ -821,7 +1020,7 @@ int t_replicate(struct sip_msg *p_msg, str *dst, int flags)
 
 		t->flags|=T_IS_LOCAL_FLAG;
 
-		return t_forward_nonack( t, p_msg, NULL );
+		return t_forward_nonack( t, p_msg, NULL, 1/*reset*/, 0/*unlocked*/);
 	}
 }
 

@@ -334,7 +334,7 @@ int cachedb_remove(str* cachedb_name, str* attr)
 
 	con = cachedb_get_connection(cde,&grp_name);
 	if (con == NULL) {
-		LM_ERR("failed to get connection for grp name [%.*s]\n",
+		LM_ERR("failed to get connection for grp name [%.*s] : check db_url\n",
 				grp_name.len,grp_name.s);
 		return -1;
 	}
@@ -387,7 +387,7 @@ int cachedb_store(str* cachedb_name, str* attr, str* val,int expires)
 
 	con = cachedb_get_connection(cde,&grp_name);
 	if (con == NULL) {
-		LM_ERR("failed to get connection for grp name [%.*s]\n",
+		LM_ERR("failed to get connection for grp name [%.*s] : check db_url\n",
 				grp_name.len,grp_name.s);
 		return -1;
 	}
@@ -440,7 +440,7 @@ int cachedb_fetch(str* cachedb_name, str* attr, str* val)
 
 	con = cachedb_get_connection(cde,&grp_name);
 	if (con == NULL) {
-		LM_ERR("failed to get connection for grp name [%.*s]\n",
+		LM_ERR("failed to get connection for grp name [%.*s] : check db_url\n",
 				grp_name.len,grp_name.s);
 		return -1;
 	}
@@ -493,7 +493,7 @@ int cachedb_counter_fetch(str* cachedb_name, str* attr, int* val)
 
 	con = cachedb_get_connection(cde,&grp_name);
 	if (con == NULL) {
-		LM_ERR("failed to get connection for grp name [%.*s]\n",
+		LM_ERR("failed to get connection for grp name [%.*s] : check db_url\n",
 				grp_name.len,grp_name.s);
 		return -1;
 	}
@@ -552,7 +552,7 @@ int cachedb_add(str* cachedb_name, str* attr, int val,int expires,int *new_val)
 
 	con = cachedb_get_connection(cde,&grp_name);
 	if (con == NULL) {
-		LM_ERR("failed to get connection for grp name [%.*s]\n",
+		LM_ERR("failed to get connection for grp name [%.*s] : check db_url\n",
 				grp_name.len,grp_name.s);
 		return -1;
 	}
@@ -611,7 +611,7 @@ int cachedb_sub(str* cachedb_name, str* attr, int val,int expires,int *new_val)
 
 	con = cachedb_get_connection(cde,&grp_name);
 	if (con == NULL) {
-		LM_ERR("failed to get connection for grp name [%.*s]\n",
+		LM_ERR("failed to get connection for grp name [%.*s] : check db_url\n",
 				grp_name.len,grp_name.s);
 		return -1;
 	}
@@ -664,8 +664,10 @@ cachedb_con* cachedb_do_init(str *url,void* (*new_connection)(struct cachedb_id 
 		}
 
 		cachedb_pool_insert((cachedb_pool_con *)con);
-	} else
+	} else {
 		LM_DBG("connection already in pool\n");
+		free_cachedb_id(id);
+	}
 
 	res->data = con;
 	return res;
@@ -742,7 +744,7 @@ int cachedb_raw_query(str* cachedb_name, str* attr, cdb_raw_entry*** reply,int e
 
 	con = cachedb_get_connection(cde,&grp_name);
 	if (con == NULL) {
-		LM_ERR("failed to get connection for grp name [%.*s]\n",
+		LM_ERR("failed to get connection for grp name [%.*s] : check db_url\n",
 				grp_name.len,grp_name.s);
 		return -1;
 	}

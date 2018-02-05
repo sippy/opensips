@@ -1252,7 +1252,18 @@ inline static int w_t_relay( struct sip_msg  *p_msg , char *proxy, char *flags)
 		if (route_type==REQUEST_ROUTE)
 			update_cloned_msg_from_msg( t->uas.request, p_msg);
 
-		ret = t_forward_nonack( t, p_msg, p);
+		if (route_type==FAILURE_ROUTE) {
+			/* If called from failure route we need reset the branch counter to
+			 * ignore the previous set of branches (already terminated) */
+			ret = t_forward_nonack( t, p_msg, p, 1/*reset*/,1/*locked*/);
+		} else {
+			/* if called from request route and the transaction was previously
+			 * created, better lock here to avoid any overlapping with 
+			 * branch injection from other processes */
+			LOCK_REPLIES(t);
+			ret = t_forward_nonack( t, p_msg, p, 1/*reset*/,1/*locked*/);
+			UNLOCK_REPLIES(t);
+		}
 		if (ret<=0 ) {
 			LM_ERR("t_forward_nonack failed\n");
 			ret = t_relay_inerr2scripterr();

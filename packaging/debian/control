@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Răzvan Crainea <razvan@opensips.org>
 Build-Depends: bison,
                debhelper (>= 9),
-               default-libmysqlclient-dev,
+               default-libmysqlclient-dev | libmysqlclient-dev,
                dh-systemd (>= 1.5),
                dpkg-dev (>= 1.16.1.1),
                flex,
@@ -19,18 +19,19 @@ Build-Depends: bison,
                liblua5.1-0-dev,
                libmemcached-dev,
                libmicrohttpd-dev,
-               libbson-dev,
-               libmongoc-dev,
+               libbson-dev | base-files (<< 9.4),
+               libmongoc-dev | base-files (<< 9.4),
                libncurses5-dev,
                libpcre3-dev,
                libperl-dev,
                libpq-dev,
                librabbitmq-dev,
-               libradcli-dev,
+               libradcli-dev | libfreeradius-client-dev,
                libsctp-dev [linux-any],
                libsnmp-dev,
                libsqlite3-dev,
                libssl-dev,
+               lsb-release,
                libxml2-dev,
                pkg-config,
                python,
@@ -116,8 +117,7 @@ Description: very fast and configurable SIP server [debug symbols]
 Package: opensips-mysql-module
 Architecture: any
 Multi-Arch: same
-Depends: default-mysql-client | virtual-mysql-client,
-         opensips (= ${binary:Version}),
+Depends: opensips (= ${binary:Version}),
          ${misc:Depends},
          ${shlibs:Depends}
 Description: MySQL database connectivity module for OpenSIPS

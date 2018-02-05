@@ -54,17 +54,6 @@ makefile_defs=0
 DEFS:= $(DEFS_EXTRA_OPTS)
 DEBUG_PARSER?=
 
-# json libs check
-ifeq ($(JSONPATH),)
-ifneq ("$(wildcard /usr/include/json-c/json.h)","")
-DEFS += -I/usr/include/json-c
-else
-DEFS += -I/usr/include/json
-endif
-else
-DEFS += -I$(JSONPATH)
-endif
-
 # create the template only if the file is not yet created
 ifeq (,$(wildcard Makefile.conf))
 $(shell cp Makefile.conf.template Makefile.conf)
@@ -432,22 +421,17 @@ bin:
 deb-orig-tar: tar
 	mv "$(NAME)-$(RELEASE)_src".tar.gz ../$(NAME)_$(RELEASE).orig.tar.gz
 
-.PHONY: deb-%
-deb-%:
+.PHONY: deb
+deb:
 	rm -rf debian
 	# dpkg-source cannot use links for debian source
-	cp -r packaging/debian/common debian
-	[ "$@" = "deb-common" ] || cp -r packaging/debian/$(@:deb-%=%)/* debian
+	cp -r packaging/debian debian
 	dpkg-buildpackage \
 		-I.git -I.gitignore \
 		-I*.swp -I*~ \
 		-i\\.git\|debian\|^\\.\\w+\\.swp\|lex\\.yy\\.c\|cfg\\.tab\\.\(c\|h\)\|\\w+\\.patch \
 		-rfakeroot -tc $(DEBBUILD_EXTRA_OPTIONS)
 	rm -rf debian
-
-.PHONY: deb
-deb: deb-$(DEBIAN_VERSION)
-
 
 .PHONY: sunpkg
 sunpkg:

@@ -118,8 +118,8 @@
 			If, for example, you have <emphasis>window_size</emphasis>=
 			<emphasis>slot_period</emphasis>=1 second, then after each second
 			you shall lose the call count, but if you set the
-			<emphasis>slot_period</emphasis> to 100 microseconds, then when your
-			call will be outside the window, the calls in the first 100 microseconds
+			<emphasis>slot_period</emphasis> to 100 milliseconds, then when your
+			call will be outside the window, the calls in the first 100 milliseconds
 			shall be dropped, and the rest in the next 900 shall be kept.
 		</para>
 	</section>
@@ -234,6 +234,7 @@ modparam("ratelimit", "timer_interval", 5)
 		<title><varname>expire_time</varname> (integer)</title>
 		<para>
 		This parameter specifies how long a pipe should be kept in memory
+		after it becomes idle (no more operations are performed on the pipe)
 		until deleted.
 		</para>
 		<para>
@@ -501,7 +502,7 @@ modparam("ratelimit", "window_size", 5)
         <section>
 		<title><varname>slot_period</varname> (int)</title>
 		<para>
-			Value of one slot in microseconds. This parameter determines
+			Value of one slot in milliseconds. This parameter determines
 		how granular the algorithm should be. The number of slots will be
 		determined by window_size/slot_period.
 		</para>
@@ -515,7 +516,7 @@ modparam("ratelimit", "window_size", 5)
 		<programlisting format="linespecific">
 ...
 modparam("ratelimit", "window_size", 5)
-#we will have 50 slots of 100 microseconds
+#we will have 50 slots of 100 milliseconds
 modparam("ratelimit", "slot_period", 100)
 ...
 </programlisting>
@@ -541,6 +542,13 @@ modparam("ratelimit", "slot_period", 100)
 		<para>
 		NOTE: A pipe's algorithm cannot be dynamically changed. Only the one
 		specified when the pipe was created will be considered.
+		</para>
+		<para>
+		NOTE: This function increments the pipe's couter every time it is
+		called, even if the call should be declined. Therefore If you are using
+		ratelimit to limit only successful traffic, you need to explicitely
+		decrease the counter for the declined calls using the
+		<emphasis>rl_dec_count()</emphasis> function.
 		</para>
 		<para>
 		The method will return an error code if the limit for the
@@ -592,6 +600,13 @@ modparam("ratelimit", "slot_period", 100)
 	# use default algorithm for each different gateway
 	$var(limit) = 10;
 	if (!rl_check("gw_$ru", "$var(limit)")) {
+		sl_send_reply("503", "Server Unavailable");
+		exit;
+	};
+...
+	# count only successful calls
+	if (!rl_check("gw_$ru", "100")) {
+		rl_dec_count("gw_$ru");
 		sl_send_reply("503", "Server Unavailable");
 		exit;
 	};

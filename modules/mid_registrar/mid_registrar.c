@@ -36,6 +36,7 @@
 #include "../../timer.h"
 #include "../../mod_fix.h"
 #include "../../data_lump.h"
+#include "../../rw_locking.h"
 
 #include "mid_registrar.h"
 #include "save.h"
@@ -64,6 +65,10 @@ str expires_param = str_init("expires");
 struct usrloc_api ul_api;
 struct tm_binds tm_api;
 struct sig_binds sig_api;
+
+/* specifically used to mutually exclude concurrent calls of the
+ * TMCB_RESPONSE_IN callback, upon SIP 200 OK retransmissions */
+rw_lock_t *tm_retrans_lk;
 
 int default_expires = 3600; /*!< Default expires value in seconds */
 int min_expires     = 10;   /*!< Minimum expires the phones are allowed to use
@@ -122,12 +127,14 @@ static int registrar_fixup(void** param, int param_no);
  */
 enum mid_reg_mode reg_mode = MID_REG_MIRROR;
 
-unsigned int outgoing_expires = 600;
+unsigned int outgoing_expires = 3600;
 
 #define is_matching_mode(v) (v == MATCH_BY_PARAM || v == MATCH_BY_USER)
 #define matching_mode_str(v) (v == MATCH_BY_PARAM ? "by uri param" : "by user")
 
 enum mid_reg_insertion_mode   insertion_mode  = INSERT_BY_CONTACT;
+
+//TODO: remove the Path-based mid-registrar logic starting with OpenSIPS 2.4
 enum mid_reg_matching_mode  matching_mode = MATCH_BY_PARAM;
 
 /*
@@ -157,7 +164,9 @@ static cmd_export_t cmds[] = {
 
 static param_export_t mod_params[] = {
 	{ "mode",                 INT_PARAM, &reg_mode },
+	{ "default_expires",      INT_PARAM, &default_expires },
 	{ "min_expires",          INT_PARAM, &min_expires },
+	{ "max_expires",          INT_PARAM, &max_expires },
 	{ "default_q",            INT_PARAM, &default_q },
 	{ "tcp_persistent_flag",  INT_PARAM, &tcp_persistent_flag },
 	{ "tcp_persistent_flag",  STR_PARAM, &tcp_persistent_flag_s },
@@ -171,7 +180,6 @@ static param_export_t mod_params[] = {
 	{ "disable_gruu",         INT_PARAM, &disable_gruu },
 	{ "outgoing_expires",     INT_PARAM, &outgoing_expires },
 	{ "insertion_mode",       INT_PARAM, &insertion_mode },
-	{ "contact_match_mode",   INT_PARAM, &matching_mode },
 	{ "contact_match_param",  STR_PARAM, &matching_param.s },
 	{ 0,0,0 }
 };
@@ -261,9 +269,6 @@ static int registrar_fixup(void** param, int param_no)
 
 static int mod_init(void)
 {
-	str s;
-	pv_spec_t avp_spec;
-
 	if (load_ul_api(&ul_api) < 0) {
 		LM_ERR("failed to load user location API\n");
 		return -1;
@@ -300,6 +305,18 @@ static int mod_init(void)
 		LM_DBG("contact matching mode: '%s'\n", matching_mode_str(matching_mode));
 	}
 
+	if (min_expires > default_expires) {
+		LM_ERR("min_expires > default_expires! "
+		       "Decreasing min_expires to %d...\n", default_expires);
+		min_expires = default_expires;
+	}
+
+	if (max_expires < default_expires) {
+		LM_ERR("max_expires < default_expires! "
+		       "Increasing max_expires to %d...\n", default_expires);
+		max_expires = default_expires;
+	}
+
 	/* Normalize default_q parameter */
 	if (default_q != Q_UNSPECIFIED) {
 		if (default_q > MAX_Q) {
@@ -315,24 +332,6 @@ static int mod_init(void)
 	 * Import use_domain parameter from usrloc
 	 */
 	reg_use_domain = ul_api.use_domain;
-
-	if (rcv_avp_param && *rcv_avp_param) {
-		s.s = rcv_avp_param; s.len = strlen(s.s);
-		if (pv_parse_spec(&s, &avp_spec)==0
-				|| avp_spec.type!=PVT_AVP) {
-			LM_ERR("malformed or non AVP %s AVP definition\n", rcv_avp_param);
-			return -1;
-		}
-
-		if(pv_get_avp_name(0, &avp_spec.pvp, &rcv_avp_name, &rcv_avp_type)!=0)
-		{
-			LM_ERR("[%s]- invalid AVP definition\n", rcv_avp_param);
-			return -1;
-		}
-	} else {
-		rcv_avp_name = -1;
-		rcv_avp_type = 0;
-	}
 
 	rcv_param.len = strlen(rcv_param.s);
 
@@ -384,6 +383,12 @@ static int mod_init(void)
 		return -1;
 	}
 
+	tm_retrans_lk = lock_init_rw();
+	if (!tm_retrans_lk) {
+		LM_ERR("oom\n");
+		return -1;
+	}
+
 	return 0;
 }
 
@@ -397,9 +402,70 @@ struct mid_reg_info *get_ct(void)
 	return __info;
 }
 
+struct mid_reg_info *mri_alloc(void)
+{
+	struct mid_reg_info *new;
 
+	new = shm_malloc(sizeof *new);
+	if (!new) {
+		LM_ERR("oom\n");
+		return NULL;
+	}
+	memset(new, 0, sizeof *new);
+
+	new->tm_lock = lock_init_rw();
+	if (!new->tm_lock) {
+		shm_free(new);
+		LM_ERR("oom\n");
+		return NULL;
+	}
+
+	INIT_LIST_HEAD(&new->ct_mappings);
+
+	return new;
+}
+
+struct mid_reg_info *mri_dup(struct mid_reg_info *mri)
+{
+	struct mid_reg_info *new;
+
+	new = mri_alloc();
+	if (!new)
+		return NULL;
+
+	new->reg_flags = mri->reg_flags;
+	new->last_cseq = mri->last_cseq;
+
+	if (mri->aor.s)
+		shm_str_dup(&new->aor, &mri->aor);
+
+	if (mri->from.s)
+		shm_str_dup(&new->from, &mri->from);
+
+	if (mri->to.s)
+		shm_str_dup(&new->to, &mri->to);
+
+	if (mri->callid.s)
+		shm_str_dup(&new->callid, &mri->callid);
+
+	if (mri->ct_uri.s)
+		shm_str_dup(&new->ct_uri, &mri->ct_uri);
+
+	if (mri->main_reg_uri.s)
+		shm_str_dup(&new->main_reg_uri, &mri->main_reg_uri);
+
+	if (mri->main_reg_next_hop.s)
+		shm_str_dup(&new->main_reg_next_hop, &mri->main_reg_next_hop);
+
+	return new;
+}
+
+extern void free_ct_mappings(struct list_head *mappings);
 void mri_free(struct mid_reg_info *mri)
 {
+	if (!mri)
+		return;
+
 	LM_DBG("aor: '%.*s' %p\n", mri->aor.len, mri->aor.s, mri->aor.s);
 	LM_DBG("from: '%.*s' %p\n", mri->from.len, mri->from.s, mri->from.s);
 	LM_DBG("to: '%.*s' %p\n", mri->to.len, mri->to.s, mri->to.s);
@@ -408,23 +474,32 @@ void mri_free(struct mid_reg_info *mri)
 	       mri->main_reg_uri.s);
 	LM_DBG("ct_uri: '%.*s' %p\n", mri->ct_uri.len, mri->ct_uri.s, mri->ct_uri.s);
 
-	if (mri->aor.s)
-		shm_free(mri->aor.s);
+	shm_free(mri->aor.s);
+	shm_free(mri->from.s);
+	shm_free(mri->to.s);
+	shm_free(mri->callid.s);
 
-	if (mri->from.s)
-		shm_free(mri->from.s);
-
-	if (mri->to.s)
-		shm_free(mri->to.s);
-
-	if (mri->callid.s)
-		shm_free(mri->callid.s);
+	lock_destroy_rw(mri->tm_lock);
 
 	if (mri->main_reg_uri.s)
 		shm_free(mri->main_reg_uri.s);
 
+	if (mri->main_reg_next_hop.s)
+		shm_free(mri->main_reg_next_hop.s);
+
 	if (mri->ct_uri.s)
 		shm_free(mri->ct_uri.s);
+
+	if (mri->user_agent.s)
+		shm_free(mri->user_agent.s);
+
+	if (mri->path.s)
+		shm_free(mri->path.s);
+
+	if (mri->path_received.s)
+		shm_free(mri->path_received.s);
+
+	free_ct_mappings(&mri->ct_mappings);
 
 #ifdef EXTRA_DEBUG
 	memset(mri, 0, sizeof *mri);

@@ -64,7 +64,7 @@ static int pv_parse_idx_cgr(pv_spec_p sp, str *in);
 static int pv_get_cgr_reply(struct sip_msg *msg, pv_param_t *param,
 		pv_value_t *val);
 
-LIST_HEAD(cgrates_engines);
+OSIPS_LIST_HEAD(cgrates_engines);
 
 static cmd_export_t cmds[] = {
 	{"cgrates_acc", (cmd_function)w_cgr_acc, 0, fixup_cgrates_acc, 0,
@@ -273,8 +273,7 @@ static int child_init(int rank)
 				cgrc_start_listen(c);
 		}
 	}
-
-	return 0;
+	return cgr_init_common();
 }
 
 

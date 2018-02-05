@@ -1371,7 +1371,6 @@ int do_action(struct action* a, struct sip_msg* msg)
 				spec = (pv_spec_t*)a->elem[2].u.data;
 				if (pv_set_value(msg, spec, 0, &val) < 0) {
 					LM_ERR("cannot set the variable value\n");
-					pkg_free(aux.s);
 					return -1;
 				}
 			}
@@ -1607,9 +1606,10 @@ next_avp:
 			script_trace("core", "xdbg", msg, a->file, a->line) ;
 			if (a->elem[0].type == SCRIPTVAR_ELEM_ST)
 			{
-				if (xdbg(msg, a->elem[0].u.data, val.rs.s) < 0)
+				ret = xdbg(msg, a->elem[0].u.data, val.rs.s);
+				if (ret < 0)
 				{
-					LM_ALERT("Cannot print message\n");
+					LM_ERR("error while printing xdbg message\n");
 					break;
 				}
 			}
@@ -1635,9 +1635,10 @@ next_avp:
 					ret=E_BUG;
 					break;
 				}
-				if (xlog_2(msg,a->elem[0].u.data, a->elem[1].u.data) < 0)
+				ret = xlog_2(msg,a->elem[0].u.data, a->elem[1].u.data);
+				if (ret < 0)
 				{
-					LM_ALERT("Cannot print xlog debug message\n");
+					LM_ERR("error while printing xlog message\n");
 					break;
 				}
 			}
@@ -1649,9 +1650,10 @@ next_avp:
 					ret=E_BUG;
 					break;
 				}
-				if (xlog_1(msg,a->elem[0].u.data, val.rs.s) < 0)
+				ret = xlog_1(msg,a->elem[0].u.data, val.rs.s);
+				if (ret < 0)
 				{
-					LM_ALERT("Cannot print xlog debug message\n");
+					LM_ERR("error while printing xlog message\n");
 					break;
 				}
 			}

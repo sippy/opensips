@@ -202,9 +202,9 @@ Chapter 1. Admin Guide
    should be. The number of slots will be window_size/slot_period.
    If, for example, you have window_size= slot_period=1 second,
    then after each second you shall lose the call count, but if
-   you set the slot_period to 100 microseconds, then when your
+   you set the slot_period to 100 milliseconds, then when your
    call will be outside the window, the calls in the first 100
-   microseconds shall be dropped, and the rest in the next 900
+   milliseconds shall be dropped, and the rest in the next 900
    shall be kept.
 
 1.3.4. Network Algorithm (NETWORK)
@@ -283,7 +283,8 @@ modparam("ratelimit", "timer_interval", 5)
 1.6.2. expire_time (integer)
 
    This parameter specifies how long a pipe should be kept in
-   memory until deleted.
+   memory after it becomes idle (no more operations are performed
+   on the pipe) until deleted.
 
    Default value is 3600.
 
@@ -441,7 +442,7 @@ modparam("ratelimit", "window_size", 5)
 
 1.6.15. slot_period (int)
 
-   Value of one slot in microseconds. This parameter determines
+   Value of one slot in milliseconds. This parameter determines
    how granular the algorithm should be. The number of slots will
    be determined by window_size/slot_period.
 
@@ -450,7 +451,7 @@ modparam("ratelimit", "window_size", 5)
    Example 1.15. Set slot_period parameter
 ...
 modparam("ratelimit", "window_size", 5)
-#we will have 50 slots of 100 microseconds
+#we will have 50 slots of 100 milliseconds
 modparam("ratelimit", "slot_period", 100)
 ...
 
@@ -466,6 +467,12 @@ modparam("ratelimit", "slot_period", 100)
 
    NOTE: A pipe's algorithm cannot be dynamically changed. Only
    the one specified when the pipe was created will be considered.
+
+   NOTE: This function increments the pipe's couter every time it
+   is called, even if the call should be declined. Therefore If
+   you are using ratelimit to limit only successful traffic, you
+   need to explicitely decrease the counter for the declined calls
+   using the rl_dec_count() function.
 
    The method will return an error code if the limit for the
    matched pipe is reached.
@@ -499,6 +506,13 @@ m
         # use default algorithm for each different gateway
         $var(limit) = 10;
         if (!rl_check("gw_$ru", "$var(limit)")) {
+                sl_send_reply("503", "Server Unavailable");
+                exit;
+        };
+...
+        # count only successful calls
+        if (!rl_check("gw_$ru", "100")) {
+                rl_dec_count("gw_$ru");
                 sl_send_reply("503", "Server Unavailable");
                 exit;
         };

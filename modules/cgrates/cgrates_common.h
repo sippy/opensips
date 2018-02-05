@@ -22,18 +22,7 @@
 #ifndef _CGRATES_COMMON_H_
 #define _CGRATES_COMMON_H_
 
-#include <json.h>
-
-#if JSON_LIB_VERSION < 10
-static inline int json_object_object_get_ex(struct json_object* jso,
-		const char *key, struct json_object **value)
-{
-	struct json_object *val = json_object_object_get(jso, key);
-	if (value)
-		*value = val;
-	return val != NULL;
-}
-#endif
+#include "../../lib/json/opensips_json_c_helper.h"
 
 #include "../../lib/list.h"
 #include "../../str.h"
@@ -103,6 +92,9 @@ struct cgr_msg {
 	json_object *msg;
 	json_object *params;
 };
+
+/* init common variables */
+int cgr_init_common(void);
 
 /* message builder */
 int cgrates_set_reply(int type, int_str *value);

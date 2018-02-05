@@ -20,6 +20,7 @@
  */
 
 #include <string.h>
+#include <stdlib.h>
 #include "../../dprint.h"
 #include "../../str.h"
 #include "../../async.h"
@@ -149,6 +150,29 @@ int cgrates_set_reply(int type, int_str *value)
 	return 0;
 }
 
+static int cgr_id_index = 0;
+
+int cgr_init_common(void)
+{
+	/*
+	 * the format is 'rand | my_pid'
+	 * rand is (int) - (unsigned short) long
+	 * my_pid is (short) long
+	 */
+	cgr_id_index = my_pid() & USHRT_MAX;
+	cgr_id_index |= rand() << sizeof(unsigned short);
+
+	return 0;
+}
+
+
+static inline int cgr_unique_id(void)
+{
+	cgr_id_index += (1 << sizeof(unsigned short));
+	/* make sure we always return something positive */
+	return cgr_id_index < 0 ? -cgr_id_index : cgr_id_index;
+}
+
 #define JSON_CHECK(_c, _s) \
 	do { \
 		if (!(_c)) { \
@@ -170,6 +194,9 @@ struct cgr_msg *cgr_get_generic_msg(str *method, struct cgr_session *s)
 	JSON_CHECK(cmsg.msg, "new json object");
 	JSON_CHECK(jtmp = json_object_new_string_len(method->s, method->len), "method");
 	json_object_object_add(cmsg.msg,"method", jtmp);
+
+	JSON_CHECK(jtmp = json_object_new_int(cgr_unique_id()), "id");
+	json_object_object_add(cmsg.msg, "id", jtmp);
 
 	JSON_CHECK(jarr = json_object_new_array(), "params array");
 	json_object_object_add(cmsg.msg,"params", jarr);
@@ -557,13 +584,7 @@ reprocess:
 		/* we do not release the context yet */
 		return 1;
 	} else if (jerr != json_tokener_success) {
-		LM_ERR("Unable to parse json: %s\n",
-#if JSON_LIB_VERSION >= 10
-				json_tokener_error_desc(jerr)
-#else
-				json_tokener_errors[(unsigned long)jerr]
-#endif
-			  );
+		LM_ERR("Unable to parse json: %s\n", json_tokener_error_desc(jerr));
 		goto disable;
 	}
 	/* now we need to see if there are any other bytes to read */

@@ -813,15 +813,15 @@ static int mod_init(void)
 
 	/* we are only interested in these parameters if the cachedb url was defined */
 	if (cdb_url.s) {
+		cdb_val_prefix.len = strlen(cdb_val_prefix.s);
+		cdb_noval_prefix.len = strlen(cdb_noval_prefix.s);
+		cdb_size_prefix.len = strlen(cdb_size_prefix.s);
 		cdb_url.len = strlen(cdb_url.s);
+
 		if (init_cachedb_utils() <0) {
 			LM_ERR("cannot init cachedb utils\n");
 			return -1;
 		}
-
-		cdb_val_prefix.len = strlen(cdb_val_prefix.s);
-		cdb_noval_prefix.len = strlen(cdb_noval_prefix.s);
-		cdb_size_prefix.len = strlen(cdb_size_prefix.s);
 	}
 
 	/* allocate a slot in the processing context */
@@ -905,14 +905,11 @@ static int mod_init(void)
 		return -1;
 	}
 
-	if (accept_replicated_dlg) {
-		no_accept_clusters++;
-		accept_clusters_ids[0] = accept_replicated_dlg;
-	}
-	if (accept_repl_profiles) {
-		no_accept_clusters++;
-		accept_clusters_ids[1] = accept_repl_profiles;
-	}
+	if (accept_replicated_dlg)
+		accept_clusters_ids[no_accept_clusters++] = accept_replicated_dlg;
+
+	if (accept_repl_profiles)
+		accept_clusters_ids[no_accept_clusters++] = accept_repl_profiles;
 
 	if (no_accept_clusters && accept_replicated_dlg == accept_repl_profiles)
 		no_accept_clusters = 1;
@@ -1005,10 +1002,8 @@ static int mod_init(void)
 			LM_ERR("failed to initialize the DB support\n");
 			return -1;
 		}
-		run_load_callbacks();
 	}
 
-	mark_dlg_loaded_callbacks_run();
 	destroy_cachedb(0);
 	
 	return 0;
@@ -1880,7 +1875,7 @@ int pv_set_dlg_timeout(struct sip_msg *msg, pv_param_t *param,
 		/* store it until we match the dialog */
 		ctx_timeout_set( timeout );
 	} else {
-		LM_CRIT("BUG - no proicessing context found !\n");
+		LM_CRIT("BUG - no processing context found!\n");
 		return -1;
 	}
 
