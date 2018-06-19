@@ -21,6 +21,7 @@ Robert-Vladut Patrascu
 
               1.3.1. param_subfield_separator (str)
               1.3.2. isup_mime_str (str)
+              1.3.3. country_code (str)
 
         1.4. Exported Functions
 
@@ -43,10 +44,11 @@ Robert-Vladut Patrascu
 
    1.1. Set param_subfield_separator parameter
    1.2. Set isup_mime_str parameter
-   1.3. add_isup_part usage
-   1.4. isup_param usage
-   1.5. isup_param_str usage
-   1.6. isup_msg_type usage
+   1.3. Set country_code parameter
+   1.4. add_isup_part usage
+   1.5. isup_param usage
+   1.6. isup_param_str usage
+   1.7. isup_msg_type usage
 
 Chapter 1. Admin Guide
 
@@ -105,6 +107,23 @@ modparam("sip_i", "param_subfield_separator", ":")
 ...
 modparam("sip_i", "isup_mime_str", "application/ISUP;base=itu-t92+;versi
 on=itu-t")
+...
+
+
+1.3.3. country_code (str)
+
+   Country Code that the first part of the number from
+   P-Asserted-Identity is tested against when trying to map the
+   Calling Party Number ISUP parameter from SIP by default. If
+   there is a match, the value assigned to the Nature of Address
+   Indicator subfield is 3(national), otherwise it is
+   4(international).
+
+   Default value is "+1".
+
+   Example 1.3. Set country_code parameter
+...
+modparam("sip_i", "country_code", "+4")
 ...
 
 
@@ -169,7 +188,7 @@ on=itu-t")
    This function can be used from
    REQUEST_ROUTE,FAILURE_ROUTE,ONREPLY_ROUTE,LOCAL_ROUTE.
 
-   Example 1.3. add_isup_part usage
+   Example 1.4. add_isup_part usage
 ...
 if ($rs == "183") {
         # Encapsulate a CPG
@@ -231,7 +250,7 @@ if ($rs == "183") {
    For more information on supported subfields and aliases check
    Section 1.6, “ISUP parameter subfields and string aliases”.
 
-   Example 1.4. isup_param usage
+   Example 1.5. isup_param usage
 ...
         $isup_param(Called Party Number | Nature of address indicator) =
  3;
@@ -267,7 +286,7 @@ SDN";
      * subfield_name - name of the subfield of the ISUP parameter
        as it appears in ITU-T Rec. Q.763
 
-   Example 1.5. isup_param_str usage
+   Example 1.6. isup_param_str usage
 ...
         # may print: "NOA is: national"
         xlog("NOA is: $isup_param_str(Called Party Number|Nature of addr
@@ -286,7 +305,7 @@ ators)");
 
    Read-only variable, returns the ISUP message type as string.
 
-   Example 1.6. isup_msg_type usage
+   Example 1.7. isup_msg_type usage
 ...
         # may print: "ISUP msg is: Initial address"
         xlog("ISUP msg is: $isup_msg_type");
@@ -438,7 +457,7 @@ ators)");
      * Optional Backward Call Indicators
           + In-band information indicator
                o no indication- 0
-               o available - 2
+               o available - 1
           + Call diversion may occur indicator
                o no indication - 0
                o call diversion - 1
@@ -469,6 +488,54 @@ ators)");
                o user - 0
                o network - 1
           + Address signal
+     * Original Called Number
+          + Odd/even indicator
+               o even - 0
+               o odd - 1
+          + Nature of address indicator
+               o subscriber - 1
+               o unknown - 2
+               o national - 3
+               o international - 4
+          + Numbering plan indicator
+               o ISDN - 1
+               o Data - 3
+               o Telex - 4
+          + Address presentation restricted indicator
+               o allowed - 0
+               o restricted - 1
+               o not available - 2
+               o reserved - 3
+     * Redirecting Number - same as Original Called Number
+     * Redirection Number - same as Called Party Number
+     * Redirection information
+          + Redirecting indicator
+               o no redirection - 0
+               o call rerouted - 1
+               o call rerouted, all information restricted - 2
+               o call diverted - 3
+               o Call diverted, all information restricted - 4
+               o call rerouted, redirection number restricted - 5
+               o call diversion, redirection number restricted - 6
+          + Original redirection reason
+               o unknown/not available - 0
+               o user busy - 1
+               o no reply - 2
+               o unconditional - 3
+          + Redirection counter
+               o 1
+               o 2
+               o 3
+               o 4
+               o 5
+          + Redirecting reason
+               o unknown/not available - 0
+               o user busy - 1
+               o no reply - 2
+               o unconditional - 3
+               o deflection alerting - 4
+               o deflection response - 5
+               o mobile not reachable - 6
      * Cause Indicators
           + Location
                o user - 0

@@ -28,6 +28,7 @@
 
 #include "../../str.h"
 #include "../../db/db.h"
+#include "../tm/tm_load.h"
 
 #define DLG_ID_COL				"dlg_id"
 #define CALL_ID_COL				"callid"
@@ -120,5 +121,8 @@ str* write_dialog_profiles(struct dlg_profile_link *links);
 
 struct mi_root* mi_sync_db_dlg(struct mi_root *cmd, void *param);
 struct mi_root* mi_restore_dlg_db(struct mi_root *cmd, void *param);
+
+void dlg_setup_reinvite_callbacks(struct cell *t, struct sip_msg *req,
+		struct dlg_cell *dlg);
 
 #endif

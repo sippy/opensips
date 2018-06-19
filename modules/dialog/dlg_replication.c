@@ -170,9 +170,9 @@ int dlg_replicated_create(bin_packet_t *packet, struct dlg_cell *cell, str *ftag
 
 	/* add the 2 legs */
 	/* TODO - sdp here */
-	if (dlg_add_leg_info(dlg, &from_tag, &rroute1, &contact1,
+	if (dlg_update_leg_info(0, dlg, &from_tag, &rroute1, &contact1,
 		&cseq1, caller_sock, 0, 0,0) != 0 ||
-		dlg_add_leg_info(dlg, &to_tag, &rroute2, &contact2,
+		dlg_update_leg_info(1, dlg, &to_tag, &rroute2, &contact2,
 		&cseq2, callee_sock, &mangled_fu, &mangled_tu,0) != 0) {
 		LM_ERR("dlg_set_leg_info failed\n");
 		goto pre_linking_error;
@@ -494,7 +494,9 @@ void replicate_dialog_created(struct dlg_cell *dlg)
 	bin_push_str(&packet, &dlg->legs[callee_leg].from_uri);
 	bin_push_str(&packet, &dlg->legs[callee_leg].to_uri);
 
-	/* XXX: on shutdown only? */
+	/* give modules the chance to write values/profiles before replicating */
+	run_dlg_callbacks(DLGCB_WRITE_VP, dlg, NULL, DLG_DIR_NONE, NULL, 1);
+
 	vars = write_dialog_vars(dlg->vals);
 	dlg_lock_dlg(dlg);
 	profiles = write_dialog_profiles(dlg->profile_links);

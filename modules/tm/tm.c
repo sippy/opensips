@@ -1674,7 +1674,6 @@ struct sip_msg* tm_pv_context_request(struct sip_msg* msg)
 {
 	struct cell* trans = get_t();
 
-	LM_DBG("in fct din tm\n");
 	if(trans == NULL || trans == T_UNDEFINED)
 	{
 		LM_ERR("No transaction found\n");
@@ -2056,8 +2055,8 @@ static int pv_get_t_id(struct sip_msg *msg, pv_param_t *param,
 															pv_value_t *res)
 {
 #define INTasHEXA_SIZE (sizeof(int)*2)
+	static char buf[INTasHEXA_SIZE+1+INTasHEXA_SIZE];
 	struct cell *t;
-	char buf[INTasHEXA_SIZE+1+INTasHEXA_SIZE];
 	char *p;
 	int size;
 

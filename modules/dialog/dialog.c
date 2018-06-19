@@ -53,7 +53,6 @@
 #include "../../script_var.h"
 #include "../../mem/mem.h"
 #include "../../mi/mi.h"
-#include "../tm/tm_load.h"
 #include "../rr/api.h"
 #include "../../bin_interface.h"
 #include "../clusterer/api.h"
@@ -134,7 +133,8 @@ static int fixup_get_profile2(void** param, int param_no);
 static int fixup_get_profile3(void** param, int param_no);
 static int w_create_dialog(struct sip_msg*);
 static int w_create_dialog2(struct sip_msg*,char *);
-static int w_match_dialog(struct sip_msg*);
+static int w_match_dialog(struct sip_msg*, char *seq_match_mode_gp);
+static int api_match_dialog(struct sip_msg *msg, int _seq_match_mode);
 static int fixup_create_dlg2(void **param,int param_no);
 static int w_validate_dialog(struct sip_msg*);
 static int w_fix_route_dialog(struct sip_msg*);
@@ -142,6 +142,7 @@ static int w_set_dlg_profile(struct sip_msg*, char*, char*);
 static int w_unset_dlg_profile(struct sip_msg*, char*, char*);
 static int w_is_in_profile(struct sip_msg*, char*, char*);
 static int w_get_profile_size(struct sip_msg*, char*, char*, char*);
+static int fixup_mmode(void **param, int param_no);
 static int fixup_dlg_flag(void** param, int param_no);
 static int w_set_dlg_flag(struct sip_msg*, char*);
 static int w_reset_dlg_flag(struct sip_msg*, char*);
@@ -223,6 +224,8 @@ static cmd_export_t cmds[]={
 			0, REQUEST_ROUTE| FAILURE_ROUTE | ONREPLY_ROUTE |
 			BRANCH_ROUTE | LOCAL_ROUTE | EVENT_ROUTE | TIMER_ROUTE },
 	{"match_dialog",  (cmd_function)w_match_dialog,       0,NULL,
+			0, REQUEST_ROUTE},
+	{"match_dialog",  (cmd_function)w_match_dialog,       1,fixup_mmode,
 			0, REQUEST_ROUTE},
 	{"load_dlg",  (cmd_function)load_dlg,   0, 0, 0, 0},
 	{0,0,0,0,0,0}
@@ -523,6 +526,24 @@ static int fixup_dlg_flag(void** param, int param_no)
 	return 0;
 }
 
+static int fixup_mmode(void **param, int param_no)
+{
+	int rc;
+	gparam_p gp;
+
+	rc = fixup_sgp(param);
+	if (rc != 0)
+		return rc;
+
+	gp = (gparam_p)*param;
+	if (gp->type != GPARAM_TYPE_STR)
+		return 0;
+
+	gp->v.sval.len = dlg_match_mode_str_to_int(&gp->v.sval);
+
+	return 0;
+}
+
 static int fixup_create_dlg2(void **param, int param_no)
 {
 	return fixup_sgp(param);
@@ -682,7 +703,7 @@ int load_dlg( struct dlg_binds *dlgb )
 	dlgb->fetch_dlg_value = fetch_dlg_value;
 	dlgb->terminate_dlg = terminate_dlg;
 
-	dlgb->match_dialog = w_match_dialog;
+	dlgb->match_dialog = api_match_dialog;
 	dlgb->fix_route_dialog = fix_route_dialog;
 	dlgb->validate_dialog = dlg_validate_dialog;
 
@@ -1063,9 +1084,6 @@ static void mod_destroy(void)
 static int w_create_dialog(struct sip_msg *req)
 {
 	struct cell *t;
-	/* is the dialog already created? */
-	if (get_current_dialog()!=NULL)
-		return 1;
 
 	t = d_tmb.t_gett();
 	if (dlg_create_dialog( (t==T_UNDEFINED)?NULL:t, req,0)!=0)
@@ -1076,7 +1094,6 @@ static int w_create_dialog(struct sip_msg *req)
 
 static int w_create_dialog2(struct sip_msg *req,char *param)
 {
-	struct dlg_cell *dlg;
 	struct cell *t;
 	str res = {0,0};
 	int flags;
@@ -1089,25 +1106,40 @@ static int w_create_dialog2(struct sip_msg *req,char *param)
 
 	flags = parse_create_dlg_flags(res);
 
-	/* is the dialog already created? */
-	if ( (dlg=get_current_dialog())!=NULL  )
-	{
-		/*Clear current flags before setting new ones*/
-		dlg->flags &= ~(DLG_FLAG_PING_CALLER | DLG_FLAG_PING_CALLEE | 
-		DLG_FLAG_BYEONTIMEOUT | DLG_FLAG_REINVITE_PING_CALLER | DLG_FLAG_REINVITE_PING_CALLEE);
-		dlg->flags |= flags;
-		return 1;
-	}
-
 	t = d_tmb.t_gett();
-	if (dlg_create_dialog( (t==T_UNDEFINED)?NULL:t, req,flags)!=0)
+	if (dlg_create_dialog( (t==T_UNDEFINED)?NULL:t, req, flags)!=0)
 		return -1;
 
 	return 1;
 }
 
 
-static int w_match_dialog(struct sip_msg *msg)
+static int w_match_dialog(struct sip_msg *msg, char *seq_match_mode_gp)
+{
+	str res = {NULL, 0};
+	gparam_p mm_gp = (gparam_p)seq_match_mode_gp;
+	int mm;
+
+	if (!seq_match_mode_gp) {
+		mm = SEQ_MATCH_FALLBACK;
+	} else {
+		if (mm_gp->type == GPARAM_TYPE_STR) {
+			mm = mm_gp->v.sval.len;
+		} else {
+			if (fixup_get_svalue(msg, mm_gp, &res) != 0) {
+				LM_ERR("failed to extract matching mode pv! "
+				       "using 'DID_FALLBACK'\n");
+				mm = SEQ_MATCH_FALLBACK;
+			} else {
+				mm = dlg_match_mode_str_to_int(&res);
+			}
+		}
+	}
+
+	return api_match_dialog(msg, mm);
+}
+
+static int api_match_dialog(struct sip_msg *msg, int _seq_match_mode)
 {
 	int backup,i;
 	void *match_param = NULL;
@@ -1115,14 +1147,12 @@ static int w_match_dialog(struct sip_msg *msg)
 	str s;
 	char *p;
 
-
 	/* dialog already found ? */
 	if (get_current_dialog()!=NULL)
 		return 1;
 
-	/* small trick to force SIP-wise matching */
 	backup = seq_match_mode;
-	seq_match_mode = SEQ_MATCH_FALLBACK;
+	seq_match_mode = _seq_match_mode;
 
 	/* See if we can force DID matching, for the case of topo
 	 * hiding, where we have the DID as param of the contact */

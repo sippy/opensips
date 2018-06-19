@@ -43,6 +43,26 @@
 #define SEQ_MATCH_STRICT_ID  0
 #define SEQ_MATCH_FALLBACK   1
 #define SEQ_MATCH_NO_ID      2
+static inline int dlg_match_mode_str_to_int(const str *in)
+{
+	str did_only = str_init("did_only"),
+	    did_fallback = str_init("did_fallback"),
+	    did_none = str_init("did_none");
+
+	if (!str_strcasecmp(in, &did_only))
+		return SEQ_MATCH_STRICT_ID;
+
+	if (!str_strcasecmp(in, &did_fallback))
+		return SEQ_MATCH_FALLBACK;
+
+	if (!str_strcasecmp(in, &did_none))
+		return SEQ_MATCH_NO_ID;
+
+	return SEQ_MATCH_FALLBACK;
+}
+#define SEQ_MATCH_STRICT_ID_ST  "did_only"
+#define SEQ_MATCH_FALLBACK_ST   "did_fallback"
+#define SEQ_MATCH_NO_ID_ST      "did_none"
 
 #define RR_DLG_PARAM_SIZE  (2*2*sizeof(int)+3+MAX_DLG_RR_PARAM_NAME)
 #define DLG_SEPARATOR      '.'
@@ -161,6 +181,19 @@ static inline int pre_match_parse( struct sip_msg *req, str *callid,
 	/* from tag */
 	*ftag = get_from(req)->tag_value;
 	return 0;
+}
+
+static inline void get_totag(struct sip_msg *msg, str *tag)
+{
+	/* get to tag*/
+	if (!msg->to && (parse_headers(msg, HDR_TO_F, 0) < 0 || !msg->to)) {
+		LM_ERR("bad %s or missing TO hdr\n",
+		       msg->first_line.type == SIP_REQUEST ? "request" : "reply");
+		tag->s = NULL;
+		tag->len = 0;
+	} else {
+		*tag = get_to(msg)->tag_value;
+	}
 }
 
 int test_and_set_dlg_flag(struct dlg_cell *dlg, unsigned long index,

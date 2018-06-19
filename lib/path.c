@@ -55,14 +55,17 @@ static int build_path(struct sip_msg* _m, struct lump* l, struct lump* l2,
 		memcpy(prefix + prefix_len - 1, "@", 1);
 	}
 
-	suffix_len = PATH_LR_PARAM_LEN + (recv ? PATH_RC_PARAM_LEN : 0);
+	suffix_len = PATH_LR_PARAM_LEN +
+		((recv && (!double_path || _inbound == INBOUND)) ?
+			PATH_RC_PARAM_LEN : 0);
+
 	suffix = pkg_malloc(suffix_len);
 	if (!suffix) {
 		LM_ERR("no pkg memory left for suffix\n");
 		goto out1;
 	}
 	memcpy(suffix, PATH_LR_PARAM, PATH_LR_PARAM_LEN);
-	if(recv)
+	if (recv && (!double_path || _inbound == INBOUND))
 		memcpy(suffix+PATH_LR_PARAM_LEN, PATH_RC_PARAM, PATH_RC_PARAM_LEN);
 
 	crlf = pkg_malloc(PATH_CRLF_LEN);
@@ -95,28 +98,32 @@ static int build_path(struct sip_msg* _m, struct lump* l, struct lump* l2,
 	}
 	l2 = insert_new_lump_before(l2, suffix, suffix_len, 0);
 	if (!l) goto out3;
-	if (recv) {
+	if (recv && (!double_path || _inbound == INBOUND)) {
 		/* TODO: agranig: optimize this one! */
 		src_ip = ip_addr2a(&_m->rcv.src_ip);
 		rcv_addr.s = pkg_malloc(4 + IP_ADDR_MAX_STR_SIZE + 7 +
-			PATH_TRANS_PARAM_LEN + 4); /* sip:<ip>:<port>[;transport=xxxx]\0 */
+			PATH_ESC_TRANS_PARAM_LEN + 4); /* sip:<ip>:<port>(\0|[%3btransport%3dxxxx]) */
 		if(!rcv_addr.s) {
 			LM_ERR("no pkg memory left for receive-address\n");
 			goto out4;
 		}
-		rcv_addr.len = snprintf(rcv_addr.s, 4 + IP_ADDR_MAX_STR_SIZE + 6, "sip:%s:%u", src_ip, _m->rcv.src_port);
+		rcv_addr.len = snprintf(rcv_addr.s, 4 + IP_ADDR_MAX_STR_SIZE + 6,
+		                        "sip:%s:%u", src_ip, _m->rcv.src_port);
 		switch (_m->rcv.proto) {
 			case PROTO_TCP:
-				memcpy(rcv_addr.s+rcv_addr.len, PATH_TRANS_PARAM "tcp",PATH_TRANS_PARAM_LEN+3);
-				rcv_addr.len += PATH_TRANS_PARAM_LEN + 3;
+				memcpy(rcv_addr.s+rcv_addr.len, PATH_ESC_TRANS_PARAM "tcp",
+				       PATH_ESC_TRANS_PARAM_LEN+3);
+				rcv_addr.len += PATH_ESC_TRANS_PARAM_LEN + 3;
 				break;
 			case PROTO_TLS:
-				memcpy(rcv_addr.s+rcv_addr.len, PATH_TRANS_PARAM "tls",PATH_TRANS_PARAM_LEN+3);
-				rcv_addr.len += PATH_TRANS_PARAM_LEN + 3;
+				memcpy(rcv_addr.s+rcv_addr.len, PATH_ESC_TRANS_PARAM "tls",
+				       PATH_ESC_TRANS_PARAM_LEN+3);
+				rcv_addr.len += PATH_ESC_TRANS_PARAM_LEN + 3;
 				break;
 			case PROTO_SCTP:
-				memcpy(rcv_addr.s+rcv_addr.len, PATH_TRANS_PARAM "sctp",PATH_TRANS_PARAM_LEN+4);
-				rcv_addr.len += PATH_TRANS_PARAM_LEN + 4;
+				memcpy(rcv_addr.s+rcv_addr.len, PATH_ESC_TRANS_PARAM "sctp",
+				       PATH_ESC_TRANS_PARAM_LEN+4);
+				rcv_addr.len += PATH_ESC_TRANS_PARAM_LEN + 4;
 				break;
 		}
 		l2 = insert_new_lump_before(l2, rcv_addr.s, rcv_addr.len, 0);
@@ -202,7 +209,7 @@ int prepend_path(struct sip_msg* _m, str *user, int recv, int double_path)
 			LM_ERR("failed to insert conditional lump\n");
 			return -5;
 		}
-		if (build_path(_m, l, l2, user, 0, INBOUND, double_path) < 0) {
+		if (build_path(_m, l, l2, user, recv, INBOUND, double_path) < 0) {
 			LM_ERR("failed to insert inbound Path");
 			return -6;
 		}

@@ -325,30 +325,25 @@ struct dlg_cell* build_new_dlg( str *callid, str *from_uri, str *to_uri,
 	return dlg;
 }
 
-
 /* first time it will called for a CALLER leg - at that time there will
    be no leg allocated, so automatically CALLER gets the first position, while
    the CALLEE legs will follow into the array in the same order they came */
-int dlg_add_leg_info(struct dlg_cell *dlg, str* tag, str *rr,
+int dlg_update_leg_info(int leg_idx, struct dlg_cell *dlg, str* tag, str *rr,
 		str *contact,str *cseq, struct socket_info *sock,
 		str *mangled_from,str *mangled_to,str *sdp)
 {
-	struct dlg_leg* leg,*new_legs;
+	struct dlg_leg *leg;
 	rr_t *head = NULL, *rrp;
 
-	if ( (dlg->legs_no[DLG_LEGS_ALLOCED]-dlg->legs_no[DLG_LEGS_USED])==0) {
-		new_legs = (struct dlg_leg*)shm_realloc(dlg->legs,
-			(dlg->legs_no[DLG_LEGS_ALLOCED]+2)*sizeof(struct dlg_leg));
-		if (new_legs==NULL) {
-			LM_ERR("Failed to resize legs array\n");
-			return -1;
-		}
-		dlg->legs=new_legs;
-		dlg->legs_no[DLG_LEGS_ALLOCED] += 2;
-		memset( dlg->legs+dlg->legs_no[DLG_LEGS_ALLOCED]-2, 0,
-			2*sizeof(struct dlg_leg));
+	if (leg_idx >= MAX_BRANCHES) {
+		LM_WARN("invalid callee leg index (branch id part): %d\n", leg_idx);
+		return -1;
 	}
-	leg = &dlg->legs[ dlg->legs_no[DLG_LEGS_USED] ];
+
+	if (ensure_leg_array(leg_idx + 1, dlg) != 0)
+		return -1;
+
+	leg = &dlg->legs[leg_idx];
 
 	leg->tag.s = (char*)shm_malloc(tag->len);
 	if ( leg->tag.s==NULL) {
@@ -465,7 +460,8 @@ int dlg_add_leg_info(struct dlg_cell *dlg, str* tag, str *rr,
 	}
 
 	/* make leg visible for searchers */
-	dlg->legs_no[DLG_LEGS_USED]++;
+	if (leg_idx >= dlg->legs_no[DLG_LEGS_USED])
+		dlg->legs_no[DLG_LEGS_USED] = leg_idx + 1;
 
 	LM_DBG("set leg %d for %p: tag=<%.*s> rcseq=<%.*s>\n",
 		dlg->legs_no[DLG_LEGS_USED]-1, dlg,

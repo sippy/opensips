@@ -486,6 +486,62 @@ error:
 }
 
 
+int add_phony_uac( struct cell *t)
+{
+	str dummy_buffer = str_init("DUMMY");
+	unsigned short branch;
+	utime_t timer;
+
+	branch=t->nr_of_outgoings;
+	if (branch==MAX_BRANCHES) {
+		LM_ERR("maximum number of branches exceeded\n");
+		return E_CFG;
+	}
+
+	/* check existing buffer -- rewriting should never occur */
+	if (t->uac[branch].request.buffer.s) {
+		LM_CRIT("buffer rewrite attempt\n");
+		ser_error=E_BUG;
+		return E_BUG;
+	}
+
+	/* we attach a dummy buffer just to pass all the "tests" for a 
+	 * valid branch */
+	t->uac[branch].request.buffer.s = (char*)shm_malloc(dummy_buffer.len);
+	if (t->uac[branch].request.buffer.s==NULL) {
+		LM_ERR("failed to alloc dummy buffer for phony branch\n");
+		/* there is nothing to reset on the branch */
+		return E_OUT_OF_MEM;
+	}
+	memcpy( t->uac[branch].request.buffer.s, dummy_buffer.s, dummy_buffer.len);
+	t->uac[branch].request.buffer.len = dummy_buffer.len;
+
+	t->uac[branch].request.my_T = t;
+	t->uac[branch].request.branch = branch;
+	t->uac[branch].flags = T_UAC_IS_PHONY;
+
+	/* in invalid proto will prevent adding this retransmission buffer
+	 * to the retransmission timer (there is nothing to retransmit here :P */
+	t->uac[branch].request.dst.proto = PROTO_NONE;
+
+	t->nr_of_outgoings++;
+
+	/* we set here only FR (final response) timer, to be sure this branch
+	 * comes to an end - as timeout value we use exactly the same value the
+	 * transaction has set as FR_INV_TIMEOUT */
+	if (is_timeout_set(t->fr_inv_timeout)) {
+		timer = t->fr_inv_timeout;
+		set_1timer(&t->uac[branch].request.fr_timer, FR_INV_TIMER_LIST,&timer);
+	} else {
+		set_1timer(&t->uac[branch].request.fr_timer, FR_INV_TIMER_LIST, NULL);
+	}
+
+	set_kr(REQ_FWDED);
+
+	return 0;
+}
+
+
 static int _reason_avp_id = 0;
 
 int t_add_reason(struct sip_msg *msg, char *val)
@@ -617,7 +673,7 @@ int t_forward_nonack( struct cell *t, struct sip_msg* p_msg ,
 	/* make -Wall happy */
 	current_uri.s=0;
 
-	/* before doing enything, update the t falgs from msg */
+	/* before doing enything, update the t flags from msg */
 	t->uas.request->flags = p_msg->flags;
 
 	if (p_msg->REQ_METHOD==METHOD_CANCEL) {
@@ -668,7 +724,15 @@ int t_forward_nonack( struct cell *t, struct sip_msg* p_msg ,
 	/* branches added */
 	added_branches=0;
 	/* branch to begin with */
-	t->first_branch=t->nr_of_outgoings;
+	if (reset_bcounter) {
+		t->first_branch=t->nr_of_outgoings;
+		/* check if the previous branch is a PHONY one and if yes
+		 * keep it in the set of active branches; that means the 
+		 * transaction had a t_wait_for_new_branches() call prior to relay() */
+		if ( t->first_branch>0 &&
+		(t->uac[t->first_branch-1].flags & T_UAC_IS_PHONY) )
+			t->first_branch--;
+	}
 
 	/* as first branch, use current uri */
 	current_uri = *GET_RURI(p_msg);

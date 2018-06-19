@@ -43,6 +43,11 @@ endif
 
 MAJOR_RELEASE=$(shell lsb_release -rs | cut -d "." -f 1)
 
+# debian unstable (sid) doesn't output a version number, so emulate one
+ifeq ($(MAJOR_RELEASE), unstable)
+	MAJOR_RELEASE=1000
+endif
+
 # use a dummy architecture for the packages we do not want to build
 ifeq ($(shell dpkg-vendor --derives-from Debian && echo yes),yes)
 	LIBMONGOC_MAJOR_RELEASE=9
@@ -229,7 +234,7 @@ CFLAGS += $(shell dpkg-buildflags --get CFLAGS) $(CPPFLAGS)
 CXXFLAGS += $(shell dpkg-buildflags --get CXXFLAGS)
 LDFLAGS += $(shell dpkg-buildflags --get LDFLAGS)
 
-# force multiach lib path and SMP support all the time
+# force multiarch lib path and SMP support all the time
 VARS = LIBDIR=lib/$(DEB_HOST_MULTIARCH) ISSMP=yes
 
 ifeq ($(shell test $(MAJOR_RELEASE) -ge $(RADCLI_MAJOR_RELEASE); echo $$?),0)
@@ -298,6 +303,7 @@ override_dh_auto_install:
 
 	find $(CURDIR)/debian/opensips/etc/opensips -type f -exec chmod -x {} \;
 	sed -i -e "s/^PATH.*//" $(CURDIR)/debian/opensips/usr/sbin/opensipsctl
+	sed -i -e "s/^PATH.*//" $(CURDIR)/debian/opensips/usr/sbin/opensipsdbctl
 
 	set -e;\
 	for pkg in $(BUILD_MODPKG_LIST) ; do\

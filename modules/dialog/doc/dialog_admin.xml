@@ -427,7 +427,8 @@ modparam("dialog", "db_update_period", 120)
 <section>
 		<title><varname>options_ping_interval</varname> (integer)</title>
 		<para>
-			The interval (seconds) at which OpenSIPS will generate in-dialog OPTIONS pings for dialogs.
+		The interval (seconds) at which OpenSIPS will generate in-dialog
+		OPTIONS pings for one or both of the involved parties.
 		</para>
 		<para>
 		<emphasis>
@@ -447,7 +448,19 @@ modparam("dialog", "options_ping_interval", 20)
 <section>
 		<title><varname>reinvite_ping_interval</varname> (integer)</title>
 		<para>
-			The interval (seconds) at which OpenSIPS will generate in-dialog Re-INVITE pings for dialogs.
+		The interval (seconds) at which OpenSIPS will generate in-dialog
+		Re-INVITE pings for one or both of the involved parties.
+		</para>
+		<para>
+		<emphasis role='bold'>Important:</emphasis> the ping timeout detection
+		is performed every time this interval ticks, not when the re-INVITE
+		transaction times out! Consequently, please make sure that the
+		timeouts for re-INVITE transactions (e.g. the "fr_timeout"
+		modparam of the "tm" module or its $T_fr_timeout variable) are
+		always <emphasis role='bold'>lower</emphasis> than the value of this
+		parameter! Failing to ensure this ordering of timeouts may possibly
+		lead to re-INVITE pings never ending a disconnected dialog due to pings
+		getting retried before getting a chance to properly time out.
 		</para>
 		<para>
 		<emphasis>
@@ -1411,7 +1424,7 @@ create_dialog("B");
 
 	<section>
 		<title>
-		<function moreinfo="none">match_dialog()</function>
+		<function moreinfo="none">match_dialog([dlg_match_mode])</function>
 		</title>
 		<para>
 		This function is to be used to match a sequential (in-dialog) request
@@ -1419,8 +1432,11 @@ create_dialog("B");
 		the current request to an known ongoing dialog.
 		</para>
 		<para>
-		The function tries to use (for dialog matching) the DID (Dialog ID)
-		from Route header and also falls back to SIP-wise matching.
+		By default, the function tries to use (for dialog matching) the DID
+		(Dialog ID) from Route header and also falls back to SIP-wise matching. 
+		This behavior may be changed by providing it with a given matching mode
+		string (see <xref linkend="param_dlg_match_mode"/> for possible values of
+		the parameter).
 		</para>
 		<para>
 		As sequential requests are automatically matched to the dialog when

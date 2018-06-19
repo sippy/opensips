@@ -1222,12 +1222,14 @@ static int parse_flags(struct ng_flags_parse *ng_flags, struct sip_msg *msg,
 				else if (str_eq(&key, "rtcp-mux-accept"))
 					BCHECK(bencode_list_add_string(ng_flags->rtcp_mux, "accept"));
 				else
-					goto error;
-				break;
+					break;
+				continue;
 
 			case 16:
 				if (str_eq(&key, "UDP/TLS/RTP/SAVP"))
 					ng_flags->transport = 0x104;
+				else if (str_eq(&key, "rtcp-mux-require")) 
+					BCHECK(bencode_list_add_string(ng_flags->rtcp_mux, "require"));
 				else
 					break;
 				continue;
@@ -1373,6 +1375,7 @@ static bencode_item_t *rtpe_function_call(bencode_buffer_t *bencbuf, struct sip_
 	bencode_list_add_string(item, ip_addr2a(&msg->rcv.src_ip));
 
 	if ((msg->first_line.type == SIP_REQUEST && op != OP_ANSWER)
+		|| (msg->first_line.type == SIP_REPLY && op == OP_DELETE)
 		|| (msg->first_line.type == SIP_REPLY && op == OP_ANSWER))
 	{
 		bencode_dictionary_add_str(ng_flags.dict, "from-tag", &from_tag);

@@ -331,7 +331,7 @@ static int _reply_light( struct cell *trans, char* buf, unsigned int len,
 {
 	struct retr_buf *rb;
 	unsigned int buf_len;
-	branch_bm_t cancel_bitmap;
+	branch_bm_t cancel_bitmap = 0;
 	str cb_s;
 
 	if (!buf)
@@ -347,14 +347,14 @@ static int _reply_light( struct cell *trans, char* buf, unsigned int len,
 		goto error;
 	}
 
-	cancel_bitmap=0;
 	if (lock) LOCK_REPLIES( trans );
-	if ( is_invite(trans) ) which_cancel(trans, &cancel_bitmap );
 	if (trans->uas.status>=200) {
 		LM_ERR("failed to generate %d reply when a final %d was sent out\n",
 				code, trans->uas.status);
 		goto error2;
 	}
+	if ( is_invite(trans) && code>=200 )
+		which_cancel(trans, &cancel_bitmap );
 
 
 	rb = & trans->uas.response;
@@ -765,6 +765,12 @@ static inline int t_pick_branch( struct cell *t, int *res_code, int *do_cancel)
 	cancelled = was_cancelled(t);
 	*do_cancel = 0;
 	for ( b=t->first_branch; b<t->nr_of_outgoings ; b++ ) {
+		/* skip PHONY branches if the transaction was canceled by UAC;
+		 * a phony branch is used just to force the transaction to wait for
+		 * more branches, but if canceled, it makes no sense to wait anymore */
+		if ( (t->uac[b].flags & T_UAC_IS_PHONY) &&
+		(t->flags & T_WAS_CANCELLED_FLAG) )
+			continue;
 		/* skip 'empty branches' */
 		if (!t->uac[b].request.buffer.s) continue;
 		/* there is still an unfinished UAC transaction; wait now! */

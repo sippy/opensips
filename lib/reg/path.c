@@ -24,6 +24,8 @@
 #include "../../data_lump.h"
 #include "../../parser/parse_rr.h"
 #include "../../parser/parse_uri.h"
+#include "../../ut.h"
+#include "../../strcommon.h"
 
 #include "path.h"
 #include "config.h"
@@ -35,9 +37,12 @@ int build_path_vector(struct sip_msg *_m, str *path, str *received,
 														unsigned int flags)
 {
 	static char buf[MAX_PATH_SIZE];
+	static char _unescape_buf[MAX_PATH_SIZE];
+
 	char *p;
 	struct hdr_field *hdr;
 	struct sip_uri puri;
+	str unescape_buf = {_unescape_buf, MAX_PATH_SIZE};
 
 	rr_t *route = 0;
 
@@ -82,18 +87,38 @@ int build_path_vector(struct sip_msg *_m, str *path, str *received,
 			param_hooks_t hooks;
 			param_t *params;
 
+			if (parse_params(&(puri.params),CLASS_URI,&hooks,&params)!=0){
+				LM_ERR("failed to parse parameters of first hop\n");
+				goto error;
+			}
+
+			/* we have a double-Path OpenSIPS in front of us - skip 1st Path */
+			if (hooks.uri.r2 && route->next) {
+				if (parse_uri(route->next->nameaddr.uri.s,
+				              route->next->nameaddr.uri.len, &puri) < 0) {
+					LM_ERR("failed to parse the 2nd Path URI\n");
+					goto error;
+				}
+			}
+
+			free_params(params);
+
 			if (parse_params(&(puri.params),CLASS_CONTACT,&hooks,&params)!=0){
 				LM_ERR("failed to parse parameters of first hop\n");
 				goto error;
 			}
-			if (hooks.contact.received)
-				*received = hooks.contact.received->body;
-			/*for (;params; params = params->next) {
-				if (params->type == P_RECEIVED) {
-					*received = hooks.contact.received->body;
-					break;
-				}
-			}*/
+
+			if (hooks.contact.received) {
+				unescape_buf.len = MAX_PATH_SIZE;
+				if (unescape_param(&hooks.contact.received->body,
+				                           &unescape_buf) != 0)
+					LM_ERR("failed to unescape received=%.*s\n",
+					       hooks.contact.received->body.len,
+					       hooks.contact.received->body.s);
+				else
+					*received = unescape_buf;
+			}
+
 			free_params(params);
 		}
 		free_rr(&route);

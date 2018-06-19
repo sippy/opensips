@@ -45,6 +45,7 @@
 #include "acc_mod.h"
 #include "acc_logic.h"
 #include "acc_extra.h"
+#include "acc_vars.h"
 
 extern struct tm_binds tmb;
 extern struct rr_binds rrb;
@@ -184,7 +185,7 @@ static int is_cdr_enabled=0;
 static void tmcb_func( struct cell* t, int type, struct tmcb_params *ps );
 static void acc_dlg_callback(struct dlg_cell *dlg, int type,
 		struct dlg_cb_params *_params);
-static void acc_dlg_onshutdown(struct dlg_cell *dlg, int type,
+static void acc_dlg_onwrite(struct dlg_cell *dlg, int type,
 		struct dlg_cb_params *_params);
 static void acc_cdr_cb( struct cell* t, int type, struct tmcb_params *ps );
 
@@ -194,7 +195,7 @@ static inline void free_extra_array(tag_t* tags, int tags_len,
 	int i;
 
 	for (i=0; i < tags_len; i++) {
-		if (array[i].shm_buf_len)
+		if (array[i].value.s)
 			shm_free(array[i].value.s);
 	}
 	shm_free(array);
@@ -662,19 +663,48 @@ static inline void on_missed(struct cell *t, struct sip_msg *req,
 }
 
 
+static void acc_dlg_ctx_cb(struct dlg_cell *dlg, int type,
+		struct dlg_cb_params *_params)
+{
+	acc_ctx_t *ctx;
+	/* set the acc context from dialog into the
+	 * current processing context */
+
+	/* if there is already a acc context in the processing
+	 * context, be sure to destroy it for now */
+	if ( (ctx=ACC_GET_CTX)!=NULL) {
+		push_ctx_to_ctx( ctx, (acc_ctx_t *)(*_params->param));
+		free_acc_ctx(ctx);
+	}
+
+	ACC_PUT_CTX( (acc_ctx_t *)(*_params->param) );
+}
+
+
 /* restore callbacks */
 void acc_loaded_callback(struct dlg_cell *dlg, int type,
 			struct dlg_cb_params *_params) {
-		str flags_s, ctx_s, table_s;
+		str flags_s, ctx_s, table_s, created_s;
 		acc_ctx_t* ctx;
+		time_t created;
+		unsigned long long flags;
 
 		if (!dlg) {
 			LM_ERR("null dialog - cannot fetch message flags\n");
 			return;
 		}
 
-		if (dlg_api.fetch_dlg_value(dlg, &flags_str, &flags_s, 0) < 0) {
+		flags_s.s = (char *)&flags;
+		flags_s.len = sizeof(flags);
+		if (dlg_api.fetch_dlg_value(dlg, &flags_str, &flags_s, 1) < 0) {
 			LM_DBG("flags were not saved in dialog\n");
+			return;
+		}
+
+		created_s.s = (char *)&created;
+		created_s.len = sizeof(created);
+		if (dlg_api.fetch_dlg_value(dlg, &created_str, &created_s, 1) < 0) {
+			LM_DBG("created time was not saved in dialog\n");
 			return;
 		}
 
@@ -687,7 +717,10 @@ void acc_loaded_callback(struct dlg_cell *dlg, int type,
 		}
 
 		/* copy flags value into the context */
-		memcpy(&ctx->flags, flags_s.s, flags_s.len);
+		ctx->flags = flags;
+
+		/* copy created value into the context */
+		ctx->created = created;
 
 		/* restore accounting table if db accounting is used */
 		if (is_db_acc_on(ctx->flags)) {
@@ -721,6 +754,14 @@ void acc_loaded_callback(struct dlg_cell *dlg, int type,
 			LM_ERR("cannot register callback for database accounting\n");
 			return;
 		}
+
+		/* register dlg callbacks for ctx management */
+		if (dlg_api.register_dlgcb(dlg, DLGCB_REQ_WITHIN,
+				acc_dlg_ctx_cb, ctx, NULL) != 0) {
+			LM_ERR("cannot register callback ctx management\n");
+			return;
+		}
+
 }
 
 /* initiate a report if we previously enabled accounting for this t */
@@ -789,12 +830,12 @@ static inline void acc_onreply( struct cell* t, struct sip_msg *req,
 		 * tm must never free it */
 		set_dialog_context(*flags);
 
-		/* register program shutdown callback
+		/* register callback for program shutdown or dialog replication
 		 * won't register free function since TERMINATED|EXPIRED callback
 		 * free function will be called to free */
-		if (dlg_api.register_dlgcb(dlg, DLGCB_DB_WRITE_VP,
-					acc_dlg_onshutdown, ctx, NULL) != 0) {
-			LM_ERR("cannot register callback for program shutdown!\n");
+		if (dlg_api.register_dlgcb(dlg, DLGCB_WRITE_VP,
+					acc_dlg_onwrite, ctx, NULL) != 0) {
+			LM_ERR("cannot register callback for context serialization\n");
 			goto restore;
 		}
 
@@ -804,6 +845,14 @@ static inline void acc_onreply( struct cell* t, struct sip_msg *req,
 			LM_ERR("cannot register callback for database accounting\n");
 			goto restore;
 		}
+
+		/* register dlg callbacks for ctx management */
+		if (dlg_api.register_dlgcb(dlg, DLGCB_REQ_WITHIN,
+								acc_dlg_ctx_cb, ctx, NULL) != 0) {
+			LM_ERR("cannot register callback ctx management\n");
+			goto restore;
+		}
+
 	} else {
 		/* do old accounting */
 		if ( is_evi_acc_on(*flags) ) {
@@ -842,6 +891,13 @@ static void acc_dlg_callback(struct dlg_cell *dlg, int type,
 	if (!_params) {
 		LM_ERR("not enough info\n");
 		return;
+	}
+
+	/* if there is already a acc context in the processing
+	 * context, be sure to destroy it for now */
+	if ( (ctx=ACC_GET_CTX)!=NULL) {
+		push_ctx_to_ctx( ctx, (acc_ctx_t *)(*_params->param));
+		free_acc_ctx(ctx);
 	}
 
 	ctx = *_params->param;
@@ -920,7 +976,7 @@ static void acc_dlg_callback(struct dlg_cell *dlg, int type,
 }
 
 
-static void acc_dlg_onshutdown(struct dlg_cell *dlg, int type,
+static void acc_dlg_onwrite(struct dlg_cell *dlg, int type,
 		struct dlg_cb_params *_params)
 {
 	str flags_s;
@@ -1567,26 +1623,15 @@ int w_drop_acc_2(struct sip_msg* msg, char* type_p, char* flags_p)
 				return -1;
 			}
 		}
-	}
+	} else
+		type = DO_ACC_LOG | DO_ACC_AAA | DO_ACC_DB | DO_ACC_EVI;
 
-	if (flags_p != NULL) {
+	if (flags_p != NULL)
 		flags= *(unsigned long long*)flags_p;
-	}
 
 	flag_mask = type * flags;
 
-	/* reset all flags */
-	if (flag_mask == 0) {
-		/*
-		 * we use this flag in order make the difference between
-		 * 0 value (do_accounting never called, callbacks never registered) and
-		 * ACC_FLAGS_RESET (do_accounting called, callbacks registered, flag value
-		 * changing during script execution)
-		 */
-		acc_ctx->flags = ACC_FLAGS_RESET;
-	} else {
-		reset_flags(acc_ctx->flags, flag_mask);
-	}
+	reset_flags(acc_ctx->flags, flag_mask);
 
 	return 1;
 }

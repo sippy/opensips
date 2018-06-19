@@ -91,6 +91,10 @@ struct sip_msg;
 #define  translate_pointer( _new_buf , _org_buf , _p) \
 	( (_p)?(_new_buf + (_p-_org_buf)):(0) )
 
+#define TIMEVAL_MS_DIFF(_tva, _tvb) \
+	((((_tvb).tv_sec * 1000000UL + (_tvb).tv_usec) - \
+	 ((_tva).tv_sec * 1000000UL + (_tva).tv_usec)) / 1000UL)
+
 #define via_len(_via) \
 	((_via)->bsize-((_via)->name.s-\
 		((_via)->hdr.s+(_via)->hdr.len)))
@@ -184,10 +188,14 @@ static inline char* int2bstr(uint64_t l, char *s, int* len)
 
 /* INTeger-TO-STRing : convers a 64-bit integer to a string
  * returns a pointer to a static buffer containing l in asciiz & sets len */
-extern char int2str_buf[INT2STR_MAX_LEN];
+#define INT2STR_BUF_NO    7
+extern char int2str_buf[INT2STR_BUF_NO][INT2STR_MAX_LEN];
 static inline char* int2str(uint64_t l, int* len)
 {
-	return int2bstr( l, int2str_buf, len);
+	static unsigned int it = 0;
+
+	if ((++it)==INT2STR_BUF_NO) it = 0;
+	return int2bstr( l, int2str_buf[it], len);
 }
 
 
@@ -611,8 +619,6 @@ static inline int shm_nt_str_dup(str* dst, const str* src)
 {
 	if (!src || !src->s)
 		return -1;
-
-	memset(dst, 0, sizeof *dst);
 
 	dst->s = shm_malloc(src->len + 1);
 	if (!dst->s) {
