@@ -34,12 +34,18 @@
 
 /* Type of algorithm used */
 typedef enum alg {
-	ALG_UNSPEC = 0,   /* Algorithm parameter not specified */
-	ALG_MD5 = 1,      /* MD5 - default value*/
-	ALG_MD5SESS = 2,  /* MD5-Session */
-	ALG_OTHER = 4     /* Unknown */
+	ALG_UNSPEC = 0,         /* Algorithm parameter not specified: defaults to MD5 */
+	ALG_MD5 = 1,            /* MD5 */
+	ALG_MD5SESS = 2,        /* MD5-Session */
+	ALG_SHA256 = 3,         /* SHA-256 */
+	ALG_SHA256SESS = 4,     /* SHA-256-Session */
+	ALG_SHA512_256 = 5,     /* SHA-512/256 */
+	ALG_SHA512_256SESS = 6, /* SHA-512/256-Session */
+	ALG_OTHER = 7           /* Unknown */
 } alg_t;
 
+/* Last supported algorithm */
+#define LAST_ALG_SPTD (ALG_MD5SESS)
 
 /* Quality Of Protection used */
 typedef enum qop_type {

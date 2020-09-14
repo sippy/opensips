@@ -27,6 +27,7 @@
 
 
 #include "digest_parser.h"
+#include "../../dassert.h"
 #include "../../trim.h"    /* trim_leading */
 #include <string.h>        /* strncasecmp */
 #include "param_parser.h"  /* Digest parameter name parser */
@@ -42,12 +43,25 @@
 #define QOP_AUTHINT_STR "auth-int"
 #define QOP_AUTHINT_STR_LEN 8
 
+#define ALG_SESS_SFX "-sess"
+
 #define ALG_MD5_STR "MD5"
-#define ALG_MD5_STR_LEN 3
+#define ALG_MD5_STR_LEN (sizeof(ALG_MD5_STR) - 1)
 
-#define ALG_MD5SESS_STR "MD5-sess"
-#define ALG_MD5SESS_STR_LEN 8
+#define ALG_MD5SESS_STR (ALG_MD5_STR ALG_SESS_SFX)
+#define ALG_MD5SESS_STR_LEN (sizeof(ALG_MD5SESS_STR) - 1)
 
+#define ALG_SHA256_STR "SHA-256"
+#define ALG_SHA256_STR_LEN (sizeof(ALG_SHA256_STR) - 1)
+
+#define ALG_SHA256SESS_STR (ALG_SHA256_STR ALG_SESS_SFX)
+#define ALG_SHA256SESS_STR_LEN (sizeof(ALG_SHA256SESS_STR) - 1)
+
+#define ALG_SHA512_256_STR "SHA-512-256"
+#define ALG_SHA512_256_STR_LEN (sizeof(ALG_SHA512_256_STR) - 1)
+
+#define ALG_SHA512_256SESS_STR (ALG_SHA512_256_STR ALG_SESS_SFX)
+#define ALG_SHA512_256SESS_STR_LEN (sizeof(ALG_SHA512_256SESS_STR) - 1)
 
 /*
  * Parse quoted string in a parameter body
@@ -233,6 +247,11 @@ static inline void parse_qop(struct qp* _q)
 	}
 }
 
+#define CASE_ALG(alg, s, a) \
+	case ALG_##alg##_STR_LEN: \
+		a->alg_parsed = (strncasecmp(s.s, ALG_##alg##_STR, s.len) ? \
+		  ALG_OTHER : ALG_##alg); \
+		break;
 
 /*
  * Parse algorithm parameter body
@@ -246,13 +265,14 @@ static inline void parse_algorithm(struct algorithm* _a)
 
 	trim(&s);
 
-	if ((s.len == ALG_MD5_STR_LEN) &&
-	    !strncasecmp(s.s, ALG_MD5_STR, ALG_MD5_STR_LEN)) {
-		_a->alg_parsed = ALG_MD5;
-	} else if ((s.len == ALG_MD5SESS_STR_LEN) &&
-		   !strncasecmp(s.s, ALG_MD5SESS_STR, ALG_MD5SESS_STR_LEN)) {
-		_a->alg_parsed = ALG_MD5SESS;
-	} else {
+	switch (s.len) {
+	CASE_ALG(MD5, s, _a);
+	CASE_ALG(MD5SESS, s, _a);
+	CASE_ALG(SHA256, s, _a);
+	CASE_ALG(SHA256SESS, s, _a);
+	CASE_ALG(SHA512_256, s, _a);
+	CASE_ALG(SHA512_256SESS, s, _a);
+	default:
 		_a->alg_parsed = ALG_OTHER;
 	}
 }
@@ -313,6 +333,9 @@ static inline int parse_digest_params(str* _s, dig_cred_t* _c)
 	     /* Parse algorithm body if the parameter was present */
 	if (_c->alg.alg_str.s != 0) {
 		parse_algorithm(&_c->alg);
+	} else {
+		/* No algorithm specified */
+		DASSERT(_c->alg.alg_parsed == ALG_UNSPEC);
 	}
 
 	if (_c->username.whole.s != 0) {
@@ -382,4 +405,3 @@ void init_dig_cred(dig_cred_t* _c)
 {
 	memset(_c, 0, sizeof(dig_cred_t));
 }
-
