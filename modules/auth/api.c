@@ -112,8 +112,10 @@ static inline int find_credentials(struct sip_msg* _m, str* _realm,
 			LM_ERR("failed to parse credentials\n");
 			return (res == -1) ? -2 : -3;
 		} else if (res == 0) {
-			r = &(((auth_body_t*)(ptr->parsed))->digest.realm);
-			if (r->len == _realm->len) {
+			auth_body_t *abp = (auth_body_t *)(ptr->parsed);
+			dig_cred_t *dcp = &(abp->digest);
+			r = &(abp->digest.realm);
+			if (r->len == _realm->len && dcp->alg.alg_parsed <= LAST_ALG_SPTD) {
 				if (!strncasecmp(_realm->s, r->s, r->len)) {
 					*_h = ptr;
 					return 0;
