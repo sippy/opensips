@@ -29,7 +29,7 @@
 #include "digest_parser.h"
 #include "../../dassert.h"
 #include "../../trim.h"    /* trim_leading */
-#include <string.h>        /* strncasecmp */
+#include "../../turbocompare.h" /* turbo_casebcmp */
 #include "param_parser.h"  /* Digest parameter name parser */
 #include "../../ut.h"      /* q_memchr */
 
@@ -237,10 +237,10 @@ static inline void parse_qop(struct qp* _q)
 	trim(&s);
 
 	if ((s.len == QOP_AUTH_STR_LEN) &&
-	    !strncasecmp(s.s, QOP_AUTH_STR, QOP_AUTH_STR_LEN)) {
+	    !turbo_casebcmp(s.s, QOP_AUTH_STR, QOP_AUTH_STR_LEN)) {
 		_q->qop_parsed = QOP_AUTH_D;
 	} else if ((s.len == QOP_AUTHINT_STR_LEN) &&
-		   !strncasecmp(s.s, QOP_AUTHINT_STR, QOP_AUTHINT_STR_LEN)) {
+		   !turbo_casebcmp(s.s, QOP_AUTHINT_STR, QOP_AUTHINT_STR_LEN)) {
 		_q->qop_parsed = QOP_AUTHINT_D;
 	} else {
 		_q->qop_parsed = QOP_OTHER_D;
@@ -249,7 +249,7 @@ static inline void parse_qop(struct qp* _q)
 
 #define CASE_ALG(alg, s, a) \
 	case ALG_##alg##_STR_LEN: \
-		a->alg_parsed = (strncasecmp(s.s, ALG_##alg##_STR, s.len) ? \
+		a->alg_parsed = (turbo_casebcmp(s.s, ALG_##alg##_STR, s.len) ? \
 		  ALG_OTHER : ALG_##alg); \
 		break;
 
@@ -373,7 +373,7 @@ int parse_digest_cred(str* _s, dig_cred_t* _c)
 	     /* Now test, if it is digest scheme, since it is the only
 	      * scheme we are able to parse here
 	      */
-	if (!strncasecmp(tmp.s, DIGEST_SCHEME, DIG_LEN) &&
+	if (!turbo_casebcmp(tmp.s, DIGEST_SCHEME, DIG_LEN) &&
 	    ((tmp.s[DIG_LEN] == ' ') ||     /* Test for one of LWS chars */
 	     (tmp.s[DIG_LEN] == '\r') ||
 	     (tmp.s[DIG_LEN] == 'n') ||
