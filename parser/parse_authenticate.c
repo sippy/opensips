@@ -44,7 +44,7 @@
 #define LOWER1B(_n) \
 	((_n < 'A' ||_n > 'Z') ? _n : _n |0x20)
 #define LOWER4B(_n) \
-	((_n)|LCMASK((unsigned int)_n))
+	((_n)|TURBO_LCMASK((unsigned int)_n))
 #define GET4B(_p) \
 	((*(_p)<<24) + (*(_p+1)<<16) + (*(_p+2)<<8) + *(_p+3))
 
@@ -81,7 +81,7 @@
 #define OPAQUE_STATE     6
 #define ALGORITHM_STATE  7
 
-#define TRB_SCASEMATCH(cp, S) (!turbo_strncasecmp(cp, (S), (sizeof(S) - 1)))
+#define TRB_SCASEMATCH(cp, S) (!turbo_casebcmp(cp, (S), (sizeof(S) - 1)))
 #define TRB_STRCASEMATCH(sarg, S) ((sarg)->len == (sizeof(S) - 1) && TRB_SCASEMATCH((sarg)->s, S))
 
 int parse_qop_value(str *val, struct authenticate_body *auth)
