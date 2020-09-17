@@ -81,15 +81,15 @@
 #define OPAQUE_STATE     6
 #define ALGORITHM_STATE  7
 
-#define TRB_SCASECMP(cp, S) (turbo_strncasecmp(cp, (S), (sizeof(S) - 1)))
-#define TRB_STRCASECMP(sarg, S) ((sarg)->len == (sizeof(S) - 1) && TRB_SCASECMP((sarg)->s, S))
+#define TRB_SCASEMATCH(cp, S) (!turbo_strncasecmp(cp, (S), (sizeof(S) - 1)))
+#define TRB_STRCASEMATCH(sarg, S) ((sarg)->len == (sizeof(S) - 1) && TRB_SCASEMATCH((sarg)->s, S))
 
 int parse_qop_value(str *val, struct authenticate_body *auth)
 {
 	char *q = val->s;
 
 	/* parse first token */
-	if (val->len<4 || !TRB_SCASECMP(q, "auth"))
+	if (val->len<4 || !TRB_SCASEMATCH(q, "auth"))
 		return -1;
 	q += 4;
 	if (q==val->s+val->len) {
@@ -103,7 +103,7 @@ int parse_qop_value(str *val, struct authenticate_body *auth)
 			break;
 		case '-':
 			q++;
-			if (TRB_SCASECMP(q, "int")) {
+			if (TRB_SCASEMATCH(q, "int")) {
 				auth->flags |= QOP_AUTH_INT;
 				q+=3;
 			} else
@@ -125,14 +125,14 @@ int parse_qop_value(str *val, struct authenticate_body *auth)
 	while (q<val->s+val->len && isspace((int)*q)) q++;
 
 	/* parse second token */
-	if (val->len-(q-val->s)<4 ||!TRB_SCASECMP(q, "auth"))
+	if (val->len-(q-val->s)<4 ||!TRB_SCASEMATCH(q, "auth"))
 		return -1;
 	q += 4;
 	if (q==val->s+val->len) {
 		auth->flags |= QOP_AUTH;
 		return 0;
 	}
-	if (TRB_SCASECMP(q, "-int")) {
+	if (TRB_SCASEMATCH(q, "-int")) {
 		auth->flags |= QOP_AUTH_INT;
 		return 0;
 	} else
@@ -163,7 +163,7 @@ int parse_authenticate_body( str *body, struct authenticate_body *auth)
 	while (p<end && isspace((int)*p)) p++;
 	if (p+AUTHENTICATE_DIGEST_LEN>=end )
 		goto parse_error;
-	if (!TRB_SCASECMP(p, "digest"))
+	if (!TRB_SCASEMATCH(p, "digest"))
 		goto parse_error;
 	p += AUTHENTICATE_DIGEST_LEN;
 	if (!isspace((int)*p))
@@ -190,7 +190,7 @@ int parse_authenticate_body( str *body, struct authenticate_body *auth)
 				CASE_6B( 0x646f6d62, 'i', 'n', DOMAIN_STATE, 1); /*domain*/
 				CASE_6B( 0x6f706171, 'u', 'e', OPAQUE_STATE, 1); /*opaque*/
 				case 0x616c676f: /*algo*/
-					if (p+9<end && TRB_SCASECMP(p+4, "rithm"))
+					if (p+9<end && TRB_SCASEMATCH(p+4, "rithm"))
 					{
 						p+=9;
 						state = ALGORITHM_STATE;
@@ -206,7 +206,7 @@ int parse_authenticate_body( str *body, struct authenticate_body *auth)
 					}
 			}
 		} else if (p+3<end) {
-			if (TRB_SCASECMP(p, "qop"))
+			if (TRB_SCASEMATCH(p, "qop"))
 			{
 				p+=3;
 				state = QOP_STATE;
@@ -280,10 +280,10 @@ int parse_authenticate_body( str *body, struct authenticate_body *auth)
 				auth->opaque = val;
 				break;
 			case ALGORITHM_STATE:
-				if (TRB_STRCASECMP(&val, "MD5")) {
+				if (TRB_STRCASEMATCH(&val, "MD5")) {
 					auth->flags |= AUTHENTICATE_MD5;
-				} else if (TRB_STRCASECMP(&val, "SHA-512-256") ||
-					       TRB_STRCASECMP(&val, "SHA-256")) {
+				} else if (TRB_STRCASEMATCH(&val, "SHA-512-256") ||
+					       TRB_STRCASEMATCH(&val, "SHA-256")) {
 					LM_INFO("RFC 8760 (%.*s) is only available "
 					        "in OpenSIPS 3.2+\n", val.len, val.s);
 					ret = 1;
@@ -293,10 +293,10 @@ int parse_authenticate_body( str *body, struct authenticate_body *auth)
 				}
 				break;
 			case STALE_STATE:
-				if (TRB_STRCASECMP(&val, "true"))
+				if (TRB_STRCASEMATCH(&val, "true"))
 				{
 					auth->flags |= AUTHENTICATE_STALE;
-				} else if (!(TRB_STRCASECMP(&val, "false")))
+				} else if (!(TRB_STRCASEMATCH(&val, "false")))
 				{
 					LM_ERR("unsupported stale value \"%.*s\"\n",val.len,val.s);
 					goto error;
