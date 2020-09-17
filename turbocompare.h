@@ -92,4 +92,11 @@ turbo_casebcmp(const char *s1, const char *s2, unsigned int len)
     return 0;
 }
 
+/*
+ * Convinience macro: return true if both sargs->len is the same as Slen and
+ * string S matches sarg->s (ignoring the case in both).
+ */
+#define turbo_strcasematch(sarg, S, Slen) ((sarg)->len == (Slen) && \
+  !turbo_casebcmp((sarg)->s, (S), (Slen)))
+
 #endif
