@@ -132,7 +132,7 @@ int parse_qop_value(str *val, struct authenticate_body *auth)
 		auth->flags |= QOP_AUTH;
 		return 0;
 	}
-	if (*q == '-' && TRB_SCASECMP(q+1, "int")) {
+	if (TRB_SCASECMP(q, "-int")) {
 		auth->flags |= QOP_AUTH_INT;
 		return 0;
 	} else
