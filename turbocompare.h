@@ -23,7 +23,7 @@
 #define _turbocompare_h
 
 /*
- * Markbetween() macro takes int-like type in x treats it as a sequence of bytes
+ * markbetween() macro takes int-like type in x treats it as a sequence of bytes
  * and produces a value of the same type and lengh with bytes of original
  * value in the range m > bX < n replaced with 0x80 and the rest with 0x00, i.e.
  *
@@ -72,7 +72,7 @@ TOLOWER_FUNC(char);
  * Both strings are assumed to be len bytes long. Zero-length strings are always
  * identical. No special treatment for \0 is performed, the comparison will
  * continue if both strings are matching until len bytes are compared, i.e.
- * turbo_casebcmp("1234\05678", "1234\05679", 9) will return 1.
+ * turbo_casebcmp("1234\05678", "1234\05679", 9) will return 1 (i.e. mismatch).
  */
 static inline int
 turbo_casebcmp(const char *s1, const char *s2, unsigned int len)
