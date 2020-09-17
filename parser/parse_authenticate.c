@@ -190,7 +190,7 @@ int parse_authenticate_body( str *body, struct authenticate_body *auth)
 				CASE_6B( 0x646f6d62, 'i', 'n', DOMAIN_STATE, 1); /*domain*/
 				CASE_6B( 0x6f706171, 'u', 'e', OPAQUE_STATE, 1); /*opaque*/
 				case 0x616c676f: /*algo*/
-					if (p+9<end && TRB_SCASECMP(p+4, "realm"))
+					if (p+9<end && TRB_SCASECMP(p+4, "rithm"))
 					{
 						p+=9;
 						state = ALGORITHM_STATE;
