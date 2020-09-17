@@ -46,8 +46,6 @@
 	((_n)|0x20202020)
 #define GET4B(_p) \
 	((*(_p)<<24) + (*(_p+1)<<16) + (*(_p+2)<<8) + *(_p+3))
-#define GET3B(_p) \
-	((*(_p)<<24) + (*(_p+1)<<16) + (*(_p+2)<<8) + 0xff)
 
 #define CASE_5B(_hex4,_c5, _new_state, _quoted) \
 	case _hex4: \
@@ -82,13 +80,15 @@
 #define OPAQUE_STATE     6
 #define ALGORITHM_STATE  7
 
+#define FAST_SCMP(cp, S) (!bcmp(cp, (S), (sizeof(S) - 1)))
+#define FAST_STRCMP(sarg, S) ((sarg)->len == (sizeof(S) - 1) && FAST_SCMP((sarg)->s, S))
 
 int parse_qop_value(str *val, struct authenticate_body *auth)
 {
 	char *q = val->s;
 
 	/* parse first token */
-	if (val->len<4 || LOWER4B(GET4B(q))!=0x61757468) /* "auth" */
+	if (val->len<4 || !FAST_SCMP(q, "auth"))
 		return -1;
 	q += 4;
 	if (q==val->s+val->len) {
@@ -102,7 +102,7 @@ int parse_qop_value(str *val, struct authenticate_body *auth)
 			break;
 		case '-':
 			q++;
-			if (LOWER4B(GET3B(q))==0x696e74ff) {
+			if (FAST_SCMP(q, "int")) {
 				auth->flags |= QOP_AUTH_INT;
 				q+=3;
 			} else
@@ -124,14 +124,14 @@ int parse_qop_value(str *val, struct authenticate_body *auth)
 	while (q<val->s+val->len && isspace((int)*q)) q++;
 
 	/* parse second token */
-	if (val->len-(q-val->s)<4 || LOWER4B(GET4B(q))!=0x61757468)  /* "auth" */
+	if (val->len-(q-val->s)<4 ||!FAST_SCMP(q, "auth"))
 		return -1;
 	q += 4;
 	if (q==val->s+val->len) {
 		auth->flags |= QOP_AUTH;
 		return 0;
 	}
-	if (*q == '-' && LOWER4B(GET3B(q+1))==0x696e74ff) {
+	if (*q == '-' && FAST_SCMP(q+1, "int")) {
 		auth->flags |= QOP_AUTH_INT;
 		return 0;
 	} else
@@ -162,8 +162,7 @@ int parse_authenticate_body( str *body, struct authenticate_body *auth)
 	while (p<end && isspace((int)*p)) p++;
 	if (p+AUTHENTICATE_DIGEST_LEN>=end )
 		goto parse_error;
-	if ( LOWER4B( GET4B(p) ) != 0x64696765 /*dige*/ ||
-	LOWER1B(*(p+4))!=0x73 /*s*/ || LOWER1B(*(p+5))!=0x74 /*t*/)
+	if (!FAST_SCMP(p, "digest"))
 		goto parse_error;
 	p += AUTHENTICATE_DIGEST_LEN;
 	if (!isspace((int)*p))
@@ -190,8 +189,7 @@ int parse_authenticate_body( str *body, struct authenticate_body *auth)
 				CASE_6B( 0x646f6d62, 'i', 'n', DOMAIN_STATE, 1); /*domain*/
 				CASE_6B( 0x6f706171, 'u', 'e', OPAQUE_STATE, 1); /*opaque*/
 				case 0x616c676f: /*algo*/
-					if (p+9<end && LOWER4B(GET4B(p+4))==0x72697468
-						&& LOWER1B(*(p+8))=='m' )
+					if (p+9<end && FAST_SCMP(p+4, "realm"))
 					{
 						p+=9;
 						state = ALGORITHM_STATE;
@@ -207,8 +205,7 @@ int parse_authenticate_body( str *body, struct authenticate_body *auth)
 					}
 			}
 		} else if (p+3<end) {
-			n = LOWER4B( GET3B(p) );
-			if (n==0x716f70ff) /*qop*/
+			if (FAST_SCMP(p, "qop"))
 			{
 				p+=3;
 				state = QOP_STATE;
@@ -282,17 +279,10 @@ int parse_authenticate_body( str *body, struct authenticate_body *auth)
 				auth->opaque = val;
 				break;
 			case ALGORITHM_STATE:
-				if (val.len==3)
-				{
-					if ( LOWER4B(GET3B(val.s))==0x6d6435ff) /* MD5 */
-						auth->flags |= AUTHENTICATE_MD5;
-				} else if ((val.len == 11 && (              /* SHA-512-256 */
-					           LOWER4B(GET4B(val.s + 0)) == 0x7368612d &&
-					           LOWER4B(GET4B(val.s + 4)) == 0x3531322d &&
-					           LOWER4B(GET3B(val.s + 8)) == 0x323536ff)) ||
-					       (val.len == 7 && (               /* SHA-256 */
-					           LOWER4B(GET4B(val.s + 0)) == 0x7368612d &&
-					           LOWER4B(GET3B(val.s + 4)) == 0x323536ff))) {
+				if (FAST_STRCMP(&val, "MD5")) {
+					auth->flags |= AUTHENTICATE_MD5;
+				} else if (FAST_STRCMP(&val, "SHA-512-256") ||
+					       FAST_STRCMP(&val, "SHA-256")) {
 					LM_INFO("RFC 8760 (%.*s) is only available "
 					        "in OpenSIPS 3.2+\n", val.len, val.s);
 					ret = 1;
@@ -302,11 +292,10 @@ int parse_authenticate_body( str *body, struct authenticate_body *auth)
 				}
 				break;
 			case STALE_STATE:
-				if (val.len==4 && LOWER4B(GET4B(val.s))==0x74727565) /*true*/
+				if (FAST_STRCMP(&val, "true"))
 				{
-						auth->flags |= AUTHENTICATE_STALE;
-				} else if ( !(val.len==5 && LOWER1B(val.s[4])=='e' &&
-					LOWER4B(GET4B(val.s))==0x66616c73) )
+					auth->flags |= AUTHENTICATE_STALE;
+				} else if ( !(FAST_STRCMP(&val, "stale")))
 				{
 					LM_ERR("unsupported stale value \"%.*s\"\n",val.len,val.s);
 					goto error;
