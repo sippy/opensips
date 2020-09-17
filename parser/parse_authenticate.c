@@ -42,9 +42,9 @@
 #define AUTHENTICATE_DIGEST_LEN  (sizeof(AUTHENTICATE_DIGEST_S)-1)
 
 #define LOWER1B(_n) \
-	((_n)|0x20)
+	((_n < 'A' ||_n > 'Z') ? _n : _n |0x20)
 #define LOWER4B(_n) \
-	((_n)|0x20202020)
+	((_n)|LCMASK((unsigned int)_n))
 #define GET4B(_p) \
 	((*(_p)<<24) + (*(_p+1)<<16) + (*(_p+2)<<8) + *(_p+3))
 
