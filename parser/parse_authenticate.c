@@ -296,7 +296,7 @@ int parse_authenticate_body( str *body, struct authenticate_body *auth)
 				if (TRB_STRCASECMP(&val, "true"))
 				{
 					auth->flags |= AUTHENTICATE_STALE;
-				} else if ( !(TRB_STRCASECMP(&val, "stale")))
+				} else if (!(TRB_STRCASECMP(&val, "false")))
 				{
 					LM_ERR("unsupported stale value \"%.*s\"\n",val.len,val.s);
 					goto error;
