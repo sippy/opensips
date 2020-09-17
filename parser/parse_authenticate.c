@@ -82,7 +82,7 @@
 #define ALGORITHM_STATE  7
 
 #define TRB_SCASEMATCH(cp, S) (!turbo_casebcmp(cp, (S), (sizeof(S) - 1)))
-#define TRB_STRCASEMATCH(sarg, S) ((sarg)->len == (sizeof(S) - 1) && TRB_SCASEMATCH((sarg)->s, S))
+#define TRB_STRCASEMATCH(sarg, S) (turbo_strcasematch(sarg, (S), (sizeof(S) - 1)))
 
 int parse_qop_value(str *val, struct authenticate_body *auth)
 {

@@ -236,11 +236,9 @@ static inline void parse_qop(struct qp* _q)
 
 	trim(&s);
 
-	if ((s.len == QOP_AUTH_STR_LEN) &&
-	    !turbo_casebcmp(s.s, QOP_AUTH_STR, QOP_AUTH_STR_LEN)) {
+	if (turbo_strcasematch(&s, QOP_AUTH_STR, QOP_AUTH_STR_LEN)) {
 		_q->qop_parsed = QOP_AUTH_D;
-	} else if ((s.len == QOP_AUTHINT_STR_LEN) &&
-		   !turbo_casebcmp(s.s, QOP_AUTHINT_STR, QOP_AUTHINT_STR_LEN)) {
+	} else if (turbo_strcasematch(&s, QOP_AUTHINT_STR, QOP_AUTHINT_STR_LEN)) {
 		_q->qop_parsed = QOP_AUTHINT_D;
 	} else {
 		_q->qop_parsed = QOP_OTHER_D;
