@@ -28,6 +28,7 @@
 #include <string.h>
 #include "../dprint.h"
 #include "../ut.h"
+#include "../turbocompare.h"
 #include "../mem/mem.h"
 #include "msg_parser.h"
 #include "parse_authenticate.h"
@@ -80,15 +81,15 @@
 #define OPAQUE_STATE     6
 #define ALGORITHM_STATE  7
 
-#define FAST_SCMP(cp, S) (!bcmp(cp, (S), (sizeof(S) - 1)))
-#define FAST_STRCMP(sarg, S) ((sarg)->len == (sizeof(S) - 1) && FAST_SCMP((sarg)->s, S))
+#define TRB_SCASECMP(cp, S) (turbo_strncasecmp(cp, (S), (sizeof(S) - 1)))
+#define TRB_STRCASECMP(sarg, S) ((sarg)->len == (sizeof(S) - 1) && TRB_SCASECMP((sarg)->s, S))
 
 int parse_qop_value(str *val, struct authenticate_body *auth)
 {
 	char *q = val->s;
 
 	/* parse first token */
-	if (val->len<4 || !FAST_SCMP(q, "auth"))
+	if (val->len<4 || !TRB_SCASECMP(q, "auth"))
 		return -1;
 	q += 4;
 	if (q==val->s+val->len) {
@@ -102,7 +103,7 @@ int parse_qop_value(str *val, struct authenticate_body *auth)
 			break;
 		case '-':
 			q++;
-			if (FAST_SCMP(q, "int")) {
+			if (TRB_SCASECMP(q, "int")) {
 				auth->flags |= QOP_AUTH_INT;
 				q+=3;
 			} else
@@ -124,14 +125,14 @@ int parse_qop_value(str *val, struct authenticate_body *auth)
 	while (q<val->s+val->len && isspace((int)*q)) q++;
 
 	/* parse second token */
-	if (val->len-(q-val->s)<4 ||!FAST_SCMP(q, "auth"))
+	if (val->len-(q-val->s)<4 ||!TRB_SCASECMP(q, "auth"))
 		return -1;
 	q += 4;
 	if (q==val->s+val->len) {
 		auth->flags |= QOP_AUTH;
 		return 0;
 	}
-	if (*q == '-' && FAST_SCMP(q+1, "int")) {
+	if (*q == '-' && TRB_SCASECMP(q+1, "int")) {
 		auth->flags |= QOP_AUTH_INT;
 		return 0;
 	} else
@@ -162,7 +163,7 @@ int parse_authenticate_body( str *body, struct authenticate_body *auth)
 	while (p<end && isspace((int)*p)) p++;
 	if (p+AUTHENTICATE_DIGEST_LEN>=end )
 		goto parse_error;
-	if (!FAST_SCMP(p, "digest"))
+	if (!TRB_SCASECMP(p, "digest"))
 		goto parse_error;
 	p += AUTHENTICATE_DIGEST_LEN;
 	if (!isspace((int)*p))
@@ -189,7 +190,7 @@ int parse_authenticate_body( str *body, struct authenticate_body *auth)
 				CASE_6B( 0x646f6d62, 'i', 'n', DOMAIN_STATE, 1); /*domain*/
 				CASE_6B( 0x6f706171, 'u', 'e', OPAQUE_STATE, 1); /*opaque*/
 				case 0x616c676f: /*algo*/
-					if (p+9<end && FAST_SCMP(p+4, "realm"))
+					if (p+9<end && TRB_SCASECMP(p+4, "realm"))
 					{
 						p+=9;
 						state = ALGORITHM_STATE;
@@ -205,7 +206,7 @@ int parse_authenticate_body( str *body, struct authenticate_body *auth)
 					}
 			}
 		} else if (p+3<end) {
-			if (FAST_SCMP(p, "qop"))
+			if (TRB_SCASECMP(p, "qop"))
 			{
 				p+=3;
 				state = QOP_STATE;
@@ -279,10 +280,10 @@ int parse_authenticate_body( str *body, struct authenticate_body *auth)
 				auth->opaque = val;
 				break;
 			case ALGORITHM_STATE:
-				if (FAST_STRCMP(&val, "MD5")) {
+				if (TRB_STRCASECMP(&val, "MD5")) {
 					auth->flags |= AUTHENTICATE_MD5;
-				} else if (FAST_STRCMP(&val, "SHA-512-256") ||
-					       FAST_STRCMP(&val, "SHA-256")) {
+				} else if (TRB_STRCASECMP(&val, "SHA-512-256") ||
+					       TRB_STRCASECMP(&val, "SHA-256")) {
 					LM_INFO("RFC 8760 (%.*s) is only available "
 					        "in OpenSIPS 3.2+\n", val.len, val.s);
 					ret = 1;
@@ -292,10 +293,10 @@ int parse_authenticate_body( str *body, struct authenticate_body *auth)
 				}
 				break;
 			case STALE_STATE:
-				if (FAST_STRCMP(&val, "true"))
+				if (TRB_STRCASECMP(&val, "true"))
 				{
 					auth->flags |= AUTHENTICATE_STALE;
-				} else if ( !(FAST_STRCMP(&val, "stale")))
+				} else if ( !(TRB_STRCASECMP(&val, "stale")))
 				{
 					LM_ERR("unsupported stale value \"%.*s\"\n",val.len,val.s);
 					goto error;
