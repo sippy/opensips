@@ -29,7 +29,7 @@
 #include "digest_parser.h"
 #include "../../dassert.h"
 #include "../../trim.h"    /* trim_leading */
-#include "../../turbocompare.h" /* turbo_casebcmp */
+#include "../../lib/turbocompare.h" /* turbo_casebcmp */
 #include "param_parser.h"  /* Digest parameter name parser */
 #include "../../ut.h"      /* q_memchr */
 

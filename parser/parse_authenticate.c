@@ -28,7 +28,7 @@
 #include <string.h>
 #include "../dprint.h"
 #include "../ut.h"
-#include "../turbocompare.h"
+#include "../lib/turbocompare.h"
 #include "../mem/mem.h"
 #include "msg_parser.h"
 #include "parse_authenticate.h"
