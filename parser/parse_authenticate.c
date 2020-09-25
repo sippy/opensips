@@ -88,14 +88,22 @@
 
 #define STR_ADVANCE_BY(sptr, incr) {(sptr)->s += (incr); (sptr)->len -= (incr);}
 #define STR_ADVANCE(sptr) STR_ADVANCE_BY(sptr, 1)
+#define STR_ADVANCE_IF_STARTS(sarg, S) (str_advance_if_starts((sarg), (S), (sizeof(S) - 1)))
+
+static int str_advance_if_starts(str *val, const char *sval, size_t slen)
+{
+	if (val->len < slen || turbo_casebcmp(val->s, sval, slen))
+		return 0;
+	STR_ADVANCE_BY(val, slen);
+	return 1;
+}
 
 int parse_qop_value(str val, struct authenticate_body *auth)
 {
 
 	/* parse first token */
-	if (!TRB_STRCASESTARTS(&val, "auth"))
+	if (!STR_ADVANCE_IF_STARTS(&val, "auth"))
 		return -1;
-	STR_ADVANCE_BY(&val, 4);
 	if (val.len == 0) {
 		auth->flags |= QOP_AUTH;
 		return 0;
@@ -108,9 +116,8 @@ int parse_qop_value(str val, struct authenticate_body *auth)
 			break;
 		case '-':
 			STR_ADVANCE(&val);
-			if (TRB_STRCASESTARTS(&val, "int")) {
+			if (STR_ADVANCE_IF_STARTS(&val, "int")) {
 				auth->flags |= QOP_AUTH_INT;
-				STR_ADVANCE_BY(&val, 3);
 			} else
 				return -1;
 			break;
@@ -135,9 +142,8 @@ postcomma:
 	trim_leading(&val);
 
 	/* parse second token */
-	if (!TRB_STRCASESTARTS(&val, "auth"))
+	if (!STR_ADVANCE_IF_STARTS(&val, "auth"))
 		return -1;
-	STR_ADVANCE_BY(&val, 4);
 	if (val.len == 0) {
 		auth->flags |= QOP_AUTH;
 		return 0;
