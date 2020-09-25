@@ -84,55 +84,63 @@
 #define TRB_SCASEMATCH(cp, S) (!turbo_casebcmp(cp, (S), (sizeof(S) - 1)))
 #define TRB_STRCASEMATCH(sarg, S) (turbo_strcasematch(sarg, (S), (sizeof(S) - 1)))
 
-int parse_qop_value(str *val, struct authenticate_body *auth)
+#define STR_ADVANCE_BY(sptr, incr) {(sptr)->s += (incr); (sptr)->len -= (incr);}
+#define STR_ADVANCE(sptr) STR_ADVANCE_BY(sptr, 1)
+
+int parse_qop_value(str val, struct authenticate_body *auth)
 {
-	char *q = val->s;
 
 	/* parse first token */
-	if (val->len<4 || !TRB_SCASEMATCH(q, "auth"))
+	if (val.len < 4 || !TRB_STRCASEMATCH(&val, "auth"))
 		return -1;
-	q += 4;
-	if (q==val->s+val->len) {
+	STR_ADVANCE_BY(&val, 4);
+	if (val.len == 0) {
 		auth->flags |= QOP_AUTH;
 		return 0;
 	}
-	switch (*q) {
+	switch (*val.s) {
 		case ' ':
 		case '\t':
+			STR_ADVANCE(&val);
 			auth->flags |= QOP_AUTH;
 			break;
 		case '-':
-			q++;
-			if (TRB_SCASEMATCH(q, "int")) {
+			STR_ADVANCE(&val);
+			if (TRB_STRCASEMATCH(&val, "int")) {
 				auth->flags |= QOP_AUTH_INT;
-				q+=3;
+				STR_ADVANCE_BY(&val, 3);
 			} else
 				return -1;
 			break;
 		case ',':
 			auth->flags |= QOP_AUTH;
-			break;
+			goto postcomma;
 		default:
 			return -1;
 	}
 
-	if (q==val->s+val->len) return 0;
-	while (q<val->s+val->len && isspace((int)*q)) q++;
-	if (q==val->s+val->len) return 0;
-	if (*q!=',')
+	if (val.len == 0)
+		return 0;
+
+	trim_leading(&val);
+
+	if (val.len == 0)
+		return 0;
+	if (*val.s != ',')
 		return -1;
-	q++;
-	while (q<val->s+val->len && isspace((int)*q)) q++;
+postcomma:
+	STR_ADVANCE(&val);
+	trim_leading(&val);
 
 	/* parse second token */
-	if (val->len-(q-val->s)<4 ||!TRB_SCASEMATCH(q, "auth"))
+	if (val.len < 4 || !TRB_STRCASEMATCH(&val, "auth"))
 		return -1;
-	q += 4;
-	if (q==val->s+val->len) {
+	STR_ADVANCE_BY(&val, 4);
+	if (val.len == 0) {
 		auth->flags |= QOP_AUTH;
 		return 0;
 	}
-	if (TRB_SCASEMATCH(q, "-int")) {
+	if (TRB_STRCASEMATCH(&val, "-int")) {
 		auth->flags |= QOP_AUTH_INT;
 		return 0;
 	} else
@@ -160,16 +168,16 @@ int parse_authenticate_body( str *body, struct authenticate_body *auth)
 	end = body->s + body->len;
 
 	/* parse the "digest" */
-	while (p<end && isspace((int)*p)) p++;
+	while (p<end && is_ws(*p)) p++;
 	if (p+AUTHENTICATE_DIGEST_LEN>=end )
 		goto parse_error;
 	if (!TRB_SCASEMATCH(p, "digest"))
 		goto parse_error;
 	p += AUTHENTICATE_DIGEST_LEN;
-	if (!isspace((int)*p))
+	if (!is_ws(*p))
 		goto parse_error;
 	p++;
-	while (p<end && isspace((int)*p)) p++;
+	while (p<end && is_ws(*p)) p++;
 	if (p==end)
 		goto parse_error;
 
@@ -214,19 +222,19 @@ int parse_authenticate_body( str *body, struct authenticate_body *auth)
 		}
 
 		/* parse to the "=" */
-		for( n=0 ; p<end&&!isspace((int)*p)&&*p!='=' ; n++,p++  );
+		for( n=0 ; p<end&&!is_ws(*p)&&*p!='=' ; n++,p++  );
 		if (p==end)
 			goto parse_error;
 		if (n!=0)
 			state = OTHER_STATE;
 		name.len = p-name.s;
 		/* get the '=' */
-		while (p<end && isspace((int)*p)) p++;
+		while (p<end && is_ws(*p)) p++;
 		if (p==end || *p!='=')
 			goto parse_error;
 		p++;
 		/* get the value (quoted or not) */
-		while (p<end && isspace((int)*p)) p++;
+		while (p<end && is_ws(*p)) p++;
 		if (p+1>=end || (quoted_val && *p!='\"'))
 			goto parse_error;
 		if (!quoted_val && *p=='\"')
@@ -240,7 +248,7 @@ int parse_authenticate_body( str *body, struct authenticate_body *auth)
 				goto error;
 		} else {
 			val.s = p;
-			while (p<end && !isspace((int)*p) && *p!=',')
+			while (p<end && !is_ws(*p) && *p!=',')
 				p++;
 		}
 		val.len = p - val.s;
@@ -248,11 +256,11 @@ int parse_authenticate_body( str *body, struct authenticate_body *auth)
 			val.s = 0;
 		/* consume the closing '"' if quoted */
 		p += quoted_val;
-		while (p<end && isspace((int)*p)) p++;
+		while (p<end && is_ws(*p)) p++;
 		if (p<end && *p==',')
 		{
 			p++;
-			while (p<end && isspace((int)*p)) p++;
+			while (p<end && is_ws(*p)) p++;
 		}
 
 		LM_DBG("<%.*s>=\"%.*s\" state=%d\n",
@@ -263,7 +271,7 @@ int parse_authenticate_body( str *body, struct authenticate_body *auth)
 		{
 			case QOP_STATE:
 				auth->qop = val;
-				if (parse_qop_value(&val, auth) < 0)
+				if (parse_qop_value(val, auth) < 0)
 					LM_DBG("Unknown token in qop value '%.*s'\n",
 						val.len, val.s);
 				break;
