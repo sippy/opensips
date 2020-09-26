@@ -22,6 +22,10 @@
 #ifndef TRIM_H
 #define TRIM_H
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #include "str.h"
 
 /* whitespace */
