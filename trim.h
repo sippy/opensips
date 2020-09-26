@@ -78,11 +78,23 @@ is_ws(unsigned char ch)
 #include <stdio.h>
 #include <stdlib.h>
 
-#define TRIM_REPORT() { \
+struct rtpp_codeptr {
+    const char *fname;
+    int linen;
+    const char *funcn;
+};
+
+#define HERETYPE const struct rtpp_codeptr *
+#define HEREVAL  ({static const struct rtpp_codeptr _here = {.fname = __FILE__, .linen = __LINE__, .funcn = __func__}; &_here;})
+#define HEREARG mlp
+#define HERETYPEARG HERETYPE HEREARG
+
+#define TRIM_REPORT(cptr) { \
         int outfd = open("/tmp/TRIM_REPORT.trace", O_CREAT | O_WRONLY | O_APPEND, 0644); \
         if (outfd >= 0) { \
                 char *abuf = NULL; \
-                int asplen = asprintf(&abuf, "%s(\"%.*s\")\n", __func__, _s->len, _s->s); \
+                int asplen = asprintf(&abuf, "%s(%s:%d)(\"%.*s\")\n", cptr->funcn, \
+		    cptr->fname, cptr->linen, _s->len, _s->s); \
                 if (asplen > 0 && abuf != NULL) { \
                         write(outfd, abuf, asplen); \
                 } \
@@ -92,9 +104,11 @@ is_ws(unsigned char ch)
         } \
 }
 
-static inline void trim_leading(str* _s)
+#define trim_leading(_s) _rly_trim_leading(_s, HEREVAL)
+
+static inline void _rly_trim_leading(str* _s, HERETYPEARG)
 {
-	TRIM_REPORT();
+	TRIM_REPORT(HEREARG);
 	for(; _s->len > 0; _s->len--, _s->s++) {
 		TRIM_SWITCH(*(_s->s));
 	}
@@ -110,9 +124,11 @@ static inline void trim_leading(str* _s)
  *          might be unable to free _s->s for
  *          example !
  */
-static inline void trim_trailing(str* _s)
+#define trim_trailing(_s) _rly_trim_trailing(_s, HEREVAL)
+
+static inline void _rly_trim_trailing(str* _s, HERETYPEARG)
 {
-	TRIM_REPORT();
+	TRIM_REPORT(HEREARG);
 	for(; _s->len > 0; _s->len--) {
 		TRIM_SWITCH(_s->s[_s->len - 1]);
 	}
@@ -126,9 +142,11 @@ static inline void trim_trailing(str* _s)
  *          Make a copy otherwise you might be
  *          unable to free _s->s for example !
  */
-static inline void trim(str* _s)
+#define trim(_s) _rly_trim(_s, HEREVAL)
+
+static inline void _rly_trim(str* _s, HERETYPEARG)
 {
-	TRIM_REPORT();
+	TRIM_REPORT(HEREARG);
 	trim_leading(_s);
 	trim_trailing(_s);
 }
