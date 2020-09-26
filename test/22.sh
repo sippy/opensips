@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # database access and persistent storage for registrar on postgres
 
 # Copyright (C) 2007 1&1 Internet AG

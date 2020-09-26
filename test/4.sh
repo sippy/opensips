@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # test basic fifo functionality
 
 # Copyright (C) 2007 1&1 Internet AG

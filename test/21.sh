@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # tests the authentification via auth_db and uri_db
 
 # Copyright (C) 2007 1&1 Internet AG

@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # runs ../opensips with all command line arguments.
 # ommited options are -h -v -C -c -D
 

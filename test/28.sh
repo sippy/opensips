@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # tests simple cpl_c script operations with mysql
 
 # Copyright (C) 2008 1&1 Internet AG

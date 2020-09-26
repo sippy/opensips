@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # checks a configuration with 'opensips -c' and 'opensips -C'
 
 # Copyright (C) 2007 1&1 Internet AG
