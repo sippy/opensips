@@ -70,12 +70,6 @@ is_ws(unsigned char ch)
 
 #include <fcntl.h>
 #include <unistd.h>
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE 1
-#endif
-#ifndef _BSD_SOURCE
-#define _BSD_SOURCE 1
-#endif
 #include <stdio.h>
 #include <stdlib.h>
 
