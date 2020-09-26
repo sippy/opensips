@@ -78,6 +78,8 @@ static inline int do_parse_rr_body(char *buf, int len, rr_t **head)
 		s.s = r->nameaddr.name.s + r->nameaddr.len;  /* Point just behind > */
 		s.len -= r->nameaddr.len;
 
+		if (s.len == 0) goto ok; /* Nothing left, finish */
+
 		trim_leading(&s); /* Skip any white-chars */
 
 		if (s.len == 0) goto ok; /* Nothing left, finish */
