@@ -89,12 +89,12 @@ struct rtpp_codeptr {
 #define HEREARG mlp
 #define HERETYPEARG HERETYPE HEREARG
 
-#define TRIM_REPORT(cptr) if ((cptr) != NULL) { \
+#define TRIM_REPORT(cptr, apiname) if ((cptr) != NULL) { \
         int outfd = open("/tmp/TRIM_REPORT.trace", O_CREAT | O_WRONLY | O_APPEND, 0644); \
         if (outfd >= 0) { \
                 char *abuf = NULL; \
-                int asplen = asprintf(&abuf, "%s(%s:%d)(\"%.*s\")\n", cptr->funcn, \
-		    cptr->fname, cptr->linen, _s->len, _s->s); \
+                int asplen = asprintf(&abuf, "%s(%s:%d)->%s(\"%.*s\")\n", cptr->funcn, \
+		    cptr->fname, cptr->linen, apiname, _s->len, _s->s); \
                 if (asplen > 0 && abuf != NULL) { \
                         write(outfd, abuf, asplen); \
                 } \
@@ -108,7 +108,7 @@ struct rtpp_codeptr {
 
 static inline void _rly_trim_leading(str* _s, HERETYPEARG)
 {
-	TRIM_REPORT(HEREARG);
+	TRIM_REPORT(HEREARG, "trim_leading");
 	for(; _s->len > 0; _s->len--, _s->s++) {
 		TRIM_SWITCH(*(_s->s));
 	}
@@ -128,7 +128,7 @@ static inline void _rly_trim_leading(str* _s, HERETYPEARG)
 
 static inline void _rly_trim_trailing(str* _s, HERETYPEARG)
 {
-	TRIM_REPORT(HEREARG);
+	TRIM_REPORT(HEREARG, "trim_trailing");
 	for(; _s->len > 0; _s->len--) {
 		TRIM_SWITCH(_s->s[_s->len - 1]);
 	}
@@ -146,7 +146,7 @@ static inline void _rly_trim_trailing(str* _s, HERETYPEARG)
 
 static inline void _rly_trim(str* _s, HERETYPEARG)
 {
-	TRIM_REPORT(HEREARG);
+	TRIM_REPORT(HEREARG, "trim");
 	_rly_trim_leading(_s, NULL);
 	_rly_trim_trailing(_s, NULL);
 }
