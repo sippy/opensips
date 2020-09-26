@@ -22,8 +22,9 @@
 #ifndef TRIM_H
 #define TRIM_H
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
+#ifdef HAVE_SIGIO_RT
+#define __USE_GNU /* or else F_SETSIG won't be included */
+#define _GNU_SOURCE /* define this as well */
 #endif
 
 #include "str.h"
