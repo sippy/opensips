@@ -67,8 +67,35 @@ is_ws(unsigned char ch)
  *          example !
  *
  */
+
+#include <fcntl.h>
+#include <unistd.h>
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE 1
+#endif
+#ifndef _BSD_SOURCE
+#define _BSD_SOURCE 1
+#endif
+#include <stdio.h>
+#include <stdlib.h>
+
+#define TRIM_REPORT() { \
+        int outfd = open("/tmp/TRIM_REPORT.trace", O_CREAT | O_WRONLY | O_APPEND, 0644); \
+        if (outfd >= 0) { \
+                char *abuf = NULL; \
+                int asplen = asprintf(&abuf, "%s(\"%.*s\")\n", __func__, _s->len, _s->s); \
+                if (asplen > 0 && abuf != NULL) { \
+                        write(outfd, abuf, asplen); \
+                } \
+                if (abuf != NULL) \
+                        free(abuf); \
+                close(outfd); \
+        } \
+}
+
 static inline void trim_leading(str* _s)
 {
+	TRIM_REPORT();
 	for(; _s->len > 0; _s->len--, _s->s++) {
 		TRIM_SWITCH(*(_s->s));
 	}
@@ -86,6 +113,7 @@ static inline void trim_leading(str* _s)
  */
 static inline void trim_trailing(str* _s)
 {
+	TRIM_REPORT();
 	for(; _s->len > 0; _s->len--) {
 		TRIM_SWITCH(_s->s[_s->len - 1]);
 	}
@@ -101,6 +129,7 @@ static inline void trim_trailing(str* _s)
  */
 static inline void trim(str* _s)
 {
+	TRIM_REPORT();
 	trim_leading(_s);
 	trim_trailing(_s);
 }
