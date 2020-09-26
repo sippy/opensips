@@ -89,7 +89,7 @@ struct rtpp_codeptr {
 #define HEREARG mlp
 #define HERETYPEARG HERETYPE HEREARG
 
-#define TRIM_REPORT(cptr) { \
+#define TRIM_REPORT(cptr) if ((cptr) != NULL) { \
         int outfd = open("/tmp/TRIM_REPORT.trace", O_CREAT | O_WRONLY | O_APPEND, 0644); \
         if (outfd >= 0) { \
                 char *abuf = NULL; \
@@ -147,8 +147,8 @@ static inline void _rly_trim_trailing(str* _s, HERETYPEARG)
 static inline void _rly_trim(str* _s, HERETYPEARG)
 {
 	TRIM_REPORT(HEREARG);
-	trim_leading(_s);
-	trim_trailing(_s);
+	_rly_trim_leading(_s, NULL);
+	_rly_trim_trailing(_s, NULL);
 }
 
 
