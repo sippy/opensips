@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Maksym Sobolyev
+ * Copyright (C) 2019 OpenSIPS Solutions
  *
  * This file is part of opensips, a free SIP server.
  *
@@ -18,6 +18,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301,USA
  */
 
-enum oob_position {OOB_PRE, OOB_POST};
+#ifndef __TEST_PARSE_AUTHB_H__
+#define __TEST_PARSE_AUTHB_H__
 
-void test_oob(const str *, void (*)(const str *, enum oob_position, void *), void *);
+void test_parse_authenticate_body(void);
+
+#endif /* __TEST_PARSE_AUTHB_H__ */
