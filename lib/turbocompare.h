@@ -32,7 +32,7 @@
  * Obtained from Bit Twiddling Hacks By Sean Eron Anderson <seander@cs.stanford.edu>
  */
 #define markbetween(x,m,n) \
-  (((~(typeof(x))0/255*(127+(n))-((x)&~(typeof(x))0/255*127))&~(x)&(((x)&~(typeof(x))0/255*127)+~(typeof(x))0/255*(127-(m))))&~(typeof(x))0/255*128)
+   ({const typeof(x) cFF = ~(typeof(x))0, c01 = cFF / 255; (((c01*(127+(n))-((x)&c01*127))&~(x)&(((x)&c01*127)+c01*(127-(m))))&c01*128);})
 
 /*
  * TURBO_LCMASK() generates mask that can be ORed with original int-like
