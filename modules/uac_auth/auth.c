@@ -33,13 +33,11 @@
 #include "../../pvar.h"
 #include "../../data_lump.h"
 #include "../../mem/mem.h"
-#include "../../md5global.h"
-#include "../../md5.h"
 #include "../../parser/parse_authenticate.h"
 #include "../tm/tm_load.h"
 
 #include "uac_auth.h"
-
+#include "uac_auth_calc.h"
 
 extern int            realm_avp_name;
 extern unsigned short realm_avp_type;
@@ -236,141 +234,6 @@ struct uac_credential *lookup_realm( str *realm)
 }
 
 
-static inline void cvt_hex(HASH bin, HASHHEX hex)
-{
-	unsigned short i;
-	unsigned char j;
-
-	for (i = 0; i<HASHLEN; i++)
-	{
-		j = (bin[i] >> 4) & 0xf;
-		if (j <= 9)
-		{
-			hex[i * 2] = (j + '0');
-		} else {
-			hex[i * 2] = (j + 'a' - 10);
-		}
-
-		j = bin[i] & 0xf;
-
-		if (j <= 9)
-		{
-			hex[i * 2 + 1] = (j + '0');
-		} else {
-			hex[i * 2 + 1] = (j + 'a' - 10);
-		}
-	};
-
-	hex[HASHHEXLEN] = '\0';
-}
-
-
-
-/*
- * calculate H(A1)
- */
-void uac_calc_HA1( struct uac_credential *crd,
-		struct authenticate_body *auth,
-		str* cnonce,
-		HASHHEX sess_key)
-{
-	MD5_CTX Md5Ctx;
-	HASH HA1;
-
-	MD5Init(&Md5Ctx);
-	MD5Update(&Md5Ctx, crd->user.s, crd->user.len);
-	MD5Update(&Md5Ctx, ":", 1);
-	MD5Update(&Md5Ctx, crd->realm.s, crd->realm.len);
-	MD5Update(&Md5Ctx, ":", 1);
-	MD5Update(&Md5Ctx, crd->passwd.s, crd->passwd.len);
-	MD5Final(HA1, &Md5Ctx);
-
-	if ( auth->algorithm == ALG_MD5SESS )
-	{
-		MD5Init(&Md5Ctx);
-		MD5Update(&Md5Ctx, HA1, HASHLEN);
-		MD5Update(&Md5Ctx, ":", 1);
-		MD5Update(&Md5Ctx, auth->nonce.s, auth->nonce.len);
-		MD5Update(&Md5Ctx, ":", 1);
-		MD5Update(&Md5Ctx, cnonce->s, cnonce->len);
-		MD5Final(HA1, &Md5Ctx);
-	};
-
-	cvt_hex(HA1, sess_key);
-}
-
-
-
-/*
- * calculate H(A2)
- */
-void uac_calc_HA2(str *msg_body, str *method, str *uri,
-		int auth_int, HASHHEX HA2Hex)
-{
-	MD5_CTX Md5Ctx;
-	HASH HA2;
-	HASH HENTITY;
-	HASHHEX HENTITYHex;
-
-	if (auth_int) {
-		MD5Init(&Md5Ctx);
-		MD5Update(&Md5Ctx, msg_body->s, msg_body->len);
-		MD5Final(HENTITY, &Md5Ctx);
-		cvt_hex(HENTITY, HENTITYHex);
-	}
-
-	MD5Init(&Md5Ctx);
-	MD5Update(&Md5Ctx, method->s, method->len);
-	MD5Update(&Md5Ctx, ":", 1);
-	MD5Update(&Md5Ctx, uri->s, uri->len);
-
-	if (auth_int)
-	{
-		MD5Update(&Md5Ctx, ":", 1);
-		MD5Update(&Md5Ctx, HENTITYHex, HASHHEXLEN);
-	};
-
-	MD5Final(HA2, &Md5Ctx);
-	cvt_hex(HA2, HA2Hex);
-}
-
-
-
-/*
- * calculate request-digest/response-digest as per HTTP Digest spec
- */
-void uac_calc_response( HASHHEX ha1, HASHHEX ha2,
-		struct authenticate_body *auth,
-		str* nc, str* cnonce,
-		HASHHEX response)
-{
-	MD5_CTX Md5Ctx;
-	HASH RespHash;
-
-	MD5Init(&Md5Ctx);
-	MD5Update(&Md5Ctx, ha1, HASHHEXLEN);
-	MD5Update(&Md5Ctx, ":", 1);
-	MD5Update(&Md5Ctx, auth->nonce.s, auth->nonce.len);
-	MD5Update(&Md5Ctx, ":", 1);
-
-	if((auth->flags&QOP_AUTH) || (auth->flags&QOP_AUTH_INT))
-	{
-		MD5Update(&Md5Ctx, nc->s, nc->len);
-		MD5Update(&Md5Ctx, ":", 1);
-		MD5Update(&Md5Ctx, cnonce->s, cnonce->len);
-		MD5Update(&Md5Ctx, ":", 1);
-		if (!(auth->flags&QOP_AUTH))
-			MD5Update(&Md5Ctx, "auth-int", 8);
-		else
-			MD5Update(&Md5Ctx, "auth", 4);
-		MD5Update(&Md5Ctx, ":", 1);
-	};
-	MD5Update(&Md5Ctx, ha2, HASHHEXLEN);
-	MD5Final(RespHash, &Md5Ctx);
-	cvt_hex(RespHash, response);
-}
-
-
 void do_uac_auth(str *msg_body, str *method, str *uri, struct uac_credential *crd,
 		struct authenticate_body *auth, struct authenticate_nc_cnonce *auth_nc_cnonce,
 		HASHHEX response)
@@ -378,6 +241,7 @@ void do_uac_auth(str *msg_body, str *method, str *uri, struct uac_credential *cr
 	HASHHEX ha1;
 	HASHHEX ha2;
 	int i, has_ha1;
+	const struct uac_auth_calc *uac_calc = &md5_uac_calc;
 
 	/* before actually doing the authe, we check if the received password is
 	   a plain text password or a HA1 value ; we detect a HA1 (in the password
@@ -406,19 +270,19 @@ void do_uac_auth(str *msg_body, str *method, str *uri, struct uac_credential *cr
 
 		/* do authentication */
 		if (!has_ha1)
-			uac_calc_HA1( crd, auth, &cnonce, ha1);
-		uac_calc_HA2(msg_body, method, uri, !(auth->flags&QOP_AUTH), ha2);
+			uac_calc->HA1( crd, auth, &cnonce, ha1);
+		uac_calc->HA2(msg_body, method, uri, !(auth->flags&QOP_AUTH), ha2);
 
-		uac_calc_response( ha1, ha2, auth, &nc, &cnonce, response);
+		uac_calc->response( ha1, ha2, auth, &nc, &cnonce, response);
 		auth_nc_cnonce->nc = &nc;
 		auth_nc_cnonce->cnonce = &cnonce;
 	} else {
 		/* do authentication */
 		if (!has_ha1)
-			uac_calc_HA1( crd, auth, 0/*cnonce*/, ha1);
-		uac_calc_HA2(msg_body, method, uri, 0, ha2);
+			uac_calc->HA1( crd, auth, 0/*cnonce*/, ha1);
+		uac_calc->HA2(msg_body, method, uri, 0, ha2);
 
-		uac_calc_response( ha1, ha2, auth, 0/*nc*/, 0/*cnonce*/, response);
+		uac_calc->response( ha1, ha2, auth, 0/*nc*/, 0/*cnonce*/, response);
 	}
 }
 
