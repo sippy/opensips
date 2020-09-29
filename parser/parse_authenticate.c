@@ -34,10 +34,6 @@
 #include "parse_authenticate.h"
 
 
-#define AUTHENTICATE_MD5         (1<<0)
-#define AUTHENTICATE_MD5SESS     (1<<1)
-#define AUTHENTICATE_STALE       (1<<2)
-
 #define AUTHENTICATE_DIGEST_S    "Digest"
 #define AUTHENTICATE_DIGEST_LEN  (sizeof(AUTHENTICATE_DIGEST_S)-1)
 
@@ -295,7 +291,7 @@ int parse_authenticate_body( str body, struct authenticate_body *auth)
 				break;
 			case ALGORITHM_STATE:
 				if (TRB_STRCASEMATCH(&val, "MD5")) {
-					auth->flags |= AUTHENTICATE_MD5;
+					auth->algorithm = ALG_MD5;
 				} else if (TRB_STRCASEMATCH(&val, "SHA-512-256") ||
 					       TRB_STRCASEMATCH(&val, "SHA-256")) {
 					LM_INFO("RFC 8760 (%.*s) is only available "
