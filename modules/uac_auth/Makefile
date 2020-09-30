@@ -10,4 +10,5 @@ auto_gen=
 NAME=uac_auth.so
 LIBS=
 
+include ../../Makefile.openssl
 include ../../Makefile.modules
