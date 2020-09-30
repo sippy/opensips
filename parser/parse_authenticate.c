@@ -290,15 +290,13 @@ int parse_authenticate_body( str body, struct authenticate_body *auth)
 				auth->opaque = val;
 				break;
 			case ALGORITHM_STATE:
-				if (TRB_STRCASEMATCH(&val, "MD5")) {
-					auth->algorithm = ALG_MD5;
-				} else if (TRB_STRCASEMATCH(&val, "SHA-256")) {
-					auth->algorithm = ALG_SHA256;
-				} else if (TRB_STRCASEMATCH(&val, "SHA-512-256")) {
+				auth->algorithm = parse_digest_algorithm(&val);
+				if (auth->algorithm == ALG_SHA512_256 ||
+				    auth->algorithm == ALG_SHA512_256SESS) {
 					LM_INFO("RFC 8760 (%.*s) is only available "
 					        "in OpenSIPS 3.2+\n", val.len, val.s);
 					ret = 1;
-				} else {
+				} else if (auth->algorithm == ALG_OTHER) {
 					LM_INFO("bad algorithm \"%.*s\"\n", val.len, val.s);
 					goto error;
 				}
