@@ -129,15 +129,10 @@ static inline int parse_token(str* _s, str* _r)
 	      */
 	for(i = 0; i < _s->len; i++) {
 
-		     /* All these characters
+		     /* All LWS characters + ','
 		      * mark end of the token
 		      */
-		switch(_s->s[i]) {
-		case ' ':
-		case '\t':
-		case '\r':
-		case '\n':
-		case ',':
+		if (is_ws(_s->s[i]) || _s->s[i] == ',') {
 			     /* So if you find
 			      * any of them
 			      * stop iterating
@@ -245,34 +240,29 @@ static inline void parse_qop(struct qp* _q)
 	}
 }
 
-#define CASE_ALG(alg, s, a) \
+#define CASE_ALG(alg, sptr) \
 	case ALG_##alg##_STR_LEN: \
-		a->alg_parsed = (turbo_casebcmp(s.s, ALG_##alg##_STR, s.len) ? \
-		  ALG_OTHER : ALG_##alg); \
+		if (!turbo_casebcmp((sptr)->s, ALG_##alg##_STR, (sptr)->len)) \
+			return ALG_##alg; \
 		break;
 
 /*
  * Parse algorithm parameter body
  */
-static inline void parse_algorithm(struct algorithm* _a)
+alg_t parse_digest_algorithm(const str *sp)
 {
-	str s;
 
-	s.s = _a->alg_str.s;
-	s.len = _a->alg_str.len;
-
-	trim(&s);
-
-	switch (s.len) {
-	CASE_ALG(MD5, s, _a);
-	CASE_ALG(MD5SESS, s, _a);
-	CASE_ALG(SHA256, s, _a);
-	CASE_ALG(SHA256SESS, s, _a);
-	CASE_ALG(SHA512_256, s, _a);
-	CASE_ALG(SHA512_256SESS, s, _a);
+	switch (sp->len) {
+	CASE_ALG(MD5, sp);
+	CASE_ALG(MD5SESS, sp);
+	CASE_ALG(SHA256, sp);
+	CASE_ALG(SHA256SESS, sp);
+	CASE_ALG(SHA512_256, sp);
+	CASE_ALG(SHA512_256SESS, sp);
 	default:
-		_a->alg_parsed = ALG_OTHER;
+		break;
 	}
+	return ALG_OTHER;
 }
 
 
@@ -330,7 +320,8 @@ static inline int parse_digest_params(str* _s, dig_cred_t* _c)
 
 	     /* Parse algorithm body if the parameter was present */
 	if (_c->alg.alg_str.s != 0) {
-		parse_algorithm(&_c->alg);
+		trim(&(_c->alg.alg_str));
+		_c->alg.alg_parsed = parse_digest_algorithm(&(_c->alg.alg_str));
 	} else {
 		/* No algorithm specified */
 		DASSERT(_c->alg.alg_parsed == ALG_UNSPEC);
