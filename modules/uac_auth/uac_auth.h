@@ -31,6 +31,9 @@
 #include "../../parser/parse_authenticate.h"
 #include "../../parser/msg_parser.h"
 
+#include "auth_md5.h"
+#include "auth_sha256.h"
+
 #define WWW_AUTH_CODE       401
 #define WWW_AUTH_HDR        "WWW-Authenticate"
 #define WWW_AUTH_HDR_LEN    (sizeof(WWW_AUTH_HDR)-1)
@@ -38,12 +41,15 @@
 #define PROXY_AUTH_HDR      "Proxy-Authenticate"
 #define PROXY_AUTH_HDR_LEN  (sizeof(PROXY_AUTH_HDR)-1)
 
+typedef union {
+	char MD5[HASHLEN_MD5];
+	char SHA256[HASHLEN_SHA256];
+} HASH;
 
-#define HASHLEN 16
-typedef char HASH[HASHLEN];
-
-#define HASHHEXLEN 32
-typedef char HASHHEX[HASHHEXLEN+1];
+typedef union {
+	char MD5[HASHHEXLEN_MD5 + 1];
+	char SHA256[HASHHEXLEN_SHA256 + 1];
+} HASHHEX;
 
 struct uac_credential {
 	str realm;
@@ -99,7 +105,7 @@ static inline int load_uac_auth_api( uac_auth_api_t *uac_auth_api)
 	return load_uac_auth( uac_auth_api );
 }
 
-static inline void cvt_hex(HASH bin, HASHHEX hex)
+static inline void cvt_hex(const char *bin, char *hex, int HASHLEN, int HASHHEXLEN)
 {
         unsigned short i;
         unsigned char j;

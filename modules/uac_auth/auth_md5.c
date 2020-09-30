@@ -46,20 +46,20 @@ static void uac_calc_HA1( struct uac_credential *crd,
 	MD5Update(&Md5Ctx, crd->realm.s, crd->realm.len);
 	MD5Update(&Md5Ctx, ":", 1);
 	MD5Update(&Md5Ctx, crd->passwd.s, crd->passwd.len);
-	MD5Final(HA1, &Md5Ctx);
+	MD5Final(HA1.MD5, &Md5Ctx);
 
 	if ( auth->algorithm == ALG_MD5SESS )
 	{
 		MD5Init(&Md5Ctx);
-		MD5Update(&Md5Ctx, HA1, HASHLEN);
+		MD5Update(&Md5Ctx, HA1.MD5, HASHLEN_MD5);
 		MD5Update(&Md5Ctx, ":", 1);
 		MD5Update(&Md5Ctx, auth->nonce.s, auth->nonce.len);
 		MD5Update(&Md5Ctx, ":", 1);
 		MD5Update(&Md5Ctx, cnonce->s, cnonce->len);
-		MD5Final(HA1, &Md5Ctx);
+		MD5Final(HA1.MD5, &Md5Ctx);
 	};
 
-	cvt_hex(HA1, sess_key);
+	cvt_hex(HA1.MD5, sess_key.MD5, HASHLEN_MD5, HASHHEXLEN_MD5);
 }
 
 
@@ -78,8 +78,8 @@ static void uac_calc_HA2(str *msg_body, str *method, str *uri,
 	if (auth_int) {
 		MD5Init(&Md5Ctx);
 		MD5Update(&Md5Ctx, msg_body->s, msg_body->len);
-		MD5Final(HENTITY, &Md5Ctx);
-		cvt_hex(HENTITY, HENTITYHex);
+		MD5Final(HENTITY.MD5, &Md5Ctx);
+		cvt_hex(HENTITY.MD5, HENTITYHex.MD5, HASHLEN_MD5, HASHHEXLEN_MD5);
 	}
 
 	MD5Init(&Md5Ctx);
@@ -90,11 +90,11 @@ static void uac_calc_HA2(str *msg_body, str *method, str *uri,
 	if (auth_int)
 	{
 		MD5Update(&Md5Ctx, ":", 1);
-		MD5Update(&Md5Ctx, HENTITYHex, HASHHEXLEN);
+		MD5Update(&Md5Ctx, HENTITYHex.MD5, HASHHEXLEN_MD5);
 	};
 
-	MD5Final(HA2, &Md5Ctx);
-	cvt_hex(HA2, HA2Hex);
+	MD5Final(HA2.MD5, &Md5Ctx);
+	cvt_hex(HA2.MD5, HA2Hex.MD5, HASHLEN_MD5, HASHHEXLEN_MD5);
 }
 
 
@@ -111,7 +111,7 @@ static void uac_calc_response( HASHHEX ha1, HASHHEX ha2,
 	HASH RespHash;
 
 	MD5Init(&Md5Ctx);
-	MD5Update(&Md5Ctx, ha1, HASHHEXLEN);
+	MD5Update(&Md5Ctx, ha1.MD5, HASHHEXLEN_MD5);
 	MD5Update(&Md5Ctx, ":", 1);
 	MD5Update(&Md5Ctx, auth->nonce.s, auth->nonce.len);
 	MD5Update(&Md5Ctx, ":", 1);
@@ -128,9 +128,9 @@ static void uac_calc_response( HASHHEX ha1, HASHHEX ha2,
 			MD5Update(&Md5Ctx, "auth", 4);
 		MD5Update(&Md5Ctx, ":", 1);
 	};
-	MD5Update(&Md5Ctx, ha2, HASHHEXLEN);
-	MD5Final(RespHash, &Md5Ctx);
-	cvt_hex(RespHash, response);
+	MD5Update(&Md5Ctx, ha2.MD5, HASHHEXLEN_MD5);
+	MD5Final(RespHash.MD5, &Md5Ctx);
+	cvt_hex(RespHash.MD5, response.MD5, HASHLEN_MD5, HASHHEXLEN_MD5);
 }
 
 const struct uac_auth_calc md5_uac_calc = {

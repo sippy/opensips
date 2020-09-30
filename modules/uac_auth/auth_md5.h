@@ -18,10 +18,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-struct uac_auth_calc {
-	void (*HA1)(struct uac_credential *, struct authenticate_body *, str *,
-	    HASHHEX);
-	void (*HA2)(str *, str *, str *, int, HASHHEX);
-	void (*response)(HASHHEX, HASHHEX, struct authenticate_body *, str *,
-	    str *, HASHHEX);
-};
+#define HASHLEN_MD5 16
+#define HASHHEXLEN_MD5 (HASHLEN_MD5 * 2)
+
+extern const struct uac_auth_calc md5_uac_calc;

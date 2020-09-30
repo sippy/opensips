@@ -241,13 +241,30 @@ void do_uac_auth(str *msg_body, str *method, str *uri, struct uac_credential *cr
 	HASHHEX ha1;
 	HASHHEX ha2;
 	int i, has_ha1;
-	const struct uac_auth_calc *uac_calc = &md5_uac_calc;
+	const struct uac_auth_calc *uac_calc;
+
+	switch (auth->algorithm) {
+	case ALG_UNSPEC:
+	case ALG_MD5:
+	case ALG_MD5SESS:
+		uac_calc = &md5_uac_calc;
+		break;
+
+	case ALG_SHA256:
+	case ALG_SHA256SESS:
+		uac_calc = &sha256_uac_calc;
+		break;
+
+	default:
+		abort();
+	}
 
 	/* before actually doing the authe, we check if the received password is
 	   a plain text password or a HA1 value ; we detect a HA1 (in the password
 	   field if: (1) starts with "0x"; (2) len is 32 + 2 (prefix) ; (3) the 32
 	   chars are HEXA values */
-	if (crd->passwd.len==34 && crd->passwd.s[0]=='0' && crd->passwd.s[1]=='x') {
+	if (uac_calc == &md5_uac_calc && crd->passwd.len==(HASHHEXLEN_MD5 + 2) &&
+	    crd->passwd.s[0]=='0' && crd->passwd.s[1]=='x') {
 		/* it may be a HA1 - check the actual content */
 		for( has_ha1=1,i=2 ; i<crd->passwd.len ; i++ ) {
 			if ( !( (crd->passwd.s[i]>='0' && crd->passwd.s[i]<='9') ||
@@ -255,10 +272,10 @@ void do_uac_auth(str *msg_body, str *method, str *uri, struct uac_credential *cr
 				has_ha1 = 0;
 				break;
 			} else {
-				ha1[i-2] = crd->passwd.s[i];
+				ha1.MD5[i-2] = crd->passwd.s[i];
 			}
 		}
-		ha1[HASHHEXLEN] = 0;
+		ha1.MD5[HASHHEXLEN_MD5] = 0;
 	} else {
 		has_ha1 = 0;
 	}
