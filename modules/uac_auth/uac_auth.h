@@ -49,7 +49,7 @@ typedef union {
 typedef union {
 	char MD5[HASHHEXLEN_MD5 + 1];
 	char SHA256[HASHHEXLEN_SHA256 + 1];
-	char _any[0];
+	char begin;
 } HASHHEX;
 
 struct uac_credential {

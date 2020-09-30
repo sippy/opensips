@@ -355,7 +355,7 @@ str* build_authorization_hdr(int code, str *uri,
 	char *qop_val;
 	int qop_val_len = 0;
 
-	response_len = strlen(response._any);
+	response_len = strlen(&response.begin);
 
 	if((auth->flags&QOP_AUTH) || (auth->flags&QOP_AUTH_INT)) {
 		if (!(auth->flags&QOP_AUTH)) {
@@ -439,7 +439,7 @@ str* build_authorization_hdr(int code, str *uri,
 	/* RESPONSE */
 	add_string( p, FIELD_SEPARATOR_S RESPONSE_FIELD_S,
 		FIELD_SEPARATOR_LEN+RESPONSE_FIELD_LEN);
-	add_string( p, response._any, response_len);
+	add_string( p, &response.begin, response_len);
 	/* ALGORITHM */
 	add_string( p, FIELD_SEPARATOR_S ALGORITHM_FIELD_S CRLF,
 		FIELD_SEPARATOR_LEN+ALGORITHM_FIELD_LEN+CRLF_LEN);
