@@ -29,7 +29,8 @@
 #include "uac_auth.h"
 #include "uac_auth_calc.h"
 
-#define ALGORITHM_VALUE_MD5_S    "MD5"
+#define ALGORITHM_VALUE_MD5_S     "MD5"
+#define ALGORITHM_VALUE_MD5SESS_S "MD5-sess"
 
 /*
  * calculate H(A1)
@@ -142,4 +143,11 @@ const struct uac_auth_calc md5_uac_calc = {
     .HA2 = uac_calc_HA2,
     .response = &uac_calc_response,
     .algorithm_val = str_init(ALGORITHM_VALUE_MD5_S)
+};
+
+const struct uac_auth_calc md5sess_uac_calc = {
+    .HA1 = uac_calc_HA1,
+    .HA2 = uac_calc_HA2,
+    .response = &uac_calc_response,
+    .algorithm_val = str_init(ALGORITHM_VALUE_MD5SESS_S)
 };

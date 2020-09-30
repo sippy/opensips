@@ -246,13 +246,19 @@ void do_uac_auth(str *msg_body, str *method, str *uri, struct uac_credential *cr
 	switch (auth->algorithm) {
 	case ALG_UNSPEC:
 	case ALG_MD5:
+                uac_calc = &md5_uac_calc;
+                break;
+
 	case ALG_MD5SESS:
-		uac_calc = &md5_uac_calc;
+		uac_calc = &md5sess_uac_calc;
 		break;
 
 	case ALG_SHA256:
-	case ALG_SHA256SESS:
 		uac_calc = &sha256_uac_calc;
+		break;
+
+	case ALG_SHA256SESS:
+		uac_calc = &sha256sess_uac_calc;
 		break;
 
 	default:
