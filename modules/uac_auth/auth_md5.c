@@ -105,7 +105,7 @@ static void uac_calc_HA2(str *msg_body, str *method, str *uri,
 static void uac_calc_response( HASHHEX ha1, HASHHEX ha2,
 		struct authenticate_body *auth,
 		str* nc, str* cnonce,
-		HASHHEX response)
+		struct auth_response *response)
 {
 	MD5_CTX Md5Ctx;
 	HASH RespHash;
@@ -130,7 +130,9 @@ static void uac_calc_response( HASHHEX ha1, HASHHEX ha2,
 	};
 	MD5Update(&Md5Ctx, ha2.MD5, HASHHEXLEN_MD5);
 	MD5Final(RespHash.MD5, &Md5Ctx);
-	cvt_hex(RespHash.MD5, response.MD5, HASHLEN_MD5, HASHHEXLEN_MD5);
+	cvt_hex(RespHash.MD5, response->hhex.MD5, HASHLEN_MD5,
+	    HASHHEXLEN_MD5);
+	response->hhex_len = HASHHEXLEN_MD5;
 }
 
 const struct uac_auth_calc md5_uac_calc = {

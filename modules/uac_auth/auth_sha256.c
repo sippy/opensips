@@ -106,7 +106,7 @@ static void uac_calc_HA2(str *msg_body, str *method, str *uri,
 static void uac_calc_response( HASHHEX ha1, HASHHEX ha2,
 		struct authenticate_body *auth,
 		str* nc, str* cnonce,
-		HASHHEX response)
+		struct auth_response *response)
 {
 	SHA256_CTX Sha256Ctx;
 	HASH RespHash;
@@ -131,7 +131,9 @@ static void uac_calc_response( HASHHEX ha1, HASHHEX ha2,
 	};
 	SHA256_Update(&Sha256Ctx, ha2.SHA256, HASHHEXLEN_SHA256);
 	SHA256_Final((unsigned char *)RespHash.SHA256, &Sha256Ctx);
-	cvt_hex(RespHash.SHA256, response.SHA256, HASHLEN_SHA256, HASHHEXLEN_SHA256);
+	cvt_hex(RespHash.SHA256, response->hhex.SHA256, HASHLEN_SHA256,
+	    HASHHEXLEN_SHA256);
+	response->hhex_len = HASHHEXLEN_SHA256;
 }
 
 const struct uac_auth_calc sha256_uac_calc = {

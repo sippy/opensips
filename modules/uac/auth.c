@@ -251,7 +251,7 @@ int uac_auth( struct sip_msg *msg)
 	int new_cseq;
 	struct sip_msg *rpl;
 	struct cell *t;
-	HASHHEX response;
+	struct auth_response response;
 	str *new_hdr;
 	str param, ttag;
 	char *p;
@@ -316,11 +316,11 @@ int uac_auth( struct sip_msg *msg)
 
 	/* do authentication */
 	uac_auth_api._do_uac_auth(&msg_body, &msg->first_line.u.request.method,
-			&t->uac[branch].uri, crd, auth, &auth_nc_cnonce, response);
+			&t->uac[branch].uri, crd, auth, &auth_nc_cnonce, &response);
 
 	/* build the authorization header */
 	new_hdr = uac_auth_api._build_authorization_hdr( code, &t->uac[branch].uri,
-		crd, auth, &auth_nc_cnonce, response);
+		crd, auth, &auth_nc_cnonce, &response);
 	if (new_hdr==0)
 	{
 		LM_ERR("failed to build authorization hdr\n");

@@ -236,7 +236,7 @@ struct uac_credential *lookup_realm( str *realm)
 
 void do_uac_auth(str *msg_body, str *method, str *uri, struct uac_credential *crd,
 		struct authenticate_body *auth, struct authenticate_nc_cnonce *auth_nc_cnonce,
-		HASHHEX response)
+		struct auth_response *response)
 {
 	HASHHEX ha1;
 	HASHHEX ha2;
@@ -347,7 +347,8 @@ void do_uac_auth(str *msg_body, str *method, str *uri, struct uac_credential *cr
 
 str* build_authorization_hdr(int code, str *uri,
 		struct uac_credential *crd, struct authenticate_body *auth,
-		struct authenticate_nc_cnonce *auth_nc_cnonce, HASHHEX response)
+		struct authenticate_nc_cnonce *auth_nc_cnonce,
+		const struct auth_response *response)
 {
 	char *p;
 	int len;
@@ -355,7 +356,7 @@ str* build_authorization_hdr(int code, str *uri,
 	char *qop_val;
 	int qop_val_len = 0;
 
-	response_len = strlen(&response.begin);
+	response_len = response->hhex_len;
 
 	if((auth->flags&QOP_AUTH) || (auth->flags&QOP_AUTH_INT)) {
 		if (!(auth->flags&QOP_AUTH)) {
@@ -439,7 +440,7 @@ str* build_authorization_hdr(int code, str *uri,
 	/* RESPONSE */
 	add_string( p, FIELD_SEPARATOR_S RESPONSE_FIELD_S,
 		FIELD_SEPARATOR_LEN+RESPONSE_FIELD_LEN);
-	add_string( p, &response.begin, response_len);
+	add_string( p, response->hhex._start, response_len);
 	/* ALGORITHM */
 	add_string( p, FIELD_SEPARATOR_S ALGORITHM_FIELD_S CRLF,
 		FIELD_SEPARATOR_LEN+ALGORITHM_FIELD_LEN+CRLF_LEN);

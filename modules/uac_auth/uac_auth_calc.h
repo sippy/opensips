@@ -23,5 +23,5 @@ struct uac_auth_calc {
 	    HASHHEX);
 	void (*HA2)(str *, str *, str *, int, HASHHEX);
 	void (*response)(HASHHEX, HASHHEX, struct authenticate_body *, str *,
-	    str *, HASHHEX);
+	    str *, struct auth_response *);
 };

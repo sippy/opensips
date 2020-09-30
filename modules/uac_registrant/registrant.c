@@ -316,7 +316,7 @@ int run_reg_tm_cback(void *e_data, void *data, void *r_data)
 	contact_t *contact;
 	struct authenticate_body *auth = NULL;
 	static struct authenticate_nc_cnonce auth_nc_cnonce;
-	HASHHEX response;
+	struct auth_response response;
 	str *new_hdr;
 	struct reg_tm_cback_data *tm_cback_data = (struct reg_tm_cback_data*)data;
 	struct cell *t;
@@ -531,9 +531,9 @@ int run_reg_tm_cback(void *e_data, void *data, void *r_data)
 
 		memset(&auth_nc_cnonce, 0, sizeof(struct authenticate_nc_cnonce));
 		uac_auth_api._do_uac_auth(&msg_body, &register_method,
-					&rec->td.rem_target, &crd, auth, &auth_nc_cnonce, response);
+					&rec->td.rem_target, &crd, auth, &auth_nc_cnonce, &response);
 		new_hdr = uac_auth_api._build_authorization_hdr(statuscode, &rec->td.rem_target,
-					&crd, auth, &auth_nc_cnonce, response);
+					&crd, auth, &auth_nc_cnonce, &response);
 		if (!new_hdr) {
 			LM_ERR("failed to build authorization hdr\n");
 			goto done;
