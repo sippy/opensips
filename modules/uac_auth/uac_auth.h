@@ -49,6 +49,7 @@ typedef union {
 typedef union {
 	char MD5[HASHHEXLEN_MD5 + 1];
 	char SHA256[HASHHEXLEN_SHA256 + 1];
+	char _any[0];
 } HASHHEX;
 
 struct uac_credential {
@@ -70,7 +71,7 @@ void do_uac_auth(str *msg_body, str *method, str *uri, struct uac_credential *cr
 		HASHHEX response);
 str* build_authorization_hdr(int code, str *uri,
 		struct uac_credential *crd, struct authenticate_body *auth,
-		struct authenticate_nc_cnonce *auth_nc_cnonce, char *response);
+		struct authenticate_nc_cnonce *auth_nc_cnonce, HASHHEX response);
 struct uac_credential* lookup_realm(str *realm);
 
 
@@ -79,7 +80,7 @@ typedef void (*do_uac_auth_t)(str *msg_body, str *method, str *uri, struct uac_c
 	HASHHEX response);
 typedef str* (*build_authorization_hdr_t)(int code, str *uri,
 	struct uac_credential *crd, struct authenticate_body *auth,
-	struct authenticate_nc_cnonce *auth_nc_cnonce, char *response);
+	struct authenticate_nc_cnonce *auth_nc_cnonce, HASHHEX response);
 typedef struct uac_credential* (*lookup_realm_t)(str *realm);
 
 typedef struct uac_auth_api
