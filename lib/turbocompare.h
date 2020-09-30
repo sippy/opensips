@@ -62,6 +62,11 @@ TOLOWER_FUNC(char);
         len -= sizeof(unsigned itype); \
         if (len == 0) \
             return 0; \
+	if (len < sizeof(unsigned itype)) { \
+	    us1.char_p -= sizeof(unsigned itype) - len; \
+	    us2.char_p -= sizeof(unsigned itype) - len; \
+	    len = sizeof(unsigned itype); \
+        } \
         us1.itype##_p++; \
         us2.itype##_p++; \
     }
