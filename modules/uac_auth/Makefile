@@ -8,7 +8,7 @@
 include ../../Makefile.defs
 auto_gen=
 NAME=uac_auth.so
-LIBS=
+LIBS=-lcrypto
 
 include ../../Makefile.openssl
 include ../../Makefile.modules
