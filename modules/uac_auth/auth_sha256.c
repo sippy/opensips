@@ -30,6 +30,8 @@
 #include "uac_auth.h"
 #include "uac_auth_calc.h"
 
+#define ALGORITHM_VALUE_SHA256_S "SHA-256"
+
 /*
  * calculate H(A1)
  */

@@ -20,6 +20,5 @@
 
 #define HASHLEN_SHA256 32
 #define HASHHEXLEN_SHA256 (HASHLEN_SHA256 * 2)
-#define ALGORITHM_VALUE_SHA256_S "SHA-256"
 
 extern const struct uac_auth_calc sha256_uac_calc;

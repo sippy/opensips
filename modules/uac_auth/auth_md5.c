@@ -29,6 +29,8 @@
 #include "uac_auth.h"
 #include "uac_auth_calc.h"
 
+#define ALGORITHM_VALUE_MD5_S    "MD5"
+
 /*
  * calculate H(A1)
  */
