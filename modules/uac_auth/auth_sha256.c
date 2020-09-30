@@ -36,7 +36,7 @@
 static void uac_calc_HA1( struct uac_credential *crd,
 		struct authenticate_body *auth,
 		str* cnonce,
-		HASHHEX sess_key)
+		HASHHEX *sess_key)
 {
 	SHA256_CTX Sha256Ctx;
 	HASH HA1;
@@ -60,7 +60,7 @@ static void uac_calc_HA1( struct uac_credential *crd,
 		SHA256_Final((unsigned char *)HA1.SHA256, &Sha256Ctx);
 	};
 
-	cvt_hex(HA1.SHA256, sess_key.SHA256, HASHLEN_SHA256, HASHHEXLEN_SHA256);
+	cvt_hex(HA1.SHA256, sess_key->SHA256, HASHLEN_SHA256, HASHHEXLEN_SHA256);
 }
 
 
@@ -69,7 +69,7 @@ static void uac_calc_HA1( struct uac_credential *crd,
  * calculate H(A2)
  */
 static void uac_calc_HA2(str *msg_body, str *method, str *uri,
-		int auth_int, HASHHEX HA2Hex)
+		int auth_int, HASHHEX *HA2Hex)
 {
 	SHA256_CTX Sha256Ctx;
 	HASH HA2;
@@ -95,7 +95,7 @@ static void uac_calc_HA2(str *msg_body, str *method, str *uri,
 	};
 
 	SHA256_Final((unsigned char *)HA2.SHA256, &Sha256Ctx);
-	cvt_hex(HA2.SHA256, HA2Hex.SHA256, HASHLEN_SHA256, HASHHEXLEN_SHA256);
+	cvt_hex(HA2.SHA256, HA2Hex->SHA256, HASHLEN_SHA256, HASHHEXLEN_SHA256);
 }
 
 
@@ -103,7 +103,7 @@ static void uac_calc_HA2(str *msg_body, str *method, str *uri,
 /*
  * calculate request-digest/response-digest as per HTTP Digest spec
  */
-static void uac_calc_response( HASHHEX ha1, HASHHEX ha2,
+static void uac_calc_response( HASHHEX *ha1, HASHHEX *ha2,
 		struct authenticate_body *auth,
 		str* nc, str* cnonce,
 		struct auth_response *response)
@@ -112,7 +112,7 @@ static void uac_calc_response( HASHHEX ha1, HASHHEX ha2,
 	HASH RespHash;
 
 	SHA256_Init(&Sha256Ctx);
-	SHA256_Update(&Sha256Ctx, ha1.SHA256, HASHHEXLEN_SHA256);
+	SHA256_Update(&Sha256Ctx, ha1->SHA256, HASHHEXLEN_SHA256);
 	SHA256_Update(&Sha256Ctx, ":", 1);
 	SHA256_Update(&Sha256Ctx, auth->nonce.s, auth->nonce.len);
 	SHA256_Update(&Sha256Ctx, ":", 1);
@@ -129,7 +129,7 @@ static void uac_calc_response( HASHHEX ha1, HASHHEX ha2,
 			SHA256_Update(&Sha256Ctx, "auth", 4);
 		SHA256_Update(&Sha256Ctx, ":", 1);
 	};
-	SHA256_Update(&Sha256Ctx, ha2.SHA256, HASHHEXLEN_SHA256);
+	SHA256_Update(&Sha256Ctx, ha2->SHA256, HASHHEXLEN_SHA256);
 	SHA256_Final((unsigned char *)RespHash.SHA256, &Sha256Ctx);
 	cvt_hex(RespHash.SHA256, response->hhex.SHA256, HASHLEN_SHA256,
 	    HASHHEXLEN_SHA256);

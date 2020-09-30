@@ -287,19 +287,19 @@ void do_uac_auth(str *msg_body, str *method, str *uri, struct uac_credential *cr
 
 		/* do authentication */
 		if (!has_ha1)
-			uac_calc->HA1( crd, auth, &cnonce, ha1);
-		uac_calc->HA2(msg_body, method, uri, !(auth->flags&QOP_AUTH), ha2);
+			uac_calc->HA1( crd, auth, &cnonce, &ha1);
+		uac_calc->HA2(msg_body, method, uri, !(auth->flags&QOP_AUTH), &ha2);
 
-		uac_calc->response( ha1, ha2, auth, &nc, &cnonce, response);
+		uac_calc->response( &ha1, &ha2, auth, &nc, &cnonce, response);
 		auth_nc_cnonce->nc = &nc;
 		auth_nc_cnonce->cnonce = &cnonce;
 	} else {
 		/* do authentication */
 		if (!has_ha1)
-			uac_calc->HA1( crd, auth, 0/*cnonce*/, ha1);
-		uac_calc->HA2(msg_body, method, uri, 0, ha2);
+			uac_calc->HA1( crd, auth, 0/*cnonce*/, &ha1);
+		uac_calc->HA2(msg_body, method, uri, 0, &ha2);
 
-		uac_calc->response( ha1, ha2, auth, 0/*nc*/, 0/*cnonce*/, response);
+		uac_calc->response( &ha1, &ha2, auth, 0/*nc*/, 0/*cnonce*/, response);
 	}
 }
 

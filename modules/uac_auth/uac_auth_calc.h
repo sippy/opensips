@@ -20,8 +20,8 @@
 
 struct uac_auth_calc {
 	void (*HA1)(struct uac_credential *, struct authenticate_body *, str *,
-	    HASHHEX);
-	void (*HA2)(str *, str *, str *, int, HASHHEX);
-	void (*response)(HASHHEX, HASHHEX, struct authenticate_body *, str *,
+	    HASHHEX *);
+	void (*HA2)(str *, str *, str *, int, HASHHEX *);
+	void (*response)(HASHHEX *, HASHHEX *, struct authenticate_body *, str *,
 	    str *, struct auth_response *);
 };

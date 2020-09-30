@@ -35,7 +35,7 @@
 static void uac_calc_HA1( struct uac_credential *crd,
 		struct authenticate_body *auth,
 		str* cnonce,
-		HASHHEX sess_key)
+		HASHHEX *sess_key)
 {
 	MD5_CTX Md5Ctx;
 	HASH HA1;
@@ -59,7 +59,7 @@ static void uac_calc_HA1( struct uac_credential *crd,
 		MD5Final(HA1.MD5, &Md5Ctx);
 	};
 
-	cvt_hex(HA1.MD5, sess_key.MD5, HASHLEN_MD5, HASHHEXLEN_MD5);
+	cvt_hex(HA1.MD5, sess_key->MD5, HASHLEN_MD5, HASHHEXLEN_MD5);
 }
 
 
@@ -68,7 +68,7 @@ static void uac_calc_HA1( struct uac_credential *crd,
  * calculate H(A2)
  */
 static void uac_calc_HA2(str *msg_body, str *method, str *uri,
-		int auth_int, HASHHEX HA2Hex)
+		int auth_int, HASHHEX *HA2Hex)
 {
 	MD5_CTX Md5Ctx;
 	HASH HA2;
@@ -94,7 +94,7 @@ static void uac_calc_HA2(str *msg_body, str *method, str *uri,
 	};
 
 	MD5Final(HA2.MD5, &Md5Ctx);
-	cvt_hex(HA2.MD5, HA2Hex.MD5, HASHLEN_MD5, HASHHEXLEN_MD5);
+	cvt_hex(HA2.MD5, HA2Hex->MD5, HASHLEN_MD5, HASHHEXLEN_MD5);
 }
 
 
@@ -102,7 +102,7 @@ static void uac_calc_HA2(str *msg_body, str *method, str *uri,
 /*
  * calculate request-digest/response-digest as per HTTP Digest spec
  */
-static void uac_calc_response( HASHHEX ha1, HASHHEX ha2,
+static void uac_calc_response( HASHHEX *ha1, HASHHEX *ha2,
 		struct authenticate_body *auth,
 		str* nc, str* cnonce,
 		struct auth_response *response)
@@ -111,7 +111,7 @@ static void uac_calc_response( HASHHEX ha1, HASHHEX ha2,
 	HASH RespHash;
 
 	MD5Init(&Md5Ctx);
-	MD5Update(&Md5Ctx, ha1.MD5, HASHHEXLEN_MD5);
+	MD5Update(&Md5Ctx, ha1->MD5, HASHHEXLEN_MD5);
 	MD5Update(&Md5Ctx, ":", 1);
 	MD5Update(&Md5Ctx, auth->nonce.s, auth->nonce.len);
 	MD5Update(&Md5Ctx, ":", 1);
@@ -128,7 +128,7 @@ static void uac_calc_response( HASHHEX ha1, HASHHEX ha2,
 			MD5Update(&Md5Ctx, "auth", 4);
 		MD5Update(&Md5Ctx, ":", 1);
 	};
-	MD5Update(&Md5Ctx, ha2.MD5, HASHHEXLEN_MD5);
+	MD5Update(&Md5Ctx, ha2->MD5, HASHHEXLEN_MD5);
 	MD5Final(RespHash.MD5, &Md5Ctx);
 	cvt_hex(RespHash.MD5, response->hhex.MD5, HASHLEN_MD5,
 	    HASHHEXLEN_MD5);
