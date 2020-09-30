@@ -2495,7 +2495,7 @@ void b2b_tm_cback(struct cell *t, b2b_table htable, struct tmcb_params *ps)
 	struct uac_credential* crd;
 	struct authenticate_body *auth = NULL;
 	static struct authenticate_nc_cnonce auth_nc_cnonce;
-	HASHHEX response;
+	struct auth_response response;
 	str *new_hdr;
 	char status_buf[INT2STR_MAX_LEN];
 	int old_route_type;
@@ -2792,10 +2792,11 @@ void b2b_tm_cback(struct cell *t, b2b_table htable, struct tmcb_params *ps)
 					memset(&auth_nc_cnonce, 0,
 							sizeof(struct authenticate_nc_cnonce));
 					uac_auth_api._do_uac_auth(&msg_body, &t->method,
-							&t->uac[0].uri, crd, auth, &auth_nc_cnonce, response);
+							&t->uac[0].uri, crd, auth, &auth_nc_cnonce,
+							&response);
 					new_hdr = uac_auth_api._build_authorization_hdr(statuscode,
 							&t->uac[0].uri, crd, auth,
-							&auth_nc_cnonce, response);
+							&auth_nc_cnonce, &response);
 					if (!new_hdr)
 					{
 						LM_ERR("failed to build auth hdr\n");
