@@ -24,4 +24,5 @@ struct uac_auth_calc {
 	void (*HA2)(str *, str *, str *, int, HASHHEX *);
 	void (*response)(HASHHEX *, HASHHEX *, struct authenticate_body *, str *,
 	    str *, struct auth_response *);
+	const str algorithm_val;
 };

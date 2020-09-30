@@ -20,5 +20,6 @@
 
 #define HASHLEN_MD5 16
 #define HASHHEXLEN_MD5 (HASHLEN_MD5 * 2)
+#define ALGORITHM_VALUE_MD5_S    "MD5"
 
 extern const struct uac_auth_calc md5_uac_calc;

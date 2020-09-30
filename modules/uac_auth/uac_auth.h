@@ -55,6 +55,7 @@ typedef union {
 struct auth_response {
 	HASHHEX hhex;
 	int hhex_len;
+	const str *algorithm_val;
 };
 
 

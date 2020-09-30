@@ -139,5 +139,6 @@ static void uac_calc_response( HASHHEX *ha1, HASHHEX *ha2,
 const struct uac_auth_calc sha256_uac_calc = {
     .HA1 = uac_calc_HA1,
     .HA2 = uac_calc_HA2,
-    .response = &uac_calc_response
+    .response = &uac_calc_response,
+    .algorithm_val = str_init(ALGORITHM_VALUE_SHA256_S)
 };

@@ -301,6 +301,7 @@ void do_uac_auth(str *msg_body, str *method, str *uri, struct uac_credential *cr
 
 		uac_calc->response( &ha1, &ha2, auth, 0/*nc*/, 0/*cnonce*/, response);
 	}
+	response->algorithm_val = &(uac_calc->algorithm_val);
 }
 
 
@@ -324,7 +325,7 @@ void do_uac_auth(str *msg_body, str *method, str *uri, struct uac_credential *cr
 #define OPAQUE_FIELD_LEN         (sizeof(OPAQUE_FIELD_S)-1)
 #define RESPONSE_FIELD_S         "response=\""
 #define RESPONSE_FIELD_LEN       (sizeof(RESPONSE_FIELD_S)-1)
-#define ALGORITHM_FIELD_S        "algorithm=MD5"
+#define ALGORITHM_FIELD_S        "algorithm="
 #define ALGORITHM_FIELD_LEN       (sizeof(ALGORITHM_FIELD_S)-1)
 #define FIELD_SEPARATOR_S        "\", "
 #define FIELD_SEPARATOR_LEN      (sizeof(FIELD_SEPARATOR_S)-1)
@@ -378,7 +379,7 @@ str* build_authorization_hdr(int code, str *uri,
 		(auth->opaque.len?
 			(OPAQUE_FIELD_LEN + auth->opaque.len + FIELD_SEPARATOR_LEN):0) +
 		RESPONSE_FIELD_LEN + response_len + FIELD_SEPARATOR_LEN +
-		ALGORITHM_FIELD_LEN + CRLF_LEN;
+		ALGORITHM_FIELD_LEN + response->algorithm_val->len + CRLF_LEN;
 	if((auth->flags&QOP_AUTH) || (auth->flags&QOP_AUTH_INT))
 		len += QOP_FIELD_LEN + qop_val_len + FIELD_SEPARATOR_UQ_LEN +
 				NC_FIELD_LEN + auth_nc_cnonce->nc->len + FIELD_SEPARATOR_UQ_LEN +
@@ -442,8 +443,10 @@ str* build_authorization_hdr(int code, str *uri,
 		FIELD_SEPARATOR_LEN+RESPONSE_FIELD_LEN);
 	add_string( p, response->hhex._start, response_len);
 	/* ALGORITHM */
-	add_string( p, FIELD_SEPARATOR_S ALGORITHM_FIELD_S CRLF,
-		FIELD_SEPARATOR_LEN+ALGORITHM_FIELD_LEN+CRLF_LEN);
+	add_string( p, FIELD_SEPARATOR_S ALGORITHM_FIELD_S,
+		FIELD_SEPARATOR_LEN+ALGORITHM_FIELD_LEN);
+	add_string( p, response->algorithm_val->s, response->algorithm_val->len);
+	add_string( p, CRLF, CRLF_LEN);
 
 	auth_hdr.len = p - auth_hdr.s;
 
