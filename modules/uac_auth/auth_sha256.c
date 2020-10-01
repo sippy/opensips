@@ -51,19 +51,20 @@ static void uac_calc_HA1( struct uac_credential *crd,
 	SHA256_Update(&Sha256Ctx, ":", 1);
 	SHA256_Update(&Sha256Ctx, crd->passwd.s, crd->passwd.len);
 	SHA256_Final((unsigned char *)HA1.SHA256, &Sha256Ctx);
+	cvt_hex(HA1.SHA256, sess_key->SHA256, HASHLEN_SHA256, HASHHEXLEN_SHA256);
 
 	if ( auth->algorithm == ALG_SHA256SESS )
 	{
 		SHA256_Init(&Sha256Ctx);
-		SHA256_Update(&Sha256Ctx, HA1.SHA256, HASHLEN_SHA256);
+		SHA256_Update(&Sha256Ctx, sess_key->SHA256, HASHHEXLEN_SHA256);
 		SHA256_Update(&Sha256Ctx, ":", 1);
 		SHA256_Update(&Sha256Ctx, auth->nonce.s, auth->nonce.len);
 		SHA256_Update(&Sha256Ctx, ":", 1);
 		SHA256_Update(&Sha256Ctx, cnonce->s, cnonce->len);
 		SHA256_Final((unsigned char *)HA1.SHA256, &Sha256Ctx);
+		cvt_hex(HA1.SHA256, sess_key->SHA256, HASHLEN_SHA256, HASHHEXLEN_SHA256);
 	};
 
-	cvt_hex(HA1.SHA256, sess_key->SHA256, HASHLEN_SHA256, HASHHEXLEN_SHA256);
 }
 
 
