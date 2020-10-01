@@ -314,12 +314,12 @@ static inline int parse_digest_params(str* _s, dig_cred_t* _c)
 	} while(comma); /* Repeat while there are next parameters */
 
 	     /* Parse QOP body if the parameter was present */
-	if (_c->qop.qop_str.s != 0) {
+	if (_c->qop.qop_str.len > 0) {
 		parse_qop(&_c->qop);
 	}
 
 	     /* Parse algorithm body if the parameter was present */
-	if (_c->alg.alg_str.s != 0) {
+	if (_c->alg.alg_str.len > 0) {
 		trim(&(_c->alg.alg_str));
 		_c->alg.alg_parsed = parse_digest_algorithm(&(_c->alg.alg_str));
 	} else {
@@ -327,7 +327,7 @@ static inline int parse_digest_params(str* _s, dig_cred_t* _c)
 		DASSERT(_c->alg.alg_parsed == ALG_UNSPEC);
 	}
 
-	if (_c->username.whole.s != 0) {
+	if (_c->username.whole.len > 0) {
 		parse_username(&_c->username);
 	}
 
