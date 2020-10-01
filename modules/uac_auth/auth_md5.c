@@ -50,19 +50,20 @@ static void uac_calc_HA1( struct uac_credential *crd,
 	MD5Update(&Md5Ctx, ":", 1);
 	MD5Update(&Md5Ctx, crd->passwd.s, crd->passwd.len);
 	MD5Final(HA1.MD5, &Md5Ctx);
+	cvt_hex(HA1.MD5, sess_key->MD5, HASHLEN_MD5, HASHHEXLEN_MD5);
 
 	if ( auth->algorithm == ALG_MD5SESS )
 	{
 		MD5Init(&Md5Ctx);
-		MD5Update(&Md5Ctx, HA1.MD5, HASHLEN_MD5);
+		MD5Update(&Md5Ctx, sess_key->MD5, HASHHEXLEN_MD5);
 		MD5Update(&Md5Ctx, ":", 1);
 		MD5Update(&Md5Ctx, auth->nonce.s, auth->nonce.len);
 		MD5Update(&Md5Ctx, ":", 1);
 		MD5Update(&Md5Ctx, cnonce->s, cnonce->len);
 		MD5Final(HA1.MD5, &Md5Ctx);
+		cvt_hex(HA1.MD5, sess_key->MD5, HASHLEN_MD5, HASHHEXLEN_MD5);
 	};
 
-	cvt_hex(HA1.MD5, sess_key->MD5, HASHLEN_MD5, HASHHEXLEN_MD5);
 }
 
 
