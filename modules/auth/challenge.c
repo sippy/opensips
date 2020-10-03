@@ -71,21 +71,24 @@ static str auth_400_err = str_init(MESSAGE_400);
 #define DIGEST_REALM_LEN  (sizeof(DIGEST_REALM)-1)
 #define DIGEST_NONCE	  "\", nonce=\""
 #define DIGEST_NONCE_LEN  (sizeof(DIGEST_NONCE)-1)
-#define DIGEST_MD5	  ", algorithm=MD5"
-#define DIGEST_MD5_LEN	  (sizeof(DIGEST_MD5)-1)
+#define DIGEST_ALGORITHM  ", algorithm="
+#define ALGORITHM_MD5	  "MD5"
+#define ALGORITHM_SHA256  "SHA-256"
+#define ALGORITHM_SESS_SFX "-sess"
 
 
 /*
  * Create {WWW,Proxy}-Authenticate header field
  */
 static inline char *build_auth_hf(int _retries, int _stale, str* _realm,
-				  int* _len, int _qop, char* _hf_name)
+    int* _len, int _qop, alg_t alg, char* _hf_name)
 {
 	int hf_name_len;
 	char *hf, *p;
 	int index = 0;
 	int qop_len = 0;
 	const char *qop_param;
+	str alg_param;
 
 	if(!disable_nonce_check) {
 		/* get the nonce index and mark it as used */
@@ -120,10 +123,34 @@ static inline char *build_auth_hf(int _retries, int _stale, str* _realm,
 		+1 /* '"' */
 		+qop_len
 		+((_stale)? STALE_PARAM_LEN : 0)
-#ifdef _PRINT_MD5
-		+DIGEST_MD5_LEN
-#endif
 		+CRLF_LEN ;
+
+	switch (alg) {
+	case ALG_UNSPEC:
+		alg_param.len = 0;
+		break;
+
+	case ALG_MD5:
+		alg_param = str_init(DIGEST_ALGORITHM ALGORITHM_MD5);
+		break;
+
+	case ALG_MD5SESS:
+		alg_param = str_init(DIGEST_ALGORITHM ALGORITHM_MD5 ALGORITHM_SESS_SFX);
+		break;
+
+	case ALG_SHA256:
+		alg_param = str_init(DIGEST_ALGORITHM ALGORITHM_SHA256);
+		break;
+
+	case ALG_SHA256SESS:
+		alg_param = str_init(DIGEST_ALGORITHM ALGORITHM_SHA256 ALGORITHM_SESS_SFX);
+		break;
+
+	default:
+		abort();
+	}
+	if (alg_param.len != 0)
+		*_len += alg_param.len;
 
 	p=hf=pkg_malloc(*_len+1);
 	if (!hf) {
@@ -147,9 +174,10 @@ static inline char *build_auth_hf(int _retries, int _stale, str* _realm,
 		memcpy(p, STALE_PARAM, STALE_PARAM_LEN);
 		p+=STALE_PARAM_LEN;
 	}
-#ifdef _PRINT_MD5
-	memcpy(p, DIGEST_MD5, DIGEST_MD5_LEN ); p+=DIGEST_MD5_LEN;
-#endif
+	if (alg_param.len > 0) {
+		memcpy(p, alg_param.s, alg_param.len);
+		p += alg_param.len;
+	}
 	memcpy(p, CRLF, CRLF_LEN ); p+=CRLF_LEN;
 	*p=0; /* zero terminator, just in case */
 
@@ -163,14 +191,13 @@ static inline char *build_auth_hf(int _retries, int _stale, str* _realm,
 static inline int challenge(struct sip_msg* _msg, str *realm, int _qop,
 						int _code, char* _message, char* _challenge_msg)
 {
-	int auth_hf_len;
 	struct hdr_field* h = NULL;
 	auth_body_t* cred = 0;
-	char *auth_hf;
 	int ret;
 	hdr_types_t hftype = 0; /* Makes gcc happy */
 	struct sip_uri *uri;
 	str reason;
+	str auth_hfs[1];
 
 	switch(_code) {
 	case 401:
@@ -188,7 +215,7 @@ static inline int challenge(struct sip_msg* _msg, str *realm, int _qop,
 	if (realm->len == 0) {
 		if (get_realm(_msg, hftype, &uri) < 0) {
 			LM_ERR("failed to extract URI\n");
-			if (send_resp(_msg, 400, &auth_400_err, 0, 0) == -1) {
+			if (send_resp(_msg, 400, &auth_400_err, NULL, 0) == -1) {
 				LM_ERR("failed to send the response\n");
 				return -1;
 			}
@@ -199,17 +226,17 @@ static inline int challenge(struct sip_msg* _msg, str *realm, int _qop,
 		strip_realm(realm);
 	}
 
-	auth_hf = build_auth_hf(0, (cred ? cred->stale : 0), realm,
-			&auth_hf_len, _qop, _challenge_msg);
-	if (!auth_hf) {
+	auth_hfs[0].s = build_auth_hf(0, (cred ? cred->stale : 0), realm,
+			&auth_hfs[0].len, _qop, ALG_UNSPEC, _challenge_msg);
+	if (!auth_hfs[0].s) {
 		LM_ERR("failed to generate nonce\n");
 		return -1;
 	}
 
 	reason.s = _message;
 	reason.len = strlen(_message);
-	ret = send_resp(_msg, _code, &reason, auth_hf, auth_hf_len);
-	if (auth_hf) pkg_free(auth_hf);
+	ret = send_resp(_msg, _code, &reason, auth_hfs, 1);
+	if (auth_hfs[0].s) pkg_free(auth_hfs[0].s);
 	if (ret == -1) {
 		LM_ERR("failed to send the response\n");
 		return -1;
