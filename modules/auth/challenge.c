@@ -108,7 +108,6 @@ static inline char *build_auth_hf(int _retries, int _stale, str* _realm,
 		+((!disable_nonce_check)?NONCE_LEN:NONCE_LEN-8)
 		+1 /* '"' */
 		+qop_param.len
-		+qop_param.len
 		+CRLF_LEN ;
 
 	p=hf=pkg_malloc(*_len+1);
