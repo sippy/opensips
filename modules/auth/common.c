@@ -75,7 +75,7 @@ int get_realm(struct sip_msg* _m, hdr_types_t _hftype, struct sip_uri** _u)
  * Create a response with given code and reason phrase
  * Optionally add new headers specified in hdrs
  */
-int send_resp(struct sip_msg* _m, int _code, str* _reason,
+int send_resp(struct sip_msg* _m, int _code, const str* _reason,
     const str hdrs[], int nhdrs)
 {
 	/* Add new headers if there are any */

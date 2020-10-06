@@ -42,8 +42,6 @@
 #include "index.h"
 #include "api.h"
 
-static str auth_400_err = str_init(MESSAGE_400);
-
 
 /*
  * proxy_challenge function sends this reply
@@ -58,19 +56,12 @@ static str auth_400_err = str_init(MESSAGE_400);
 #define MESSAGE_401        "Unauthorized"
 #define WWW_AUTH_CHALLENGE "WWW-Authenticate"
 
-
-#define QOP_AUTH	      ", qop=\"auth\""
-#define QOP_AUTH_LEN	  (sizeof(QOP_AUTH)-1)
+#define QOP_AUTH	  ", qop=\"auth\""
 #define QOP_AUTH_INT	  ", qop=\"auth-int\""
-#define QOP_AUTH_INT_LEN  (sizeof(QOP_AUTH_INT)-1)
 #define QOP_AUTH_BOTH	  ", qop=\"auth,auth-int\""
-#define QOP_AUTH_BOTH_LEN  (sizeof(QOP_AUTH_BOTH)-1)
 #define STALE_PARAM	  ", stale=true"
-#define STALE_PARAM_LEN	  (sizeof(STALE_PARAM)-1)
 #define DIGEST_REALM	  ": Digest realm=\""
-#define DIGEST_REALM_LEN  (sizeof(DIGEST_REALM)-1)
 #define DIGEST_NONCE	  "\", nonce=\""
-#define DIGEST_NONCE_LEN  (sizeof(DIGEST_NONCE)-1)
 #define DIGEST_ALGORITHM  ", algorithm="
 #define ALGORITHM_MD5	  "MD5"
 #define ALGORITHM_SHA256  "SHA-256"
@@ -81,14 +72,15 @@ static str auth_400_err = str_init(MESSAGE_400);
  * Create {WWW,Proxy}-Authenticate header field
  */
 static inline char *build_auth_hf(int _retries, int _stale, str* _realm,
-    int* _len, int _qop, alg_t alg, char* _hf_name)
+    int* _len, int _qop, alg_t alg, const str* _hf_name)
 {
-	int hf_name_len;
 	char *hf, *p;
 	int index = 0;
-	int qop_len = 0;
-	const char *qop_param;
 	str alg_param;
+	str qop_param = STR_NULL;
+	str stale_param = STR_NULL;
+	const str digest_realm = str_init(DIGEST_REALM);
+	const str nonce_param = str_init(DIGEST_NONCE);
 
 	if(!disable_nonce_check) {
 		/* get the nonce index and mark it as used */
@@ -103,26 +95,25 @@ static inline char *build_auth_hf(int _retries, int _stale, str* _realm,
 
 	if (_qop) {
 		if (_qop == QOP_TYPE_AUTH) {
-			qop_len = QOP_AUTH_LEN;
-			qop_param = QOP_AUTH;
+			qop_param = str_init(QOP_AUTH);
 		} else if (_qop == QOP_TYPE_AUTH_INT) {
-			qop_len = QOP_AUTH_INT_LEN;
-			qop_param = QOP_AUTH_INT;
+			qop_param = str_init(QOP_AUTH_INT);
 		} else {
-			qop_len = QOP_AUTH_BOTH_LEN;
-			qop_param = QOP_AUTH_BOTH;
+			qop_param = str_init(QOP_AUTH_BOTH);
 		}
 	}
+	if (_stale)
+		stale_param = str_init(STALE_PARAM);
 
 	/* length calculation */
-	*_len=hf_name_len=strlen(_hf_name);
-	*_len+=DIGEST_REALM_LEN
+	*_len=_hf_name->len;
+	*_len+=digest_realm.len
 		+_realm->len
-		+DIGEST_NONCE_LEN
+		+nonce_param.len
 		+((!disable_nonce_check)?NONCE_LEN:NONCE_LEN-8)
 		+1 /* '"' */
-		+qop_len
-		+((_stale)? STALE_PARAM_LEN : 0)
+		+stale_param.len
+		+qop_param.len
 		+CRLF_LEN ;
 
 	switch (alg) {
@@ -159,20 +150,20 @@ static inline char *build_auth_hf(int _retries, int _stale, str* _realm,
 		return 0;
 	}
 
-	memcpy(p, _hf_name, hf_name_len); p+=hf_name_len;
-	memcpy(p, DIGEST_REALM, DIGEST_REALM_LEN);p+=DIGEST_REALM_LEN;
+	memcpy(p, _hf_name->s, _hf_name->len); p+=_hf_name->len;
+	memcpy(p, digest_realm.s, digest_realm.len);p+=digest_realm.len;
 	memcpy(p, _realm->s, _realm->len);p+=_realm->len;
-	memcpy(p, DIGEST_NONCE, DIGEST_NONCE_LEN);p+=DIGEST_NONCE_LEN;
+	memcpy(p, nonce_param.s, nonce_param.len);p+=nonce_param.len;
 	calc_nonce(p, time(0) + nonce_expire, index, &secret);
 	p+=((!disable_nonce_check)?NONCE_LEN:NONCE_LEN-8);
 	*p='"';p++;
 	if (_qop) {
-		memcpy(p, qop_param, qop_len);
-		p+=qop_len;
+		memcpy(p, qop_param.s, qop_param.len);
+		p+=qop_param.len;
 	}
 	if (_stale) {
-		memcpy(p, STALE_PARAM, STALE_PARAM_LEN);
-		p+=STALE_PARAM_LEN;
+		memcpy(p, stale_param.s, stale_param.len);
+		p+=stale_param.len;
 	}
 	if (alg_param.len > 0) {
 		memcpy(p, alg_param.s, alg_param.len);
@@ -189,14 +180,13 @@ static inline char *build_auth_hf(int _retries, int _stale, str* _realm,
  * Create and send a challenge
  */
 static inline int challenge(struct sip_msg* _msg, str *realm, int _qop,
-						int _code, char* _message, char* _challenge_msg)
+    int _code, const str *reason, const str* _challenge_msg)
 {
 	struct hdr_field* h = NULL;
 	auth_body_t* cred = 0;
 	int ret;
 	hdr_types_t hftype = 0; /* Makes gcc happy */
 	struct sip_uri *uri;
-	str reason;
 	str auth_hfs[1];
 
 	switch(_code) {
@@ -215,7 +205,7 @@ static inline int challenge(struct sip_msg* _msg, str *realm, int _qop,
 	if (realm->len == 0) {
 		if (get_realm(_msg, hftype, &uri) < 0) {
 			LM_ERR("failed to extract URI\n");
-			if (send_resp(_msg, 400, &auth_400_err, NULL, 0) == -1) {
+			if (send_resp(_msg, 400, &str_init(MESSAGE_400), NULL, 0) == -1) {
 				LM_ERR("failed to send the response\n");
 				return -1;
 			}
@@ -233,9 +223,7 @@ static inline int challenge(struct sip_msg* _msg, str *realm, int _qop,
 		return -1;
 	}
 
-	reason.s = _message;
-	reason.len = strlen(_message);
-	ret = send_resp(_msg, _code, &reason, auth_hfs, 1);
+	ret = send_resp(_msg, _code, reason, auth_hfs, 1);
 	if (auth_hfs[0].s) pkg_free(auth_hfs[0].s);
 	if (ret == -1) {
 		LM_ERR("failed to send the response\n");
@@ -285,7 +273,7 @@ int fixup_qop(void** param)
 int www_challenge(struct sip_msg* _msg, str* _realm, void* _qop)
 {
 	return challenge(_msg, _realm, (int)(long)_qop, 401,
-			MESSAGE_401, WWW_AUTH_CHALLENGE);
+		&str_init(MESSAGE_401), &str_init(WWW_AUTH_CHALLENGE));
 }
 
 
@@ -295,7 +283,7 @@ int www_challenge(struct sip_msg* _msg, str* _realm, void* _qop)
 int proxy_challenge(struct sip_msg* _msg, str* _realm, void* _qop)
 {
 	return challenge(_msg, _realm, (int)(long)_qop, 407,
-			MESSAGE_407, PROXY_AUTH_CHALLENGE);
+		&str_init(MESSAGE_407), &str_init(PROXY_AUTH_CHALLENGE));
 }
 
 
