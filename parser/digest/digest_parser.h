@@ -44,6 +44,15 @@ typedef enum alg {
 	ALG_OTHER = 7           /* Unknown */
 } alg_t;
 
+/* Flags to enable/disable set of algorithms */
+#define ALGFLG_UNSPEC         (1 << ALG_UNSPEC)
+#define ALGFLG_MD5            (1 << ALG_MD5)
+#define ALGFLG_MD5SESS        (1 << ALG_MD5SESS)
+#define ALGFLG_SHA256         (1 << ALG_SHA256)
+#define ALGFLG_SHA256SESS     (1 << ALG_SHA256SESS)
+#define ALGFLG_SHA512_256     (1 << ALG_SHA512_256)
+#define ALGFLG_SHA512_256SESS (1 << ALG_SHA512_256SESS)
+
 /* Last supported algorithm */
 #define LAST_ALG_SPTD (ALG_MD5SESS)
 
