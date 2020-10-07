@@ -53,8 +53,9 @@ typedef enum alg {
 #define ALGFLG_SHA512_256     (1 << ALG_SHA512_256)
 #define ALGFLG_SHA512_256SESS (1 << ALG_SHA512_256SESS)
 
-/* Last supported algorithm */
-#define LAST_ALG_SPTD (ALG_MD5SESS)
+/* First/Last supported algorithm */
+#define FIRST_ALG_SPTD (ALG_UNSPEC)
+#define LAST_ALG_SPTD  (ALG_MD5SESS)
 
 /* Quality Of Protection used */
 typedef enum qop_type {
