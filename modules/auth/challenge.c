@@ -41,6 +41,7 @@
 #include "nonce.h"
 #include "index.h"
 #include "api.h"
+#include "../../dassert.h"
 
 
 /*
@@ -180,14 +181,14 @@ static inline char *build_auth_hf(int _retries, int _stale, str* _realm,
  * Create and send a challenge
  */
 static inline int challenge(struct sip_msg* _msg, str *realm, int _qop,
-    int _code, const str *reason, const str* _challenge_msg)
+    int _code, const str *reason, const str* _challenge_msg, int algmask)
 {
 	struct hdr_field* h = NULL;
 	auth_body_t* cred = 0;
-	int ret;
+	int ret, nalgs;
 	hdr_types_t hftype = 0; /* Makes gcc happy */
 	struct sip_uri *uri;
-	str auth_hfs[1];
+	str auth_hfs[LAST_ALG_SPTD - FIRST_ALG_SPTD + 1];
 
 	switch(_code) {
 	case 401:
@@ -216,15 +217,26 @@ static inline int challenge(struct sip_msg* _msg, str *realm, int _qop,
 		strip_realm(realm);
 	}
 
-	auth_hfs[0].s = build_auth_hf(0, (cred ? cred->stale : 0), realm,
-			&auth_hfs[0].len, _qop, ALG_UNSPEC, _challenge_msg);
-	if (!auth_hfs[0].s) {
-		LM_ERR("failed to generate nonce\n");
-		return -1;
+	nalgs = 0;
+	for (int i = FIRST_ALG_SPTD; i <= LAST_ALG_SPTD; i++) {
+		if ((algmask & (1 << i)) == 0)
+			continue;
+		auth_hfs[nalgs].s = build_auth_hf(0, (cred ? cred->stale : 0), realm,
+		    &auth_hfs[i].len, _qop, i, _challenge_msg);
+		if (!auth_hfs[i].s) {
+			LM_ERR("failed to generate nonce\n");
+			ret = -1;
+			goto failure;
+		}
+		nalgs += 1;
 	}
+	DASSERT(nalgs > 0);
 
-	ret = send_resp(_msg, _code, reason, auth_hfs, 1);
-	if (auth_hfs[0].s) pkg_free(auth_hfs[0].s);
+	ret = send_resp(_msg, _code, reason, auth_hfs, nalgs);
+failure:
+	for (int i = 0; i < nalgs; i++) {
+		if (auth_hfs[i].s) pkg_free(auth_hfs[i].s);
+	}
 	if (ret == -1) {
 		LM_ERR("failed to send the response\n");
 		return -1;
@@ -273,7 +285,7 @@ int fixup_qop(void** param)
 int www_challenge(struct sip_msg* _msg, str* _realm, void* _qop)
 {
 	return challenge(_msg, _realm, (int)(long)_qop, 401,
-		&str_init(MESSAGE_401), &str_init(WWW_AUTH_CHALLENGE));
+	    &str_init(MESSAGE_401), &str_init(WWW_AUTH_CHALLENGE), ALGFLG_UNSPEC);
 }
 
 
@@ -283,7 +295,7 @@ int www_challenge(struct sip_msg* _msg, str* _realm, void* _qop)
 int proxy_challenge(struct sip_msg* _msg, str* _realm, void* _qop)
 {
 	return challenge(_msg, _realm, (int)(long)_qop, 407,
-		&str_init(MESSAGE_407), &str_init(PROXY_AUTH_CHALLENGE));
+	    &str_init(MESSAGE_407), &str_init(PROXY_AUTH_CHALLENGE), ALGFLG_UNSPEC);
 }
 
 
