@@ -27,7 +27,7 @@
 
 
 #include "digest_parser.h"
-#include "../../dassert.h"
+#include "../../lib/dassert.h"
 #include "../../trim.h"    /* trim_leading */
 #include "../../lib/turbocompare.h" /* turbo_casebcmp */
 #include "param_parser.h"  /* Digest parameter name parser */

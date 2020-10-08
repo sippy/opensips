@@ -41,7 +41,7 @@
 #include "nonce.h"
 #include "index.h"
 #include "api.h"
-#include "../../dassert.h"
+#include "../../lib/dassert.h"
 
 
 /*
