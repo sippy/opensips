@@ -222,8 +222,8 @@ static inline int challenge(struct sip_msg* _msg, str *realm, int _qop,
 		if ((algmask & (1 << i)) == 0)
 			continue;
 		auth_hfs[nalgs].s = build_auth_hf(0, (cred ? cred->stale : 0), realm,
-		    &auth_hfs[i].len, _qop, i, _challenge_msg);
-		if (!auth_hfs[i].s) {
+		    &auth_hfs[nalgs].len, _qop, i, _challenge_msg);
+		if (!auth_hfs[nalgs].s) {
 			LM_ERR("failed to generate nonce\n");
 			ret = -1;
 			goto failure;
