@@ -25,7 +25,7 @@
 #include "../../str.h"
 #include "../../md5global.h"
 #include "../../md5.h"
-#include "../../parser/parse_authenticate.h"
+#include "../../parser/digest/digest_parser.h"
 
 #include "digest_auth.h"
 #include "digest_auth_calc.h"
@@ -36,10 +36,8 @@
 /*
  * calculate H(A1)
  */
-static void digest_calc_HA1( struct digest_auth_credential *crd,
-		struct authenticate_body *auth,
-		str* cnonce,
-		HASHHEX *sess_key)
+static void _digest_calc_HA1(const struct digest_auth_credential *crd,
+   const str* nonce, const str* cnonce, int issess, HASHHEX *sess_key)
 {
 	MD5_CTX Md5Ctx;
 	HASH HA1;
@@ -53,12 +51,12 @@ static void digest_calc_HA1( struct digest_auth_credential *crd,
 	MD5Final(HA1.MD5, &Md5Ctx);
 	cvt_hex(HA1.MD5, sess_key->MD5, HASHLEN_MD5, HASHHEXLEN_MD5);
 
-	if ( auth->algorithm == ALG_MD5SESS )
+	if (issess != 0)
 	{
 		MD5Init(&Md5Ctx);
 		MD5Update(&Md5Ctx, sess_key->MD5, HASHHEXLEN_MD5);
 		MD5Update(&Md5Ctx, ":", 1);
-		MD5Update(&Md5Ctx, auth->nonce.s, auth->nonce.len);
+		MD5Update(&Md5Ctx, nonce->s, nonce->len);
 		MD5Update(&Md5Ctx, ":", 1);
 		MD5Update(&Md5Ctx, cnonce->s, cnonce->len);
 		MD5Final(HA1.MD5, &Md5Ctx);
@@ -67,13 +65,24 @@ static void digest_calc_HA1( struct digest_auth_credential *crd,
 
 }
 
+static void digest_calc_HA1(const struct digest_auth_credential *crd,
+   const str* nonce, const str* cnonce, HASHHEX *sess_key)
+{
+	_digest_calc_HA1(crd, nonce, cnonce, 0, sess_key);
+}
+
+static void digest_calc_HA1_s(const struct digest_auth_credential *crd,
+   const str* nonce, const str* cnonce, HASHHEX *sess_key)
+{
+	_digest_calc_HA1(crd, nonce, cnonce, 1, sess_key);
+}
 
 
 /*
  * calculate H(A2)
  */
-static void digest_calc_HA2(str *msg_body, str *method, str *uri,
-		int auth_int, HASHHEX *HA2Hex)
+static void digest_calc_HA2(const str *msg_body, const str *method,
+    const str *uri, int auth_int, HASHHEX *HA2Hex)
 {
 	MD5_CTX Md5Ctx;
 	HASH HA2;
@@ -107,10 +116,9 @@ static void digest_calc_HA2(str *msg_body, str *method, str *uri,
 /*
  * calculate request-digest/response-digest as per HTTP Digest spec
  */
-static void digest_calc_response( HASHHEX *ha1, HASHHEX *ha2,
-		struct authenticate_body *auth,
-		str* nc, str* cnonce,
-		struct digest_auth_response *response)
+static void digest_calc_response(const HASHHEX *ha1, const HASHHEX *ha2,
+    const str *nonce, const str *qop_val, const str* nc, const str* cnonce,
+    struct digest_auth_response *response)
 {
 	MD5_CTX Md5Ctx;
 	HASH RespHash;
@@ -118,19 +126,16 @@ static void digest_calc_response( HASHHEX *ha1, HASHHEX *ha2,
 	MD5Init(&Md5Ctx);
 	MD5Update(&Md5Ctx, ha1->MD5, HASHHEXLEN_MD5);
 	MD5Update(&Md5Ctx, ":", 1);
-	MD5Update(&Md5Ctx, auth->nonce.s, auth->nonce.len);
+	MD5Update(&Md5Ctx, nonce->s, nonce->len);
 	MD5Update(&Md5Ctx, ":", 1);
 
-	if((auth->flags&QOP_AUTH) || (auth->flags&QOP_AUTH_INT))
+	if (qop_val != NULL)
 	{
 		MD5Update(&Md5Ctx, nc->s, nc->len);
 		MD5Update(&Md5Ctx, ":", 1);
 		MD5Update(&Md5Ctx, cnonce->s, cnonce->len);
 		MD5Update(&Md5Ctx, ":", 1);
-		if (!(auth->flags&QOP_AUTH))
-			MD5Update(&Md5Ctx, "auth-int", 8);
-		else
-			MD5Update(&Md5Ctx, "auth", 4);
+		MD5Update(&Md5Ctx, qop_val->s, qop_val->len);
 		MD5Update(&Md5Ctx, ":", 1);
 	};
 	MD5Update(&Md5Ctx, ha2->MD5, HASHHEXLEN_MD5);
@@ -150,7 +155,7 @@ const struct digest_auth_calc md5_digest_calc = {
 };
 
 const struct digest_auth_calc md5sess_digest_calc = {
-	.HA1 = digest_calc_HA1,
+	.HA1 = digest_calc_HA1_s,
 	.HA2 = digest_calc_HA2,
 	.response = &digest_calc_response,
 	.algorithm_val = str_init(ALGORITHM_VALUE_MD5SESS_S),

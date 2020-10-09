@@ -19,15 +19,15 @@
  */
 
 struct digest_auth_credential;
-struct authenticate_body;
 struct digest_auth_response;
 
 struct digest_auth_calc {
-	void (*HA1)(struct digest_auth_credential *, struct authenticate_body *, str *,
+	void (*HA1)(const struct digest_auth_credential *, const str *, const str *,
 	    HASHHEX *);
-	void (*HA2)(str *, str *, str *, int, HASHHEX *);
-	void (*response)(HASHHEX *, HASHHEX *, struct authenticate_body *, str *,
-	    str *, struct digest_auth_response *);
+	void (*HA2)(const str *, const str *, const str *, int, HASHHEX *);
+	void (*response)(const HASHHEX *ha1, const HASHHEX *ha2,
+	    const str *nonce, const str *qop_val, const str* nc, const str* cnonce,
+	    struct digest_auth_response *response);
 	const str algorithm_val;
 	int HASHLEN;
 	int HASHHEXLEN;

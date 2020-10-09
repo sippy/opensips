@@ -26,7 +26,7 @@
 #include "openssl/sha.h"
 
 #include "../../str.h"
-#include "../../parser/parse_authenticate.h"
+#include "../../parser/digest/digest_parser.h"
 
 #include "digest_auth.h"
 #include "digest_auth_calc.h"
@@ -37,10 +37,8 @@
 /*
  * calculate H(A1)
  */
-static void digest_calc_HA1( struct digest_auth_credential *crd,
-		struct authenticate_body *auth,
-		str* cnonce,
-		HASHHEX *sess_key)
+static void _digest_calc_HA1(const struct digest_auth_credential *crd,
+    const str* nonce, const str* cnonce, int issess, HASHHEX *sess_key)
 {
 	SHA256_CTX Sha256Ctx;
 	HASH HA1;
@@ -54,12 +52,12 @@ static void digest_calc_HA1( struct digest_auth_credential *crd,
 	SHA256_Final((unsigned char *)HA1.SHA256, &Sha256Ctx);
 	cvt_hex(HA1.SHA256, sess_key->SHA256, HASHLEN_SHA256, HASHHEXLEN_SHA256);
 
-	if ( auth->algorithm == ALG_SHA256SESS )
+	if (issess != 0)
 	{
 		SHA256_Init(&Sha256Ctx);
 		SHA256_Update(&Sha256Ctx, sess_key->SHA256, HASHHEXLEN_SHA256);
 		SHA256_Update(&Sha256Ctx, ":", 1);
-		SHA256_Update(&Sha256Ctx, auth->nonce.s, auth->nonce.len);
+		SHA256_Update(&Sha256Ctx, nonce->s, nonce->len);
 		SHA256_Update(&Sha256Ctx, ":", 1);
 		SHA256_Update(&Sha256Ctx, cnonce->s, cnonce->len);
 		SHA256_Final((unsigned char *)HA1.SHA256, &Sha256Ctx);
@@ -68,13 +66,23 @@ static void digest_calc_HA1( struct digest_auth_credential *crd,
 
 }
 
+static void digest_calc_HA1(const struct digest_auth_credential *crd,
+   const str* nonce, const str* cnonce, HASHHEX *sess_key)
+{
+	_digest_calc_HA1(crd, nonce, cnonce, 0, sess_key);
+}
 
+static void digest_calc_HA1_s(const struct digest_auth_credential *crd,
+   const str* nonce, const str* cnonce, HASHHEX *sess_key)
+{
+	_digest_calc_HA1(crd, nonce, cnonce, 1, sess_key);
+}
 
 /*
  * calculate H(A2)
  */
-static void digest_calc_HA2(str *msg_body, str *method, str *uri,
-		int auth_int, HASHHEX *HA2Hex)
+static void digest_calc_HA2(const str *msg_body, const str *method,
+    const str *uri, int auth_int, HASHHEX *HA2Hex)
 {
 	SHA256_CTX Sha256Ctx;
 	HASH HA2;
@@ -108,10 +116,9 @@ static void digest_calc_HA2(str *msg_body, str *method, str *uri,
 /*
  * calculate request-digest/response-digest as per HTTP Digest spec
  */
-static void digest_calc_response( HASHHEX *ha1, HASHHEX *ha2,
-		struct authenticate_body *auth,
-		str* nc, str* cnonce,
-		struct digest_auth_response *response)
+static void digest_calc_response(const HASHHEX *ha1, const HASHHEX *ha2,
+    const str *nonce, const str *qop_val, const str* nc, const str* cnonce,
+    struct digest_auth_response *response)
 {
 	SHA256_CTX Sha256Ctx;
 	HASH RespHash;
@@ -119,19 +126,16 @@ static void digest_calc_response( HASHHEX *ha1, HASHHEX *ha2,
 	SHA256_Init(&Sha256Ctx);
 	SHA256_Update(&Sha256Ctx, ha1->SHA256, HASHHEXLEN_SHA256);
 	SHA256_Update(&Sha256Ctx, ":", 1);
-	SHA256_Update(&Sha256Ctx, auth->nonce.s, auth->nonce.len);
+	SHA256_Update(&Sha256Ctx, nonce->s, nonce->len);
 	SHA256_Update(&Sha256Ctx, ":", 1);
 
-	if((auth->flags&QOP_AUTH) || (auth->flags&QOP_AUTH_INT))
+	if (qop_val != NULL)
 	{
 		SHA256_Update(&Sha256Ctx, nc->s, nc->len);
 		SHA256_Update(&Sha256Ctx, ":", 1);
 		SHA256_Update(&Sha256Ctx, cnonce->s, cnonce->len);
 		SHA256_Update(&Sha256Ctx, ":", 1);
-		if (!(auth->flags&QOP_AUTH))
-			SHA256_Update(&Sha256Ctx, "auth-int", 8);
-		else
-			SHA256_Update(&Sha256Ctx, "auth", 4);
+		SHA256_Update(&Sha256Ctx, qop_val->s, qop_val->len);
 		SHA256_Update(&Sha256Ctx, ":", 1);
 	};
 	SHA256_Update(&Sha256Ctx, ha2->SHA256, HASHHEXLEN_SHA256);
@@ -151,7 +155,7 @@ const struct digest_auth_calc sha256_digest_calc = {
 };
 
 const struct digest_auth_calc sha256sess_digest_calc = {
-	.HA1 = digest_calc_HA1,
+	.HA1 = digest_calc_HA1_s,
 	.HA2 = digest_calc_HA2,
 	.response = &digest_calc_response,
 	.algorithm_val = str_init(ALGORITHM_VALUE_SHA256SESS_S),
