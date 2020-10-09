@@ -35,6 +35,10 @@
 #define PROXY_AUTH_CODE     407
 #define PROXY_AUTH_HDR      "Proxy-Authenticate"
 
+/* First/Last supported algorithm */
+#define FIRST_ALG_SPTD (ALG_UNSPEC)
+#define LAST_ALG_SPTD  (ALG_MD5SESS)
+
 typedef union {
 	char MD5[HASHLEN_MD5];
 	char SHA256[HASHLEN_SHA256];
