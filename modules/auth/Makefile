@@ -8,6 +8,7 @@
 include ../../Makefile.defs
 auto_gen=
 NAME=auth.so
-LIBS=
+LIBS=../../lib/digest_auth/libdigest_auth.a -lcrypto
 
+include ../../Makefile.openssl
 include ../../Makefile.modules
