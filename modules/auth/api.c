@@ -32,9 +32,8 @@
 #include "api.h"
 #include "rpid.h"
 #include "index.h"
-
-static str auth_400_err = str_init(MESSAGE_400);
-static str auth_500_err = str_init(MESSAGE_500);
+#include "../../lib/digest_auth/digest_auth_calc.h"
+#include "../../lib/dassert.h"
 
 
 /*
@@ -152,9 +151,10 @@ static inline int find_credentials(struct sip_msg* _m, str* _realm,
 auth_result_t pre_auth(struct sip_msg* _m, str* _realm, hdr_types_t _hftype,
 													struct hdr_field** _h)
 {
-	int ret;
+	int ret, ecode;
 	auth_body_t* c;
 	struct sip_uri *uri;
+	const str *emsg;
 
 	/* ACK and CANCEL must be always authorized, there is
 	 * no way how to challenge ACK and CANCEL cannot be
@@ -168,10 +168,9 @@ auth_result_t pre_auth(struct sip_msg* _m, str* _realm, hdr_types_t _hftype,
 	if (_realm->len == 0) {
 		if (get_realm(_m, _hftype, &uri) < 0) {
 			LM_ERR("failed to extract realm\n");
-			if (send_resp(_m, 400, &auth_400_err, 0, 0) == -1) {
-				LM_ERR("failed to send 400 reply\n");
-			}
-			return ERROR;
+			emsg = &str_init(MESSAGE_400);
+			ecode = 400;
+			goto ereply;
 		}
 
 		*_realm = uri->host;
@@ -185,11 +184,14 @@ auth_result_t pre_auth(struct sip_msg* _m, str* _realm, hdr_types_t _hftype,
 	ret = find_credentials(_m, _realm, _hftype, _h);
 	if (ret < 0) {
 		LM_ERR("failed to find credentials\n");
-		if (send_resp(_m, (ret == -2) ? 500 : 400,
-			      (ret == -2) ? &auth_500_err : &auth_400_err, 0, 0) == -1) {
-			LM_ERR("failed to send 400 reply\n");
+		if (ret == -2) {
+			emsg = &str_init(MESSAGE_500);
+			ecode = 500;
+		} else {
+			emsg = &str_init(MESSAGE_400);
+			ecode = 400;
 		}
-		return ERROR;
+		goto ereply;
 	} else if (ret > 0) {
 		LM_DBG("credentials with given realm not found\n");
 		return NO_CREDENTIALS;
@@ -201,18 +203,16 @@ auth_result_t pre_auth(struct sip_msg* _m, str* _realm, hdr_types_t _hftype,
 	/* Check credentials correctness here */
 	if (check_dig_cred(&(c->digest)) != E_DIG_OK) {
 		LM_DBG("received credentials are not filled properly\n");
-		if (send_resp(_m, 400, &auth_400_err, 0, 0) == -1) {
-			LM_ERR("failed to send 400 reply\n");
-		}
-		return ERROR;
+		emsg = &str_init(MESSAGE_400);
+		ecode = 400;
+		goto ereply;
 	}
 
 	if (mark_authorized_cred(_m, *_h) < 0) {
 		LM_ERR("failed to mark parsed credentials\n");
-		if (send_resp(_m, 500, &auth_400_err, 0, 0) == -1) {
-			LM_ERR("failed to send 400 reply\n");
-		}
-		return ERROR;
+		emsg = &str_init(MESSAGE_400);
+		ecode = 500;
+		goto ereply;
 	}
 
 	if (is_nonce_stale(&c->digest.nonce)) {
@@ -228,6 +228,11 @@ auth_result_t pre_auth(struct sip_msg* _m, str* _realm, hdr_types_t _hftype,
 	}
 
 	return DO_AUTHORIZATION;
+ereply:
+	if (send_resp(_m, ecode, emsg, 0, 0) == -1) {
+		LM_ERR("failed to send %d reply\n", ecode);
+	}
+	return ERROR;
 }
 
 
@@ -266,16 +271,22 @@ auth_result_t post_auth(struct sip_msg* _m, struct hdr_field* _h)
 
 }
 
-int check_response(dig_cred_t* _cred, str* _method, str *_msg_body, char* _ha1)
+int check_response(const dig_cred_t* _cred, const str* _method,
+    const str *_msg_body, const HASHHEX* _ha1)
 {
-	HASHHEX resp;
+	HASHHEX ha2;
+	struct digest_auth_response resp;
+	const struct digest_auth_calc *digest_calc;
+
+	digest_calc = get_digest_calc(_cred->alg.alg_parsed);
+	DASSERT(digest_calc != NULL);
 
 	/*
 	 * First, we have to verify that the response received has
 	 * the same length as responses created by us
 	 */
-	if (_cred->response.len != 32) {
-		LM_DBG("receive response len != 32\n");
+	if (_cred->response.len != digest_calc->HASHHEXLEN) {
+		LM_DBG("receive response len != %d\n", digest_calc->HASHHEXLEN);
 		return 1;
 	}
 
@@ -283,18 +294,18 @@ int check_response(dig_cred_t* _cred, str* _method, str *_msg_body, char* _ha1)
 	 * Now, calculate our response from parameters received
 	 * from the user agent
 	 */
-	calc_response(_ha1, &(_cred->nonce),
-		&(_cred->nc), &(_cred->cnonce),
-		&(_cred->qop.qop_str), _cred->qop.qop_parsed == QOP_AUTHINT_D,
-		_method, _msg_body, &(_cred->uri), resp);
+	digest_calc->HA2(_msg_body, _method, &(_cred->uri),
+	    _cred->qop.qop_parsed == QOP_AUTHINT_D, &ha2);
+	digest_calc->response(_ha1, &ha2, &(_cred->nonce), &(_cred->qop.qop_str),
+	    &(_cred->nc), &(_cred->cnonce), &resp);
 
-	LM_DBG("our result = \'%s\'\n", resp);
+	LM_DBG("our result = \'%s\'\n", resp.hhex._start);
 
 	/*
 	 * And simply compare the strings, the user is
 	 * authorized if they match
 	 */
-	if (!memcmp(resp, _cred->response.s, 32)) {
+	if (!memcmp(resp.hhex._start, _cred->response.s, digest_calc->HASHHEXLEN)) {
 		LM_DBG("authorization is OK\n");
 		return 0;
 	} else {
@@ -303,7 +314,17 @@ int check_response(dig_cred_t* _cred, str* _method, str *_msg_body, char* _ha1)
 	}
 }
 
+static void auth_calc_HA1(alg_t alg, const str* username, const str* realm,
+    const str* password, const str* nonce, const str* cnonce, HASHHEX *sess_key)
+{
+	const struct digest_auth_calc *digest_calc;
+	struct digest_auth_credential creds = {.realm = *realm,
+	    .user = *username, .passwd = *password};
 
+	digest_calc = get_digest_calc(alg);
+	DASSERT(digest_calc != NULL);
+	digest_calc->HA1(&creds, nonce, cnonce, sess_key);
+}
 
 int bind_auth(auth_api_t* api)
 {
@@ -314,7 +335,7 @@ int bind_auth(auth_api_t* api)
 
 	api->pre_auth = pre_auth;
 	api->post_auth = post_auth;
-	api->calc_HA1 = calc_HA1;
+	api->calc_HA1 = auth_calc_HA1;
 	api->check_response = check_response;
 
 	get_rpid_avp( &api->rpid_avp, &api->rpid_avp_type );

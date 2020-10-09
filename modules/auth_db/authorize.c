@@ -44,6 +44,7 @@
 #include "../../usr_avp.h"
 #include "../../mod_fix.h"
 #include "../../mem/mem.h"
+#include "../../lib/digest_auth/digest_auth.h"
 #include "aaa_avps.h"
 #include "authdb_mod.h"
 
@@ -51,8 +52,8 @@
 static str auth_500_err = str_init("Server Internal Error");
 
 
-static inline int get_ha1(struct username* _username, str* _domain,
-			  const str* _table, char* _ha1, db_res_t** res)
+static inline int get_ha1(dig_cred_t* digest, const str* _domain,
+    const str* _table, HASHHEX* _ha1, db_res_t** res)
 {
 	struct aaa_avp *cred;
 	db_key_t keys[2];
@@ -61,6 +62,7 @@ static inline int get_ha1(struct username* _username, str* _domain,
 	str result;
 	static db_ps_t auth_ha1_ps = NULL;
 	static db_ps_t auth_ha1b_ps = NULL;
+	struct username* _username = &digest->username;
 
 	int n, nc;
 
@@ -126,12 +128,12 @@ static inline int get_ha1(struct username* _username, str* _domain,
 	if (calc_ha1) {
 		/* Only plaintext passwords are stored in database,
 		 * we have to calculate HA1 */
-		auth_api.calc_HA1(HA_MD5, &_username->whole, _domain, &result,
-				0, 0, _ha1);
-		LM_DBG("HA1 string calculated: %s\n", _ha1);
+		auth_api.calc_HA1(digest->alg.alg_parsed, &_username->whole,
+		    _domain, &result, 0, 0, _ha1);
+		LM_DBG("HA1 string calculated: %s\n", _ha1->_start);
 	} else {
-		memcpy(_ha1, result.s, result.len);
-		_ha1[result.len] = '\0';
+		memcpy(_ha1->_start, result.s, result.len);
+		_ha1->_start[result.len] = '\0';
 	}
 
 	return 0;
@@ -209,9 +211,9 @@ static int generate_avps(db_res_t* result)
  * Authorize digest credentials
  */
 static inline int authorize(struct sip_msg* _m, str *domain,
-									str* table, hdr_types_t _hftype)
+    str* table, hdr_types_t _hftype)
 {
-	char ha1[256];
+	HASHHEX ha1;
 	int res;
 	struct hdr_field* h;
 	auth_body_t* cred;
@@ -226,7 +228,7 @@ static inline int authorize(struct sip_msg* _m, str *domain,
 
 	cred = (auth_body_t*)h->parsed;
 
-	res = get_ha1(&cred->digest.username, domain, table, ha1, &result);
+	res = get_ha1(&cred->digest, domain, table, &ha1, &result);
 	if (res < 0) {
 		/* Error while accessing the database */
 		if (sigb.reply(_m, 500, &auth_500_err, NULL) == -1) {
@@ -248,7 +250,7 @@ static inline int authorize(struct sip_msg* _m, str *domain,
 
 	/* Recalculate response, it must be same to authorize successfully */
 	if (!auth_api.check_response(&(cred->digest),
-				&_m->first_line.u.request.method, &msg_body, ha1)) {
+	    &_m->first_line.u.request.method, &msg_body, &ha1)) {
 		ret = auth_api.post_auth(_m, h);
 		if (ret == AUTHORIZED)
 			generate_avps(result);

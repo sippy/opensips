@@ -47,7 +47,9 @@
 #include "challenge.h"
 #include "rpid.h"
 #include "api.h"
-
+#include "../../parser/digest/digest_parser.h"
+#include "../../lib/digest_auth/digest_auth_calc.h"
+#include "../../lib/dassert.h"
 
 #define RAND_SECRET_LEN 32
 
@@ -369,10 +371,11 @@ static void destroy(void)
 	}
 }
 
-static inline int auth_get_ha1(struct sip_msg *msg, struct username* _username,
-		str* _domain, char* _ha1)
+static inline int auth_get_ha1(struct sip_msg *msg, dig_cred_t* digest,
+		str* _domain, HASHHEX* _ha1)
 {
 	pv_value_t sval;
+	struct username* _username = &digest->username;
 
 	/* get username from PV */
 	memset(&sval, 0, sizeof(pv_value_t));
@@ -409,13 +412,19 @@ static inline int auth_get_ha1(struct sip_msg *msg, struct username* _username,
 		return 1;
 	}
 	if (auth_calc_ha1) {
+		const struct digest_auth_calc *digest_calc;
+		struct digest_auth_credential creds = {.realm = *_domain,
+		    .user = _username->whole, .passwd = sval.rs};
+
+		digest_calc = get_digest_calc(digest->alg.alg_parsed);
+		DASSERT(digest_calc != NULL);
 		/* Only plaintext passwords are stored in database,
 		 * we have to calculate HA1 */
-		calc_HA1(HA_MD5, &_username->whole, _domain, &sval.rs, 0, 0, _ha1);
-		LM_DBG("HA1 string calculated: %s\n", _ha1);
+		digest_calc->HA1(&creds, NULL/*nonce*/, NULL/*cnonce*/, _ha1);
+		LM_DBG("HA1 string calculated: %s\n", _ha1->_start);
 	} else {
-		memcpy(_ha1, sval.rs.s, sval.rs.len);
-		_ha1[sval.rs.len] = '\0';
+		memcpy(_ha1->_start, sval.rs.s, sval.rs.len);
+		_ha1->_start[sval.rs.len] = '\0';
 	}
 
 	return 0;
@@ -424,7 +433,7 @@ static inline int auth_get_ha1(struct sip_msg *msg, struct username* _username,
 static inline int pv_authorize(struct sip_msg* msg, str *domain,
 										hdr_types_t hftype)
 {
-	static char ha1[256];
+	HASHHEX ha1;
 	int res;
 	struct hdr_field* h;
 	auth_body_t* cred;
@@ -441,7 +450,7 @@ static inline int pv_authorize(struct sip_msg* msg, str *domain,
 
 	cred = (auth_body_t*)h->parsed;
 
-	res = auth_get_ha1(msg, &cred->digest.username, domain, ha1);
+	res = auth_get_ha1(msg, &cred->digest, domain, &ha1);
 	if (res < 0) {
 		/* Error */
 		if (sigb.reply(msg, 500, &auth_500_err, NULL) == -1)
@@ -461,7 +470,7 @@ static inline int pv_authorize(struct sip_msg* msg, str *domain,
 
 	/* Recalculate response, it must be same to authorize successfully */
 	if (!check_response(&(cred->digest),&msg->first_line.u.request.method,
-		&msg_body,ha1))
+		&msg_body, &ha1))
 	{
 		return post_auth(msg, h);
 	}
