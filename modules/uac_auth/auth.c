@@ -35,6 +35,7 @@
 #include "../../mem/mem.h"
 #include "../../parser/parse_authenticate.h"
 #include "../tm/tm_load.h"
+#include "../../lib/dassert.h"
 
 #include "uac_auth.h"
 #include "../../lib/digest_auth/digest_auth_calc.h"
@@ -243,33 +244,14 @@ void do_uac_auth(str *msg_body, str *method, str *uri, struct uac_credential *cr
 	int i, has_ha1;
 	const struct digest_auth_calc *digest_calc;
 
-	switch (auth->algorithm) {
-	case ALG_UNSPEC:
-	case ALG_MD5:
-                digest_calc = &md5_digest_calc;
-                break;
-
-	case ALG_MD5SESS:
-		digest_calc = &md5sess_digest_calc;
-		break;
-
-	case ALG_SHA256:
-		digest_calc = &sha256_digest_calc;
-		break;
-
-	case ALG_SHA256SESS:
-		digest_calc = &sha256sess_digest_calc;
-		break;
-
-	default:
-		abort();
-	}
+	digest_calc = get_digest_calc(auth->algorithm);
+	DASSERT(digest_calc != NULL);
 
 	/* before actually doing the authe, we check if the received password is
 	   a plain text password or a HA1 value ; we detect a HA1 (in the password
 	   field if: (1) starts with "0x"; (2) len is 32 + 2 (prefix) ; (3) the 32
 	   chars are HEXA values */
-	if (digest_calc == &md5_digest_calc && crd->auth_data.passwd.len==(HASHHEXLEN_MD5 + 2) &&
+	if (crd->auth_data.passwd.len==(digest_calc->HASHHEXLEN + 2) &&
 	    crd->auth_data.passwd.s[0]=='0' && crd->auth_data.passwd.s[1]=='x') {
 		/* it may be a HA1 - check the actual content */
 		for( has_ha1=1,i=2 ; i<crd->auth_data.passwd.len ; i++ ) {
@@ -278,10 +260,10 @@ void do_uac_auth(str *msg_body, str *method, str *uri, struct uac_credential *cr
 				has_ha1 = 0;
 				break;
 			} else {
-				ha1.MD5[i-2] = crd->auth_data.passwd.s[i];
+				ha1._start[i-2] = crd->auth_data.passwd.s[i];
 			}
 		}
-		ha1.MD5[HASHHEXLEN_MD5] = 0;
+		ha1._start[digest_calc->HASHHEXLEN] = 0;
 	} else {
 		has_ha1 = 0;
 	}
