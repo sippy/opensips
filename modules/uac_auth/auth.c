@@ -275,19 +275,21 @@ void do_uac_auth(str *msg_body, str *method, str *uri, struct uac_credential *cr
 
 		/* do authentication */
 		if (!has_ha1)
-			digest_calc->HA1( &crd->auth_data, auth, &cnonce, &ha1);
+			digest_calc->HA1( &crd->auth_data, &auth->nonce, &cnonce, &ha1);
 		digest_calc->HA2(msg_body, method, uri, !(auth->flags&QOP_AUTH), &ha2);
 
-		digest_calc->response( &ha1, &ha2, auth, &nc, &cnonce, response);
+		digest_calc->response( &ha1, &ha2, &auth->nonce, &auth->qop,
+		    &nc, &cnonce, response);
 		auth_nc_cnonce->nc = &nc;
 		auth_nc_cnonce->cnonce = &cnonce;
 	} else {
 		/* do authentication */
 		if (!has_ha1)
-			digest_calc->HA1( &crd->auth_data, auth, 0/*cnonce*/, &ha1);
+			digest_calc->HA1( &crd->auth_data, &auth->nonce, 0/*cnonce*/, &ha1);
 		digest_calc->HA2(msg_body, method, uri, 0, &ha2);
 
-		digest_calc->response( &ha1, &ha2, auth, 0/*nc*/, 0/*cnonce*/, response);
+		digest_calc->response( &ha1, &ha2, &auth->nonce, NULL/*qop*/,
+		    0/*nc*/, 0/*cnonce*/, response);
 	}
 	response->algorithm_val = &(digest_calc->algorithm_val);
 }
