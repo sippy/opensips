@@ -111,8 +111,6 @@ static void digest_calc_HA2(const str *msg_body, const str *method,
 	cvt_hex(HA2.SHA256, HA2Hex->SHA256, HASHLEN_SHA256, HASHHEXLEN_SHA256);
 }
 
-
-
 /*
  * calculate request-digest/response-digest as per HTTP Digest spec
  */

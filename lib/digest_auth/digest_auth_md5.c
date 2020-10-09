@@ -37,7 +37,7 @@
  * calculate H(A1)
  */
 static void _digest_calc_HA1(const struct digest_auth_credential *crd,
-   const str* nonce, const str* cnonce, int issess, HASHHEX *sess_key)
+    const str* nonce, const str* cnonce, int issess, HASHHEX *sess_key)
 {
 	MD5_CTX Md5Ctx;
 	HASH HA1;
@@ -77,7 +77,6 @@ static void digest_calc_HA1_s(const struct digest_auth_credential *crd,
 	_digest_calc_HA1(crd, nonce, cnonce, 1, sess_key);
 }
 
-
 /*
  * calculate H(A2)
  */
@@ -110,8 +109,6 @@ static void digest_calc_HA2(const str *msg_body, const str *method,
 	MD5Final(HA2.MD5, &Md5Ctx);
 	cvt_hex(HA2.MD5, HA2Hex->MD5, HASHLEN_MD5, HASHHEXLEN_MD5);
 }
-
-
 
 /*
  * calculate request-digest/response-digest as per HTTP Digest spec
