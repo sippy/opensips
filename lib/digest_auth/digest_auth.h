@@ -37,7 +37,7 @@
 
 /* First/Last supported algorithm */
 #define FIRST_ALG_SPTD (ALG_UNSPEC)
-#define LAST_ALG_SPTD  (ALG_MD5SESS)
+#define LAST_ALG_SPTD  (ALG_SHA256SESS)
 
 typedef union {
 	char MD5[HASHLEN_MD5];
