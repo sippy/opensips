@@ -142,15 +142,19 @@ static void digest_calc_response( HASHHEX *ha1, HASHHEX *ha2,
 }
 
 const struct digest_auth_calc sha256_digest_calc = {
-    .HA1 = digest_calc_HA1,
-    .HA2 = digest_calc_HA2,
-    .response = &digest_calc_response,
-    .algorithm_val = str_init(ALGORITHM_VALUE_SHA256_S)
+	.HA1 = digest_calc_HA1,
+	.HA2 = digest_calc_HA2,
+	.response = &digest_calc_response,
+	.algorithm_val = str_init(ALGORITHM_VALUE_SHA256_S),
+	.HASHLEN = HASHLEN_SHA256,
+	.HASHHEXLEN = HASHHEXLEN_SHA256
 };
 
 const struct digest_auth_calc sha256sess_digest_calc = {
-    .HA1 = digest_calc_HA1,
-    .HA2 = digest_calc_HA2,
-    .response = &digest_calc_response,
-    .algorithm_val = str_init(ALGORITHM_VALUE_SHA256SESS_S)
+	.HA1 = digest_calc_HA1,
+	.HA2 = digest_calc_HA2,
+	.response = &digest_calc_response,
+	.algorithm_val = str_init(ALGORITHM_VALUE_SHA256SESS_S),
+	.HASHLEN = HASHLEN_SHA256,
+	.HASHHEXLEN = HASHHEXLEN_SHA256
 };

@@ -29,4 +29,8 @@ struct digest_auth_calc {
 	void (*response)(HASHHEX *, HASHHEX *, struct authenticate_body *, str *,
 	    str *, struct digest_auth_response *);
 	const str algorithm_val;
+	int HASHLEN;
+	int HASHHEXLEN;
 };
+
+const struct digest_auth_calc* get_digest_calc(alg_t algorithm);

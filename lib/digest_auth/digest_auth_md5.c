@@ -141,15 +141,19 @@ static void digest_calc_response( HASHHEX *ha1, HASHHEX *ha2,
 }
 
 const struct digest_auth_calc md5_digest_calc = {
-    .HA1 = digest_calc_HA1,
-    .HA2 = digest_calc_HA2,
-    .response = &digest_calc_response,
-    .algorithm_val = str_init(ALGORITHM_VALUE_MD5_S)
+	.HA1 = digest_calc_HA1,
+	.HA2 = digest_calc_HA2,
+	.response = &digest_calc_response,
+	.algorithm_val = str_init(ALGORITHM_VALUE_MD5_S),
+	.HASHLEN = HASHLEN_MD5,
+	.HASHHEXLEN = HASHHEXLEN_MD5
 };
 
 const struct digest_auth_calc md5sess_digest_calc = {
-    .HA1 = digest_calc_HA1,
-    .HA2 = digest_calc_HA2,
-    .response = &digest_calc_response,
-    .algorithm_val = str_init(ALGORITHM_VALUE_MD5SESS_S)
+	.HA1 = digest_calc_HA1,
+	.HA2 = digest_calc_HA2,
+	.response = &digest_calc_response,
+	.algorithm_val = str_init(ALGORITHM_VALUE_MD5SESS_S),
+	.HASHLEN = HASHLEN_MD5,
+	.HASHHEXLEN = HASHHEXLEN_MD5
 };
