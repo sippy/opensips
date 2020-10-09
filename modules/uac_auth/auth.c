@@ -37,7 +37,7 @@
 #include "../tm/tm_load.h"
 
 #include "uac_auth.h"
-#include "uac_auth_calc.h"
+#include "../../lib/digest_auth/digest_auth_calc.h"
 
 extern int            realm_avp_name;
 extern unsigned short realm_avp_type;
@@ -72,9 +72,9 @@ int has_credentials(void) {return (crd_list)?1:0;}
 void free_credential(struct uac_credential *crd)
 {
 	if (crd) {
-		if (crd->realm.s) pkg_free(crd->realm.s);
-		if (crd->user.s) pkg_free(crd->user.s);
-			if (crd->passwd.s) pkg_free(crd->passwd.s);
+		if (crd->auth_data.realm.s) pkg_free(crd->auth_data.realm.s);
+		if (crd->auth_data.user.s) pkg_free(crd->auth_data.user.s);
+			if (crd->auth_data.passwd.s) pkg_free(crd->auth_data.passwd.s);
 			pkg_free(crd);
 	}
 }
@@ -109,7 +109,7 @@ int add_credential( unsigned int type, void *val)
 		goto parse_error;
 	foo.len = p - foo.s;
 	/* dulicate it */
-	duplicate_str( crd->user, foo, error);
+	duplicate_str( crd->auth_data.user, foo, error);
 
 	/* parse the ':' separator */
 	while (*p && isspace((int)*p)) p++;
@@ -129,7 +129,7 @@ int add_credential( unsigned int type, void *val)
 		goto parse_error;
 	foo.len = p - foo.s;
 	/* dulicate it */
-	duplicate_str( crd->realm, foo, error);
+	duplicate_str( crd->auth_data.realm, foo, error);
 
 	/* parse the ':' separator */
 	while (*p && isspace((int)*p)) p++;
@@ -149,7 +149,7 @@ int add_credential( unsigned int type, void *val)
 		goto parse_error;
 	foo.len = p - foo.s;
 	/* dulicate it */
-	duplicate_str( crd->passwd, foo, error);
+	duplicate_str( crd->auth_data.passwd, foo, error);
 
 	/* end of string */
 	while (*p && isspace((int)*p)) p++;
@@ -196,22 +196,22 @@ static inline struct uac_credential *get_avp_credential(str *realm)
 	if ( avp==NULL || (avp->flags&AVP_VAL_STR)==0 || val.s.len<=0 )
 		return 0;
 
-	crd.realm = val.s;
+	crd.auth_data.realm = val.s;
 	/* is it the domain we are looking for? */
-	if (realm->len!=crd.realm.len ||
-	strncmp( realm->s, crd.realm.s, realm->len)!=0 )
+	if (realm->len!=crd.auth_data.realm.len ||
+	strncmp( realm->s, crd.auth_data.realm.s, realm->len)!=0 )
 		return 0;
 
 	/* get username and password */
 	avp = search_first_avp( user_avp_type, user_avp_name, &val, 0);
 	if ( avp==NULL || (avp->flags&AVP_VAL_STR)==0 || val.s.len<=0 )
 		return 0;
-	crd.user = val.s;
+	crd.auth_data.user = val.s;
 
 	avp = search_first_avp( pwd_avp_type, pwd_avp_name, &val, 0);
 	if ( avp==NULL || (avp->flags&AVP_VAL_STR)==0 || val.s.len<=0 )
 		return 0;
-	crd.passwd = val.s;
+	crd.auth_data.passwd = val.s;
 
 	return &crd;
 }
@@ -227,8 +227,8 @@ struct uac_credential *lookup_realm( str *realm)
 
 	/* search in the static list */
 	for( crd=crd_list ; crd ; crd=crd->next )
-		if (realm->len==crd->realm.len &&
-		strncmp( realm->s, crd->realm.s, realm->len)==0 )
+		if (realm->len==crd->auth_data.realm.len &&
+		strncmp( realm->s, crd->auth_data.realm.s, realm->len)==0 )
 			return crd;
 	return 0;
 }
@@ -236,29 +236,29 @@ struct uac_credential *lookup_realm( str *realm)
 
 void do_uac_auth(str *msg_body, str *method, str *uri, struct uac_credential *crd,
 		struct authenticate_body *auth, struct authenticate_nc_cnonce *auth_nc_cnonce,
-		struct auth_response *response)
+		struct digest_auth_response *response)
 {
 	HASHHEX ha1;
 	HASHHEX ha2;
 	int i, has_ha1;
-	const struct uac_auth_calc *uac_calc;
+	const struct digest_auth_calc *digest_calc;
 
 	switch (auth->algorithm) {
 	case ALG_UNSPEC:
 	case ALG_MD5:
-                uac_calc = &md5_uac_calc;
+                digest_calc = &md5_digest_calc;
                 break;
 
 	case ALG_MD5SESS:
-		uac_calc = &md5sess_uac_calc;
+		digest_calc = &md5sess_digest_calc;
 		break;
 
 	case ALG_SHA256:
-		uac_calc = &sha256_uac_calc;
+		digest_calc = &sha256_digest_calc;
 		break;
 
 	case ALG_SHA256SESS:
-		uac_calc = &sha256sess_uac_calc;
+		digest_calc = &sha256sess_digest_calc;
 		break;
 
 	default:
@@ -269,16 +269,16 @@ void do_uac_auth(str *msg_body, str *method, str *uri, struct uac_credential *cr
 	   a plain text password or a HA1 value ; we detect a HA1 (in the password
 	   field if: (1) starts with "0x"; (2) len is 32 + 2 (prefix) ; (3) the 32
 	   chars are HEXA values */
-	if (uac_calc == &md5_uac_calc && crd->passwd.len==(HASHHEXLEN_MD5 + 2) &&
-	    crd->passwd.s[0]=='0' && crd->passwd.s[1]=='x') {
+	if (digest_calc == &md5_digest_calc && crd->auth_data.passwd.len==(HASHHEXLEN_MD5 + 2) &&
+	    crd->auth_data.passwd.s[0]=='0' && crd->auth_data.passwd.s[1]=='x') {
 		/* it may be a HA1 - check the actual content */
-		for( has_ha1=1,i=2 ; i<crd->passwd.len ; i++ ) {
-			if ( !( (crd->passwd.s[i]>='0' && crd->passwd.s[i]<='9') ||
-			(crd->passwd.s[i]>='a' && crd->passwd.s[i]<='f') )) {
+		for( has_ha1=1,i=2 ; i<crd->auth_data.passwd.len ; i++ ) {
+			if ( !( (crd->auth_data.passwd.s[i]>='0' && crd->auth_data.passwd.s[i]<='9') ||
+			(crd->auth_data.passwd.s[i]>='a' && crd->auth_data.passwd.s[i]<='f') )) {
 				has_ha1 = 0;
 				break;
 			} else {
-				ha1.MD5[i-2] = crd->passwd.s[i];
+				ha1.MD5[i-2] = crd->auth_data.passwd.s[i];
 			}
 		}
 		ha1.MD5[HASHHEXLEN_MD5] = 0;
@@ -293,21 +293,21 @@ void do_uac_auth(str *msg_body, str *method, str *uri, struct uac_credential *cr
 
 		/* do authentication */
 		if (!has_ha1)
-			uac_calc->HA1( crd, auth, &cnonce, &ha1);
-		uac_calc->HA2(msg_body, method, uri, !(auth->flags&QOP_AUTH), &ha2);
+			digest_calc->HA1( &crd->auth_data, auth, &cnonce, &ha1);
+		digest_calc->HA2(msg_body, method, uri, !(auth->flags&QOP_AUTH), &ha2);
 
-		uac_calc->response( &ha1, &ha2, auth, &nc, &cnonce, response);
+		digest_calc->response( &ha1, &ha2, auth, &nc, &cnonce, response);
 		auth_nc_cnonce->nc = &nc;
 		auth_nc_cnonce->cnonce = &cnonce;
 	} else {
 		/* do authentication */
 		if (!has_ha1)
-			uac_calc->HA1( crd, auth, 0/*cnonce*/, &ha1);
-		uac_calc->HA2(msg_body, method, uri, 0, &ha2);
+			digest_calc->HA1( &crd->auth_data, auth, 0/*cnonce*/, &ha1);
+		digest_calc->HA2(msg_body, method, uri, 0, &ha2);
 
-		uac_calc->response( &ha1, &ha2, auth, 0/*nc*/, 0/*cnonce*/, response);
+		digest_calc->response( &ha1, &ha2, auth, 0/*nc*/, 0/*cnonce*/, response);
 	}
-	response->algorithm_val = &(uac_calc->algorithm_val);
+	response->algorithm_val = &(digest_calc->algorithm_val);
 }
 
 
@@ -355,7 +355,7 @@ void do_uac_auth(str *msg_body, str *method, str *uri, struct uac_credential *cr
 str* build_authorization_hdr(int code, str *uri,
 		struct uac_credential *crd, struct authenticate_body *auth,
 		struct authenticate_nc_cnonce *auth_nc_cnonce,
-		const struct auth_response *response)
+		const struct digest_auth_response *response)
 {
 	char *p;
 	int len;
@@ -378,8 +378,8 @@ str* build_authorization_hdr(int code, str *uri,
 	/* compile then len */
 	len = (code==401?
 		AUTHORIZATION_HDR_START_LEN:PROXY_AUTHORIZATION_HDR_START_LEN) +
-		USERNAME_FIELD_LEN + crd->user.len + FIELD_SEPARATOR_LEN +
-		REALM_FIELD_LEN + crd->realm.len + FIELD_SEPARATOR_LEN +
+		USERNAME_FIELD_LEN + crd->auth_data.user.len + FIELD_SEPARATOR_LEN +
+		REALM_FIELD_LEN + crd->auth_data.realm.len + FIELD_SEPARATOR_LEN +
 		NONCE_FIELD_LEN + auth->nonce.len + FIELD_SEPARATOR_LEN +
 		URI_FIELD_LEN + uri->len + FIELD_SEPARATOR_LEN +
 		(auth->opaque.len?
@@ -412,11 +412,11 @@ str* build_authorization_hdr(int code, str *uri,
 			PROXY_AUTHORIZATION_HDR_START_LEN+USERNAME_FIELD_LEN);
 	}
 	/* username */
-	add_string( p, crd->user.s, crd->user.len);
+	add_string( p, crd->auth_data.user.s, crd->auth_data.user.len);
 	/* REALM */
 	add_string( p, FIELD_SEPARATOR_S REALM_FIELD_S,
 		FIELD_SEPARATOR_LEN+REALM_FIELD_LEN);
-	add_string( p, crd->realm.s, crd->realm.len);
+	add_string( p, crd->auth_data.realm.s, crd->auth_data.realm.len);
 	/* NONCE */
 	add_string( p, FIELD_SEPARATOR_S NONCE_FIELD_S,
 		FIELD_SEPARATOR_LEN+NONCE_FIELD_LEN);

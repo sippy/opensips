@@ -25,9 +25,10 @@
 #include "../../str.h"
 #include "../../md5global.h"
 #include "../../md5.h"
+#include "../../parser/parse_authenticate.h"
 
-#include "uac_auth.h"
-#include "uac_auth_calc.h"
+#include "digest_auth.h"
+#include "digest_auth_calc.h"
 
 #define ALGORITHM_VALUE_MD5_S     "MD5"
 #define ALGORITHM_VALUE_MD5SESS_S "MD5-sess"
@@ -35,7 +36,7 @@
 /*
  * calculate H(A1)
  */
-static void uac_calc_HA1( struct uac_credential *crd,
+static void digest_calc_HA1( struct digest_auth_credential *crd,
 		struct authenticate_body *auth,
 		str* cnonce,
 		HASHHEX *sess_key)
@@ -71,7 +72,7 @@ static void uac_calc_HA1( struct uac_credential *crd,
 /*
  * calculate H(A2)
  */
-static void uac_calc_HA2(str *msg_body, str *method, str *uri,
+static void digest_calc_HA2(str *msg_body, str *method, str *uri,
 		int auth_int, HASHHEX *HA2Hex)
 {
 	MD5_CTX Md5Ctx;
@@ -106,10 +107,10 @@ static void uac_calc_HA2(str *msg_body, str *method, str *uri,
 /*
  * calculate request-digest/response-digest as per HTTP Digest spec
  */
-static void uac_calc_response( HASHHEX *ha1, HASHHEX *ha2,
+static void digest_calc_response( HASHHEX *ha1, HASHHEX *ha2,
 		struct authenticate_body *auth,
 		str* nc, str* cnonce,
-		struct auth_response *response)
+		struct digest_auth_response *response)
 {
 	MD5_CTX Md5Ctx;
 	HASH RespHash;
@@ -139,16 +140,16 @@ static void uac_calc_response( HASHHEX *ha1, HASHHEX *ha2,
 	response->hhex_len = HASHHEXLEN_MD5;
 }
 
-const struct uac_auth_calc md5_uac_calc = {
-    .HA1 = uac_calc_HA1,
-    .HA2 = uac_calc_HA2,
-    .response = &uac_calc_response,
+const struct digest_auth_calc md5_digest_calc = {
+    .HA1 = digest_calc_HA1,
+    .HA2 = digest_calc_HA2,
+    .response = &digest_calc_response,
     .algorithm_val = str_init(ALGORITHM_VALUE_MD5_S)
 };
 
-const struct uac_auth_calc md5sess_uac_calc = {
-    .HA1 = uac_calc_HA1,
-    .HA2 = uac_calc_HA2,
-    .response = &uac_calc_response,
+const struct digest_auth_calc md5sess_digest_calc = {
+    .HA1 = digest_calc_HA1,
+    .HA2 = digest_calc_HA2,
+    .response = &digest_calc_response,
     .algorithm_val = str_init(ALGORITHM_VALUE_MD5SESS_S)
 };

@@ -21,5 +21,5 @@
 #define HASHLEN_MD5 16
 #define HASHHEXLEN_MD5 (HASHLEN_MD5 * 2)
 
-extern const struct uac_auth_calc md5_uac_calc;
-extern const struct uac_auth_calc md5sess_uac_calc;
+extern const struct digest_auth_calc md5_digest_calc;
+extern const struct digest_auth_calc md5sess_digest_calc;

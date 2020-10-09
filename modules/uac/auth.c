@@ -39,6 +39,7 @@
 #include "../../parser/msg_parser.h"
 #include "../tm/tm_load.h"
 #include "../uac_auth/uac_auth.h"
+#include "../../lib/digest_auth/digest_auth.h"
 #include "../dialog/dlg_load.h"
 #include "auth.h"
 
@@ -251,7 +252,7 @@ int uac_auth( struct sip_msg *msg)
 	int new_cseq;
 	struct sip_msg *rpl;
 	struct cell *t;
-	struct auth_response response;
+	struct digest_auth_response response;
 	str *new_hdr;
 	str param, ttag;
 	char *p;

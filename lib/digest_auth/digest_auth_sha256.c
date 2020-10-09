@@ -26,9 +26,10 @@
 #include "openssl/sha.h"
 
 #include "../../str.h"
+#include "../../parser/parse_authenticate.h"
 
-#include "uac_auth.h"
-#include "uac_auth_calc.h"
+#include "digest_auth.h"
+#include "digest_auth_calc.h"
 
 #define ALGORITHM_VALUE_SHA256_S     "SHA-256"
 #define ALGORITHM_VALUE_SHA256SESS_S "SHA-256-sess"
@@ -36,7 +37,7 @@
 /*
  * calculate H(A1)
  */
-static void uac_calc_HA1( struct uac_credential *crd,
+static void digest_calc_HA1( struct digest_auth_credential *crd,
 		struct authenticate_body *auth,
 		str* cnonce,
 		HASHHEX *sess_key)
@@ -72,7 +73,7 @@ static void uac_calc_HA1( struct uac_credential *crd,
 /*
  * calculate H(A2)
  */
-static void uac_calc_HA2(str *msg_body, str *method, str *uri,
+static void digest_calc_HA2(str *msg_body, str *method, str *uri,
 		int auth_int, HASHHEX *HA2Hex)
 {
 	SHA256_CTX Sha256Ctx;
@@ -107,10 +108,10 @@ static void uac_calc_HA2(str *msg_body, str *method, str *uri,
 /*
  * calculate request-digest/response-digest as per HTTP Digest spec
  */
-static void uac_calc_response( HASHHEX *ha1, HASHHEX *ha2,
+static void digest_calc_response( HASHHEX *ha1, HASHHEX *ha2,
 		struct authenticate_body *auth,
 		str* nc, str* cnonce,
-		struct auth_response *response)
+		struct digest_auth_response *response)
 {
 	SHA256_CTX Sha256Ctx;
 	HASH RespHash;
@@ -140,16 +141,16 @@ static void uac_calc_response( HASHHEX *ha1, HASHHEX *ha2,
 	response->hhex_len = HASHHEXLEN_SHA256;
 }
 
-const struct uac_auth_calc sha256_uac_calc = {
-    .HA1 = uac_calc_HA1,
-    .HA2 = uac_calc_HA2,
-    .response = &uac_calc_response,
+const struct digest_auth_calc sha256_digest_calc = {
+    .HA1 = digest_calc_HA1,
+    .HA2 = digest_calc_HA2,
+    .response = &digest_calc_response,
     .algorithm_val = str_init(ALGORITHM_VALUE_SHA256_S)
 };
 
-const struct uac_auth_calc sha256sess_uac_calc = {
-    .HA1 = uac_calc_HA1,
-    .HA2 = uac_calc_HA2,
-    .response = &uac_calc_response,
+const struct digest_auth_calc sha256sess_digest_calc = {
+    .HA1 = digest_calc_HA1,
+    .HA2 = digest_calc_HA2,
+    .response = &digest_calc_response,
     .algorithm_val = str_init(ALGORITHM_VALUE_SHA256SESS_S)
 };

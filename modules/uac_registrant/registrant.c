@@ -36,6 +36,7 @@
 #include "../../parser/contact/parse_contact.h"
 #include "../../parser/parse_min_expires.h"
 #include "../uac_auth/uac_auth.h"
+#include "../../lib/digest_auth/digest_auth.h"
 #include "reg_records.h"
 #include "reg_db_handler.h"
 #include "clustering.h"
@@ -316,7 +317,7 @@ int run_reg_tm_cback(void *e_data, void *data, void *r_data)
 	contact_t *contact;
 	struct authenticate_body *auth = NULL;
 	static struct authenticate_nc_cnonce auth_nc_cnonce;
-	struct auth_response response;
+	struct digest_auth_response response;
 	str *new_hdr;
 	struct reg_tm_cback_data *tm_cback_data = (struct reg_tm_cback_data*)data;
 	struct cell *t;
@@ -516,13 +517,13 @@ int run_reg_tm_cback(void *e_data, void *data, void *r_data)
 
 		/* perform authentication */
 		if (auth->realm.s && auth->realm.len) {
-			crd.realm.s = auth->realm.s; crd.realm.len = auth->realm.len;
+			crd.auth_data.realm = auth->realm;
 		} else {
 			LM_ERR("No realm found\n");
 			goto done;
 		}
-		crd.user.s = rec->auth_user.s; crd.user.len = rec->auth_user.len;
-		crd.passwd.s = rec->auth_password.s; crd.passwd.len = rec->auth_password.len;
+		crd.auth_data.user = rec->auth_user;
+		crd.auth_data.passwd = rec->auth_password;
 
 		if ((auth->flags & QOP_AUTH_INT) && get_body(msg, &msg_body) < 0) {
 			LM_ERR("Failed to get message body\n");

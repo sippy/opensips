@@ -37,7 +37,7 @@
 #include "../../parser/sdp/sdp.h"
 #include "../../locking.h"
 #include "../../script_cb.h"
-#include "../uac_auth/uac_auth.h"
+#include "../../lib/digest_auth/digest_auth.h"
 #include "../presence/hash.h"
 #include "../../action.h"
 #include "../../trim.h"
@@ -2495,7 +2495,7 @@ void b2b_tm_cback(struct cell *t, b2b_table htable, struct tmcb_params *ps)
 	struct uac_credential* crd;
 	struct authenticate_body *auth = NULL;
 	static struct authenticate_nc_cnonce auth_nc_cnonce;
-	struct auth_response response;
+	struct digest_auth_response response;
 	str *new_hdr;
 	char status_buf[INT2STR_MAX_LEN];
 	int old_route_type;

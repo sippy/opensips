@@ -21,5 +21,5 @@
 #define HASHLEN_SHA256 32
 #define HASHHEXLEN_SHA256 (HASHLEN_SHA256 * 2)
 
-extern const struct uac_auth_calc sha256_uac_calc;
-extern const struct uac_auth_calc sha256sess_uac_calc;
+extern const struct digest_auth_calc sha256_digest_calc;
+extern const struct digest_auth_calc sha256sess_digest_calc;

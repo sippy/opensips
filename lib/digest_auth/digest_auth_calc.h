@@ -18,11 +18,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-struct uac_auth_calc {
-	void (*HA1)(struct uac_credential *, struct authenticate_body *, str *,
+struct digest_auth_credential;
+struct authenticate_body;
+struct digest_auth_response;
+
+struct digest_auth_calc {
+	void (*HA1)(struct digest_auth_credential *, struct authenticate_body *, str *,
 	    HASHHEX *);
 	void (*HA2)(str *, str *, str *, int, HASHHEX *);
 	void (*response)(HASHHEX *, HASHHEX *, struct authenticate_body *, str *,
-	    str *, struct auth_response *);
+	    str *, struct digest_auth_response *);
 	const str algorithm_val;
 };

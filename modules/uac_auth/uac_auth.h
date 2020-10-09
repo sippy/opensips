@@ -31,38 +31,10 @@
 #include "../../parser/parse_authenticate.h"
 #include "../../parser/msg_parser.h"
 
-#include "auth_md5.h"
-#include "auth_sha256.h"
-
-#define WWW_AUTH_CODE       401
-#define WWW_AUTH_HDR        "WWW-Authenticate"
-#define WWW_AUTH_HDR_LEN    (sizeof(WWW_AUTH_HDR)-1)
-#define PROXY_AUTH_CODE     407
-#define PROXY_AUTH_HDR      "Proxy-Authenticate"
-#define PROXY_AUTH_HDR_LEN  (sizeof(PROXY_AUTH_HDR)-1)
-
-typedef union {
-	char MD5[HASHLEN_MD5];
-	char SHA256[HASHLEN_SHA256];
-} HASH;
-
-typedef union {
-	char MD5[HASHHEXLEN_MD5 + 1];
-	char SHA256[HASHHEXLEN_SHA256 + 1];
-	char _start[0];
-} HASHHEX;
-
-struct auth_response {
-	HASHHEX hhex;
-	int hhex_len;
-	const str *algorithm_val;
-};
-
+#include "../../lib/digest_auth/digest_auth.h"
 
 struct uac_credential {
-	str realm;
-	str user;
-	str passwd;
+	struct digest_auth_credential auth_data;
 	struct uac_credential *next;
 };
 
@@ -75,20 +47,20 @@ struct authenticate_nc_cnonce {
 int uac_auth( struct sip_msg *msg);
 void do_uac_auth(str *msg_body, str *method, str *uri, struct uac_credential *crd,
 		struct authenticate_body *auth, struct authenticate_nc_cnonce *auth_nc_cnonce,
-		struct auth_response *response);
+		struct digest_auth_response *response);
 str* build_authorization_hdr(int code, str *uri,
 		struct uac_credential *crd, struct authenticate_body *auth,
 		struct authenticate_nc_cnonce *auth_nc_cnonce,
-		const struct auth_response *response);
+		const struct digest_auth_response *response);
 struct uac_credential* lookup_realm(str *realm);
 
 
 typedef void (*do_uac_auth_t)(str *msg_body, str *method, str *uri, struct uac_credential *crd,
 	struct authenticate_body *auth, struct authenticate_nc_cnonce *auth_nc_cnonce,
-	struct auth_response *response);
+	struct digest_auth_response *response);
 typedef str* (*build_authorization_hdr_t)(int code, str *uri,
 	struct uac_credential *crd, struct authenticate_body *auth,
-	struct authenticate_nc_cnonce *auth_nc_cnonce, const struct auth_response *response);
+	struct authenticate_nc_cnonce *auth_nc_cnonce, const struct digest_auth_response *response);
 typedef struct uac_credential* (*lookup_realm_t)(str *realm);
 
 typedef struct uac_auth_api
@@ -112,34 +84,6 @@ static inline int load_uac_auth_api( uac_auth_api_t *uac_auth_api)
 
 	/* let the auto-loading function load all uac_auth stuff */
 	return load_uac_auth( uac_auth_api );
-}
-
-static inline void cvt_hex(const char *bin, char *hex, int HASHLEN, int HASHHEXLEN)
-{
-        unsigned short i;
-        unsigned char j;
-
-        for (i = 0; i<HASHLEN; i++)
-        {
-                j = (bin[i] >> 4) & 0xf;
-                if (j <= 9)
-                {
-                        hex[i * 2] = (j + '0');
-                } else {
-                        hex[i * 2] = (j + 'a' - 10);
-                }
-
-                j = bin[i] & 0xf;
-
-                if (j <= 9)
-                {
-                        hex[i * 2 + 1] = (j + '0');
-                } else {
-                        hex[i * 2 + 1] = (j + 'a' - 10);
-                }
-        };
-
-        hex[HASHHEXLEN] = '\0';
 }
 
 #endif
