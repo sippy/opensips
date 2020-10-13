@@ -48,11 +48,6 @@ extern int            pwd_avp_name;
 extern unsigned short pwd_avp_type;
 
 
-
-static str nc = {"00000001", 8};
-static str cnonce = {"o", 1};
-static str auth_hdr = {NULL, 0};
-
 static struct uac_credential *crd_list = NULL;
 
 #define  duplicate_str(_strd, _strs, _error)		\
@@ -243,6 +238,8 @@ void do_uac_auth(str *msg_body, str *method, str *uri, struct uac_credential *cr
 	HASHHEX ha2;
 	int i, has_ha1;
 	const struct digest_auth_calc *digest_calc;
+	str_const cnonce;
+	str_const nc;
 
 	digest_calc = get_digest_calc(auth->algorithm);
 	DASSERT(digest_calc != NULL);
@@ -271,27 +268,31 @@ void do_uac_auth(str *msg_body, str *method, str *uri, struct uac_credential *cr
 	if((auth->flags&QOP_AUTH) || (auth->flags&QOP_AUTH_INT))
 	{
 		/* if qop generate nonce-count and cnonce */
+		nc = str_const_init("00000001");
 		cnonce.s = int2str(core_hash(&auth->nonce, 0, 0),&cnonce.len);
 
 		/* do authentication */
 		if (!has_ha1)
-			digest_calc->HA1( &crd->auth_data, &auth->nonce, &cnonce, &ha1);
-		digest_calc->HA2(msg_body, method, uri, !(auth->flags&QOP_AUTH), &ha2);
+			digest_calc->HA1(&crd->auth_data, str2const(&auth->nonce),
+			    &cnonce, &ha1);
+		digest_calc->HA2(str2const(msg_body), str2const(method), str2const(uri),
+		    !(auth->flags&QOP_AUTH), &ha2);
 
-		digest_calc->response( &ha1, &ha2, &auth->nonce, &auth->qop,
-		    &nc, &cnonce, response);
-		auth_nc_cnonce->nc = &nc;
-		auth_nc_cnonce->cnonce = &cnonce;
+		digest_calc->response(&ha1, &ha2, str2const(&auth->nonce),
+		    str2const(&auth->qop), &nc, &cnonce, response);
+		auth_nc_cnonce->nc = nc;
+		auth_nc_cnonce->cnonce = cnonce;
 	} else {
 		/* do authentication */
 		if (!has_ha1)
-			digest_calc->HA1( &crd->auth_data, &auth->nonce, 0/*cnonce*/, &ha1);
-		digest_calc->HA2(msg_body, method, uri, 0, &ha2);
+			digest_calc->HA1(&crd->auth_data, str2const(&auth->nonce),
+			    NULL/*cnonce*/, &ha1);
+		digest_calc->HA2(str2const(msg_body), str2const(method), str2const(uri),
+		    0, &ha2);
 
-		digest_calc->response( &ha1, &ha2, &auth->nonce, NULL/*qop*/,
-		    0/*nc*/, 0/*cnonce*/, response);
+		digest_calc->response(&ha1, &ha2, str2const(&auth->nonce),
+		    NULL/*qop*/, NULL/*nc*/, NULL/*cnonce*/, response);
 	}
-	response->algorithm_val = &(digest_calc->algorithm_val);
 }
 
 
@@ -329,10 +330,10 @@ void do_uac_auth(str *msg_body, str *method, str *uri, struct uac_credential *cr
 #define CNONCE_FIELD_S           "cnonce=\""
 #define CNONCE_FIELD_LEN         (sizeof(CNONCE_FIELD_S)-1)
 
-#define add_string( _p, _s, _l) \
+#define add_str(_p, _sp) \
 	do {\
-		memcpy( _p, _s, _l);\
-		_p += _l; \
+		memcpy(_p, (_sp)->s, (_sp)->len);\
+		_p += (_sp)->len; \
 	}while(0)
 
 
@@ -343,19 +344,15 @@ str* build_authorization_hdr(int code, str *uri,
 {
 	char *p;
 	int len;
-	int response_len;
-	char *qop_val;
-	int qop_val_len = 0;
-
-	response_len = response->hhex_len;
+	const str_const response_val = {.s = response->hhex._start, .len = response->hhex_len};
+	str_const qop_val = STR_NULL_const;
+	static str auth_hdr = STR_NULL;
 
 	if((auth->flags&QOP_AUTH) || (auth->flags&QOP_AUTH_INT)) {
 		if (!(auth->flags&QOP_AUTH)) {
-			qop_val = "auth-int";
-			qop_val_len = 8;
+			qop_val = str_const_init("auth-int");
 		} else {
-			qop_val = "auth";
-			qop_val_len = 4;
+			qop_val = str_const_init("auth");
 		}
 	}
 
@@ -368,12 +365,12 @@ str* build_authorization_hdr(int code, str *uri,
 		URI_FIELD_LEN + uri->len + FIELD_SEPARATOR_LEN +
 		(auth->opaque.len?
 			(OPAQUE_FIELD_LEN + auth->opaque.len + FIELD_SEPARATOR_LEN):0) +
-		RESPONSE_FIELD_LEN + response_len + FIELD_SEPARATOR_LEN +
+		RESPONSE_FIELD_LEN + response_val.len + FIELD_SEPARATOR_LEN +
 		ALGORITHM_FIELD_LEN + response->algorithm_val->len + CRLF_LEN;
 	if((auth->flags&QOP_AUTH) || (auth->flags&QOP_AUTH_INT))
-		len += QOP_FIELD_LEN + qop_val_len + FIELD_SEPARATOR_UQ_LEN +
-				NC_FIELD_LEN + auth_nc_cnonce->nc->len + FIELD_SEPARATOR_UQ_LEN +
-				CNONCE_FIELD_LEN + auth_nc_cnonce->cnonce->len + FIELD_SEPARATOR_LEN;
+		len += QOP_FIELD_LEN + qop_val.len + FIELD_SEPARATOR_UQ_LEN +
+				NC_FIELD_LEN + auth_nc_cnonce->nc.len + FIELD_SEPARATOR_UQ_LEN +
+				CNONCE_FIELD_LEN + auth_nc_cnonce->cnonce.len + FIELD_SEPARATOR_LEN;
 
 	if (auth_hdr.s || auth_hdr.len)
 		LM_WARN("potential memory leak at addr: %p\n", auth_hdr.s);
@@ -389,54 +386,43 @@ str* build_authorization_hdr(int code, str *uri,
 	/* header start */
 	if (code==401)
 	{
-		add_string( p, AUTHORIZATION_HDR_START USERNAME_FIELD_S,
-			AUTHORIZATION_HDR_START_LEN+USERNAME_FIELD_LEN);
+		add_str(p, &str_init(AUTHORIZATION_HDR_START USERNAME_FIELD_S));
 	} else {
-		add_string( p, PROXY_AUTHORIZATION_HDR_START USERNAME_FIELD_S,
-			PROXY_AUTHORIZATION_HDR_START_LEN+USERNAME_FIELD_LEN);
+		add_str(p, &str_init(PROXY_AUTHORIZATION_HDR_START USERNAME_FIELD_S));
 	}
 	/* username */
-	add_string( p, crd->auth_data.user.s, crd->auth_data.user.len);
+	add_str(p, &crd->auth_data.user);
 	/* REALM */
-	add_string( p, FIELD_SEPARATOR_S REALM_FIELD_S,
-		FIELD_SEPARATOR_LEN+REALM_FIELD_LEN);
-	add_string( p, crd->auth_data.realm.s, crd->auth_data.realm.len);
+	add_str(p, &str_init(FIELD_SEPARATOR_S REALM_FIELD_S));
+	add_str(p, &crd->auth_data.realm);
 	/* NONCE */
-	add_string( p, FIELD_SEPARATOR_S NONCE_FIELD_S,
-		FIELD_SEPARATOR_LEN+NONCE_FIELD_LEN);
-	add_string( p, auth->nonce.s, auth->nonce.len);
+	add_str(p, &str_init(FIELD_SEPARATOR_S NONCE_FIELD_S));
+	add_str(p, &auth->nonce);
 	/* URI */
-	add_string( p, FIELD_SEPARATOR_S URI_FIELD_S,
-		FIELD_SEPARATOR_LEN+URI_FIELD_LEN);
-	add_string( p, uri->s, uri->len);
+	add_str(p, &str_init(FIELD_SEPARATOR_S URI_FIELD_S));
+	add_str(p, uri);
 	/* OPAQUE */
 	if (auth->opaque.len )
 	{
-		add_string( p, FIELD_SEPARATOR_S OPAQUE_FIELD_S,
-			FIELD_SEPARATOR_LEN+OPAQUE_FIELD_LEN);
-		add_string( p, auth->opaque.s, auth->opaque.len);
+		add_str(p, &str_init(FIELD_SEPARATOR_S OPAQUE_FIELD_S));
+		add_str(p, &auth->opaque);
 	}
 	if((auth->flags&QOP_AUTH) || (auth->flags&QOP_AUTH_INT))
 	{
-		add_string( p, FIELD_SEPARATOR_S QOP_FIELD_S,
-			FIELD_SEPARATOR_LEN+QOP_FIELD_LEN);
-		add_string( p, qop_val, qop_val_len);
-		add_string( p, FIELD_SEPARATOR_UQ_S NC_FIELD_S,
-			FIELD_SEPARATOR_UQ_LEN+NC_FIELD_LEN);
-		add_string( p, auth_nc_cnonce->nc->s, auth_nc_cnonce->nc->len);
-		add_string( p, FIELD_SEPARATOR_UQ_S CNONCE_FIELD_S,
-			FIELD_SEPARATOR_UQ_LEN+CNONCE_FIELD_LEN);
-		add_string( p, auth_nc_cnonce->cnonce->s, auth_nc_cnonce->cnonce->len);
+		add_str(p, &str_init(FIELD_SEPARATOR_S QOP_FIELD_S));
+		add_str(p, &qop_val);
+		add_str(p, &str_init(FIELD_SEPARATOR_UQ_S NC_FIELD_S));
+		add_str(p, &auth_nc_cnonce->nc);
+		add_str(p, &str_init(FIELD_SEPARATOR_UQ_S CNONCE_FIELD_S));
+		add_str(p, &auth_nc_cnonce->cnonce);
 	}
 	/* RESPONSE */
-	add_string( p, FIELD_SEPARATOR_S RESPONSE_FIELD_S,
-		FIELD_SEPARATOR_LEN+RESPONSE_FIELD_LEN);
-	add_string( p, response->hhex._start, response_len);
+	add_str(p, &str_init(FIELD_SEPARATOR_S RESPONSE_FIELD_S));
+	add_str(p, &response_val);
 	/* ALGORITHM */
-	add_string( p, FIELD_SEPARATOR_S ALGORITHM_FIELD_S,
-		FIELD_SEPARATOR_LEN+ALGORITHM_FIELD_LEN);
-	add_string( p, response->algorithm_val->s, response->algorithm_val->len);
-	add_string( p, CRLF, CRLF_LEN);
+	add_str(p, &str_init(FIELD_SEPARATOR_S ALGORITHM_FIELD_S));
+	add_str(p, response->algorithm_val);
+	add_str(p, &str_init(CRLF));
 
 	auth_hdr.len = p - auth_hdr.s;
 
@@ -453,7 +439,5 @@ str* build_authorization_hdr(int code, str *uri,
 
 	return &auth_hdr;
 error:
-	return 0;
+	return NULL;
 }
-
-
