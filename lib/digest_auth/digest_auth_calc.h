@@ -22,13 +22,14 @@ struct digest_auth_credential;
 struct digest_auth_response;
 
 struct digest_auth_calc {
-	void (*HA1)(const struct digest_auth_credential *, const str *, const str *,
-	    HASHHEX *);
-	void (*HA2)(const str *, const str *, const str *, int, HASHHEX *);
+	void (*HA1)(const struct digest_auth_credential *, const str_const *,
+	    const str_const *, HASHHEX *);
+	void (*HA2)(const str_const *, const str_const *, const str_const *,
+	    int, HASHHEX *);
 	void (*response)(const HASHHEX *ha1, const HASHHEX *ha2,
-	    const str *nonce, const str *qop_val, const str* nc, const str* cnonce,
-	    struct digest_auth_response *response);
-	const str algorithm_val;
+	    const str_const *nonce, const str_const *qop_val, const str_const* nc,
+	    const str_const* cnonce, struct digest_auth_response *response);
+	const str_const algorithm_val;
 	int HASHLEN;
 	int HASHHEXLEN;
 };

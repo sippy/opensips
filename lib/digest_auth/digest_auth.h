@@ -53,7 +53,7 @@ typedef union {
 struct digest_auth_response {
 	HASHHEX hhex;
 	int hhex_len;
-	const str *algorithm_val;
+	const str_const *algorithm_val;
 };
 
 struct digest_auth_credential {

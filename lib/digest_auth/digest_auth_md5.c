@@ -37,7 +37,7 @@
  * calculate H(A1)
  */
 static void _digest_calc_HA1(const struct digest_auth_credential *crd,
-    const str* nonce, const str* cnonce, int issess, HASHHEX *sess_key)
+    const str_const *nonce, const str_const *cnonce, int issess, HASHHEX *sess_key)
 {
 	MD5_CTX Md5Ctx;
 	HASH HA1;
@@ -66,13 +66,13 @@ static void _digest_calc_HA1(const struct digest_auth_credential *crd,
 }
 
 static void digest_calc_HA1(const struct digest_auth_credential *crd,
-   const str* nonce, const str* cnonce, HASHHEX *sess_key)
+   const str_const *nonce, const str_const *cnonce, HASHHEX *sess_key)
 {
 	_digest_calc_HA1(crd, nonce, cnonce, 0, sess_key);
 }
 
 static void digest_calc_HA1_s(const struct digest_auth_credential *crd,
-   const str* nonce, const str* cnonce, HASHHEX *sess_key)
+   const str_const *nonce, const str_const *cnonce, HASHHEX *sess_key)
 {
 	_digest_calc_HA1(crd, nonce, cnonce, 1, sess_key);
 }
@@ -80,8 +80,8 @@ static void digest_calc_HA1_s(const struct digest_auth_credential *crd,
 /*
  * calculate H(A2)
  */
-static void digest_calc_HA2(const str *msg_body, const str *method,
-    const str *uri, int auth_int, HASHHEX *HA2Hex)
+static void digest_calc_HA2(const str_const *msg_body, const str_const *method,
+    const str_const *uri, int auth_int, HASHHEX *HA2Hex)
 {
 	MD5_CTX Md5Ctx;
 	HASH HA2;
@@ -114,8 +114,8 @@ static void digest_calc_HA2(const str *msg_body, const str *method,
  * calculate request-digest/response-digest as per HTTP Digest spec
  */
 static void digest_calc_response(const HASHHEX *ha1, const HASHHEX *ha2,
-    const str *nonce, const str *qop_val, const str* nc, const str* cnonce,
-    struct digest_auth_response *response)
+    const str_const *nonce, const str_const *qop_val, const str_const *nc,
+    const str_const *cnonce, struct digest_auth_response *response)
 {
 	MD5_CTX Md5Ctx;
 	HASH RespHash;
@@ -140,13 +140,14 @@ static void digest_calc_response(const HASHHEX *ha1, const HASHHEX *ha2,
 	cvt_hex(RespHash.MD5, response->hhex.MD5, HASHLEN_MD5,
 	    HASHHEXLEN_MD5);
 	response->hhex_len = HASHHEXLEN_MD5;
+	response->algorithm_val = &md5_digest_calc.algorithm_val;
 }
 
 const struct digest_auth_calc md5_digest_calc = {
 	.HA1 = digest_calc_HA1,
 	.HA2 = digest_calc_HA2,
 	.response = &digest_calc_response,
-	.algorithm_val = str_init(ALGORITHM_VALUE_MD5_S),
+	.algorithm_val = str_const_init(ALGORITHM_VALUE_MD5_S),
 	.HASHLEN = HASHLEN_MD5,
 	.HASHHEXLEN = HASHHEXLEN_MD5
 };
@@ -155,7 +156,7 @@ const struct digest_auth_calc md5sess_digest_calc = {
 	.HA1 = digest_calc_HA1_s,
 	.HA2 = digest_calc_HA2,
 	.response = &digest_calc_response,
-	.algorithm_val = str_init(ALGORITHM_VALUE_MD5SESS_S),
+	.algorithm_val = str_const_init(ALGORITHM_VALUE_MD5SESS_S),
 	.HASHLEN = HASHLEN_MD5,
 	.HASHHEXLEN = HASHHEXLEN_MD5
 };
