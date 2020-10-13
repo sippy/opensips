@@ -294,10 +294,12 @@ int check_response(const dig_cred_t* _cred, const str* _method,
 	 * Now, calculate our response from parameters received
 	 * from the user agent
 	 */
-	digest_calc->HA2(_msg_body, _method, &(_cred->uri),
-	    _cred->qop.qop_parsed == QOP_AUTHINT_D, &ha2);
-	digest_calc->response(_ha1, &ha2, &(_cred->nonce), &(_cred->qop.qop_str),
-	    &(_cred->nc), &(_cred->cnonce), &resp);
+	digest_calc->HA2(str2const(_msg_body), str2const(_method),
+	    str2const(&(_cred->uri)), _cred->qop.qop_parsed == QOP_AUTHINT_D, &ha2);
+	digest_calc->response(_ha1, &ha2, str2const(&(_cred->nonce)),
+	    str2const(&(_cred->qop.qop_str)), str2const(&(_cred->nc)),
+	    str2const(&(_cred->cnonce)), &resp);
+	DASSERT(resp.hhex_len == digest_calc->HASHHEXLEN);
 
 	LM_DBG("our result = \'%s\'\n", resp.hhex._start);
 
@@ -323,7 +325,7 @@ static void auth_calc_HA1(alg_t alg, const str* username, const str* realm,
 
 	digest_calc = get_digest_calc(alg);
 	DASSERT(digest_calc != NULL);
-	digest_calc->HA1(&creds, nonce, cnonce, sess_key);
+	digest_calc->HA1(&creds, str2const(nonce), str2const(cnonce), sess_key);
 }
 
 int bind_auth(auth_api_t* api)

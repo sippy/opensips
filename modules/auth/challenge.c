@@ -71,16 +71,17 @@
 /*
  * Create {WWW,Proxy}-Authenticate header field
  */
-static inline char *build_auth_hf(int _retries, int _stale, str* _realm,
-    int* _len, int _qop, alg_t alg, const str* _hf_name)
+static inline char *build_auth_hf(int _retries, int _stale,
+    const str_const *_realm, int* _len, int _qop, alg_t alg,
+    const str_const* _hf_name)
 {
 	char *hf, *p;
 	int index = 0;
-	str alg_param;
-	str qop_param = STR_NULL;
-	str stale_param = STR_NULL;
-	const str digest_realm = str_init(DIGEST_REALM);
-	const str nonce_param = str_init(DIGEST_NONCE);
+	str_const alg_param;
+	str_const qop_param = STR_NULL_const;
+	str_const stale_param = STR_NULL_const;
+	const str_const digest_realm = str_const_init(DIGEST_REALM);
+	const str_const nonce_param = str_const_init(DIGEST_NONCE);
 
 	if(!disable_nonce_check) {
 		/* get the nonce index and mark it as used */
@@ -95,15 +96,15 @@ static inline char *build_auth_hf(int _retries, int _stale, str* _realm,
 
 	if (_qop) {
 		if (_qop == QOP_TYPE_AUTH) {
-			qop_param = str_init(QOP_AUTH);
+			qop_param = str_const_init(QOP_AUTH);
 		} else if (_qop == QOP_TYPE_AUTH_INT) {
-			qop_param = str_init(QOP_AUTH_INT);
+			qop_param = str_const_init(QOP_AUTH_INT);
 		} else {
-			qop_param = str_init(QOP_AUTH_BOTH);
+			qop_param = str_const_init(QOP_AUTH_BOTH);
 		}
 	}
 	if (_stale)
-		stale_param = str_init(STALE_PARAM);
+		stale_param = str_const_init(STALE_PARAM);
 
 	/* length calculation */
 	*_len=_hf_name->len;
@@ -122,19 +123,19 @@ static inline char *build_auth_hf(int _retries, int _stale, str* _realm,
 		break;
 
 	case ALG_MD5:
-		alg_param = str_init(DIGEST_ALGORITHM ALGORITHM_MD5);
+		alg_param = str_const_init(DIGEST_ALGORITHM ALGORITHM_MD5);
 		break;
 
 	case ALG_MD5SESS:
-		alg_param = str_init(DIGEST_ALGORITHM ALGORITHM_MD5 ALGORITHM_SESS_SFX);
+		alg_param = str_const_init(DIGEST_ALGORITHM ALGORITHM_MD5 ALGORITHM_SESS_SFX);
 		break;
 
 	case ALG_SHA256:
-		alg_param = str_init(DIGEST_ALGORITHM ALGORITHM_SHA256);
+		alg_param = str_const_init(DIGEST_ALGORITHM ALGORITHM_SHA256);
 		break;
 
 	case ALG_SHA256SESS:
-		alg_param = str_init(DIGEST_ALGORITHM ALGORITHM_SHA256 ALGORITHM_SESS_SFX);
+		alg_param = str_const_init(DIGEST_ALGORITHM ALGORITHM_SHA256 ALGORITHM_SESS_SFX);
 		break;
 
 	default:
@@ -180,7 +181,7 @@ static inline char *build_auth_hf(int _retries, int _stale, str* _realm,
  * Create and send a challenge
  */
 static inline int challenge(struct sip_msg* _msg, str *realm, int _qop,
-    int _code, const str *reason, const str* _challenge_msg, int algmask)
+    int _code, const str *reason, const str_const *_challenge_msg, int algmask)
 {
 	struct hdr_field* h = NULL;
 	auth_body_t* cred = 0;
@@ -220,8 +221,8 @@ static inline int challenge(struct sip_msg* _msg, str *realm, int _qop,
 	for (int i = LAST_ALG_SPTD; i >= FIRST_ALG_SPTD; i--) {
 		if ((algmask & (1 << i)) == 0)
 			continue;
-		auth_hfs[nalgs].s = build_auth_hf(0, (cred ? cred->stale : 0), realm,
-		    &auth_hfs[nalgs].len, _qop, i, _challenge_msg);
+		auth_hfs[nalgs].s = build_auth_hf(0, (cred ? cred->stale : 0),
+		    str2const(realm), &auth_hfs[nalgs].len, _qop, i, _challenge_msg);
 		if (!auth_hfs[nalgs].s) {
 			LM_ERR("failed to generate nonce\n");
 			ret = -1;
@@ -256,12 +257,12 @@ int fixup_qop(void** param)
 		return -1;
 	}
 	for (q = q_csv; q; q = q->next) {
-		if (!str_strcmp(&q->s, _str("auth")))  {
+		if (!str_strcmp(&q->s, &str_init("auth")))  {
 			if (qop_type == QOP_TYPE_AUTH_INT)
 				qop_type = QOP_TYPE_BOTH;
 			else
 				qop_type = QOP_TYPE_AUTH;
-		} else if (!str_strcmp(&q->s, _str("auth-int"))) {
+		} else if (!str_strcmp(&q->s, &str_init("auth-int"))) {
 			if (qop_type == QOP_TYPE_AUTH)
 				qop_type = QOP_TYPE_BOTH;
 			else
@@ -284,7 +285,7 @@ int fixup_qop(void** param)
 int www_challenge(struct sip_msg* _msg, str* _realm, void* _qop)
 {
 	return challenge(_msg, _realm, (int)(long)_qop, 401,
-	    &str_init(MESSAGE_401), &str_init(WWW_AUTH_HDR),
+	    &str_init(MESSAGE_401), &str_const_init(WWW_AUTH_HDR),
 	    ALGFLG_MD5 | ALGFLG_SHA256);
 }
 
@@ -295,7 +296,7 @@ int www_challenge(struct sip_msg* _msg, str* _realm, void* _qop)
 int proxy_challenge(struct sip_msg* _msg, str* _realm, void* _qop)
 {
 	return challenge(_msg, _realm, (int)(long)_qop, 407,
-	    &str_init(MESSAGE_407), &str_init(PROXY_AUTH_HDR),
+	    &str_init(MESSAGE_407), &str_const_init(PROXY_AUTH_HDR),
 	    ALGFLG_MD5 | ALGFLG_SHA256);
 }
 

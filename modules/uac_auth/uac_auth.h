@@ -39,8 +39,8 @@ struct uac_credential {
 };
 
 struct authenticate_nc_cnonce {
-	str *nc;
-	str *cnonce;
+	str_const nc;
+	str_const cnonce;
 };
 
 
