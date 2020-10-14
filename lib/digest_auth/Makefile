@@ -1,6 +1,5 @@
 LIBNAME=	digest_auth
 
-include ../../Makefile.misclibs
 include ../../Makefile.openssl
 
 LIBS=
@@ -14,3 +13,5 @@ ifeq ($(SHA_512_256_SUPPORT),yes)
 else
 	exclude_files=$(wildcard *sha512t256.c)
 endif
+
+include ../../Makefile.misclibs
