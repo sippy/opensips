@@ -294,11 +294,13 @@ int check_response(const dig_cred_t* _cred, const str* _method,
 	 * Now, calculate our response from parameters received
 	 * from the user agent
 	 */
-	digest_calc->HA2(str2const(_msg_body), str2const(_method),
-	    str2const(&(_cred->uri)), _cred->qop.qop_parsed == QOP_AUTHINT_D, &ha2);
-	digest_calc->response(_ha1, &ha2, str2const(&(_cred->nonce)),
+	if (digest_calc->HA2(str2const(_msg_body), str2const(_method),
+	    str2const(&(_cred->uri)), _cred->qop.qop_parsed == QOP_AUTHINT_D, &ha2) != 0)
+		return (-1);
+	if (digest_calc->response(_ha1, &ha2, str2const(&(_cred->nonce)),
 	    str2const(&(_cred->qop.qop_str)), str2const(&(_cred->nc)),
-	    str2const(&(_cred->cnonce)), &resp);
+	    str2const(&(_cred->cnonce)), &resp) != 0)
+		return (-1);
 
 #if !defined(NO_DEBUG)
 	do {
@@ -321,7 +323,7 @@ int check_response(const dig_cred_t* _cred, const str* _method,
 	}
 }
 
-static void auth_calc_HA1(alg_t alg, const str* username, const str* realm,
+static int auth_calc_HA1(alg_t alg, const str* username, const str* realm,
     const str* password, const str* nonce, const str* cnonce, HASHHEX *sess_key)
 {
 	const struct digest_auth_calc *digest_calc;
@@ -330,7 +332,9 @@ static void auth_calc_HA1(alg_t alg, const str* username, const str* realm,
 
 	digest_calc = get_digest_calc(alg);
 	DASSERT(digest_calc != NULL);
-	digest_calc->HA1(&creds, str2const(nonce), str2const(cnonce), sess_key);
+	if (digest_calc->HA1(&creds, str2const(nonce), str2const(cnonce), sess_key) != 0)
+		return (-1);
+	return (0);
 }
 
 int bind_auth(auth_api_t* api)

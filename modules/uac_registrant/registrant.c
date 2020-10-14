@@ -531,8 +531,11 @@ int run_reg_tm_cback(void *e_data, void *data, void *r_data)
 		}
 
 		memset(&auth_nc_cnonce, 0, sizeof(struct authenticate_nc_cnonce));
-		uac_auth_api._do_uac_auth(&msg_body, &register_method,
-					&rec->td.rem_target, &crd, auth, &auth_nc_cnonce, &response);
+		if (uac_auth_api._do_uac_auth(&msg_body, &register_method,
+		    &rec->td.rem_target, &crd, auth, &auth_nc_cnonce, &response) != 0) {
+			LM_ERR("Failed in do_uac_auth()\n");
+			goto done;
+		}
 		new_hdr = uac_auth_api._build_authorization_hdr(statuscode, &rec->td.rem_target,
 					&crd, auth, &auth_nc_cnonce, &response);
 		if (!new_hdr) {

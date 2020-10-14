@@ -75,8 +75,9 @@ typedef int (*check_response_t)(const dig_cred_t* _cred, const str* _method,
 int check_response(const dig_cred_t* _cred, const str* _method,
     const str* _msg_body, const HASHHEX* _ha1);
 
-typedef void (*calc_HA1_t)(alg_t _alg, const str* _username, const str* _realm,
-    const str* _password, const str* _nonce, const str* _cnonce, HASHHEX *_sess_key);
+typedef int (*calc_HA1_t)(alg_t _alg, const str* _username, const str* _realm,
+    const str* _password, const str* _nonce, const str* _cnonce, HASHHEX *_sess_key)
+    __attribute__ ((warn_unused_result));
 
 /*
  * Strip the beginning of realm

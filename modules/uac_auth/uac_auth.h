@@ -45,9 +45,9 @@ struct authenticate_nc_cnonce {
 
 
 int uac_auth( struct sip_msg *msg);
-void do_uac_auth(str *msg_body, str *method, str *uri, struct uac_credential *crd,
+int do_uac_auth(str *msg_body, str *method, str *uri, struct uac_credential *crd,
 		struct authenticate_body *auth, struct authenticate_nc_cnonce *auth_nc_cnonce,
-		struct digest_auth_response *response);
+		struct digest_auth_response *response) __attribute__ ((warn_unused_result));;
 str* build_authorization_hdr(int code, str *uri,
 		struct uac_credential *crd, struct authenticate_body *auth,
 		struct authenticate_nc_cnonce *auth_nc_cnonce,
@@ -55,9 +55,9 @@ str* build_authorization_hdr(int code, str *uri,
 struct uac_credential* lookup_realm(str *realm);
 
 
-typedef void (*do_uac_auth_t)(str *msg_body, str *method, str *uri, struct uac_credential *crd,
+typedef int (*do_uac_auth_t)(str *msg_body, str *method, str *uri, struct uac_credential *crd,
 	struct authenticate_body *auth, struct authenticate_nc_cnonce *auth_nc_cnonce,
-	struct digest_auth_response *response);
+	struct digest_auth_response *response) __attribute__ ((warn_unused_result));;
 typedef str* (*build_authorization_hdr_t)(int code, str *uri,
 	struct uac_credential *crd, struct authenticate_body *auth,
 	struct authenticate_nc_cnonce *auth_nc_cnonce, const struct digest_auth_response *response);

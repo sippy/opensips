@@ -230,7 +230,7 @@ struct uac_credential *lookup_realm( str *realm)
 }
 
 
-void do_uac_auth(str *msg_body, str *method, str *uri, struct uac_credential *crd,
+int do_uac_auth(str *msg_body, str *method, str *uri, struct uac_credential *crd,
 		struct authenticate_body *auth, struct authenticate_nc_cnonce *auth_nc_cnonce,
 		struct digest_auth_response *response)
 {
@@ -273,26 +273,33 @@ void do_uac_auth(str *msg_body, str *method, str *uri, struct uac_credential *cr
 
 		/* do authentication */
 		if (!has_ha1)
-			digest_calc->HA1(&crd->auth_data, str2const(&auth->nonce),
-			    &cnonce, &ha1);
-		digest_calc->HA2(str2const(msg_body), str2const(method), str2const(uri),
-		    !(auth->flags&QOP_AUTH), &ha2);
+			if (digest_calc->HA1(&crd->auth_data, str2const(&auth->nonce),
+			    &cnonce, &ha1) != 0)
+				return (-1);
+		if (digest_calc->HA2(str2const(msg_body), str2const(method), str2const(uri),
+		    !(auth->flags&QOP_AUTH), &ha2) != 0)
+			return (-1);
 
-		digest_calc->response(&ha1, &ha2, str2const(&auth->nonce),
-		    str2const(&auth->qop), &nc, &cnonce, response);
+		if (digest_calc->response(&ha1, &ha2, str2const(&auth->nonce),
+		    str2const(&auth->qop), &nc, &cnonce, response) != 0)
+			return (-1);
 		auth_nc_cnonce->nc = nc;
 		auth_nc_cnonce->cnonce = cnonce;
 	} else {
 		/* do authentication */
 		if (!has_ha1)
-			digest_calc->HA1(&crd->auth_data, str2const(&auth->nonce),
-			    NULL/*cnonce*/, &ha1);
-		digest_calc->HA2(str2const(msg_body), str2const(method), str2const(uri),
-		    0, &ha2);
+			if (digest_calc->HA1(&crd->auth_data, str2const(&auth->nonce),
+			    NULL/*cnonce*/, &ha1) != 0)
+				return (-1);
+		if (digest_calc->HA2(str2const(msg_body), str2const(method), str2const(uri),
+		    0, &ha2) != 0)
+			return (-1);
 
-		digest_calc->response(&ha1, &ha2, str2const(&auth->nonce),
-		    NULL/*qop*/, NULL/*nc*/, NULL/*cnonce*/, response);
+		if (digest_calc->response(&ha1, &ha2, str2const(&auth->nonce),
+		    NULL/*qop*/, NULL/*nc*/, NULL/*cnonce*/, response) != 0)
+			return (-1);
 	}
+	return (0);
 }
 
 

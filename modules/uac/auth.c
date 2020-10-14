@@ -316,8 +316,11 @@ int uac_auth( struct sip_msg *msg)
 	}
 
 	/* do authentication */
-	uac_auth_api._do_uac_auth(&msg_body, &msg->first_line.u.request.method,
-			&t->uac[branch].uri, crd, auth, &auth_nc_cnonce, &response);
+	if (uac_auth_api._do_uac_auth(&msg_body, &msg->first_line.u.request.method,
+	    &t->uac[branch].uri, crd, auth, &auth_nc_cnonce, &response) != 0) {
+		LM_ERR("Failed in do_uac_auth()\n");
+		goto error;
+	}
 
 	/* build the authorization header */
 	new_hdr = uac_auth_api._build_authorization_hdr( code, &t->uac[branch].uri,
