@@ -18,6 +18,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
  */
 
+#ifndef _digest_auth_sha256_h
+#define _digest_auth_sha256_h
+
 #define HASHLEN_SHA256 32
 #define HASHHEXLEN_SHA256 (HASHLEN_SHA256 * 2)
 
@@ -26,3 +29,5 @@ typedef char HASHHEX_SHA256[HASHHEXLEN_SHA256 + 1];
 
 extern const struct digest_auth_calc sha256_digest_calc;
 extern const struct digest_auth_calc sha256sess_digest_calc;
+
+#endif /* _digest_auth_sha256_h */

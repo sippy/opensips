@@ -18,6 +18,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
  */
 
+#ifndef _digest_auth_md5_h
+#define _digest_auth_md5_h
+
 #define HASHLEN_MD5 16
 #define HASHHEXLEN_MD5 (HASHLEN_MD5 * 2)
 
@@ -26,3 +29,5 @@ typedef char HASHHEX_MD5[HASHHEXLEN_MD5 + 1];
 
 extern const struct digest_auth_calc md5_digest_calc;
 extern const struct digest_auth_calc md5sess_digest_calc;
+
+#endif /* _digest_auth_md5_h */
