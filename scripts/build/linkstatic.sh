@@ -24,5 +24,5 @@ do
   nmfollows=1
 done
 
-${AR} cru "${ARNAME}" ${LINKARGS}
+${AR} cr "${ARNAME}" ${LINKARGS}
 ${RANLIB} "${ARNAME}"
