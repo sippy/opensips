@@ -21,5 +21,8 @@
 #define HASHLEN_SHA256 32
 #define HASHHEXLEN_SHA256 (HASHLEN_SHA256 * 2)
 
+typedef char HASH_SHA256[HASHLEN_SHA256];
+typedef char HASHHEX_SHA256[HASHHEXLEN_SHA256 + 1];
+
 extern const struct digest_auth_calc sha256_digest_calc;
 extern const struct digest_auth_calc sha256sess_digest_calc;

@@ -21,5 +21,8 @@
 #define HASHLEN_MD5 16
 #define HASHHEXLEN_MD5 (HASHLEN_MD5 * 2)
 
+typedef char HASH_MD5[HASHLEN_MD5];
+typedef char HASHHEX_MD5[HASHHEXLEN_MD5 + 1];
+
 extern const struct digest_auth_calc md5_digest_calc;
 extern const struct digest_auth_calc md5sess_digest_calc;
