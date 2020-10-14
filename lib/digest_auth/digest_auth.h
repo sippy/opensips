@@ -29,6 +29,7 @@
 
 #include "digest_auth_md5.h"
 #include "digest_auth_sha256.h"
+#include "digest_auth_sha512t256.h"
 
 #define WWW_AUTH_CODE       401
 #define WWW_AUTH_HDR        "WWW-Authenticate"
@@ -37,16 +38,18 @@
 
 /* First/Last supported algorithm */
 #define FIRST_ALG_SPTD (ALG_UNSPEC)
-#define LAST_ALG_SPTD  (ALG_SHA256SESS)
+#define LAST_ALG_SPTD  (ALG_SHA512_256SESS)
 
 typedef union {
 	HASH_MD5 MD5;
 	HASH_SHA256 SHA256;
+	HASH_SHA512t256 SHA512t256;
 } HASH;
 
 typedef union {
 	HASHHEX_MD5 MD5;
 	HASHHEX_SHA256 SHA256;
+	HASHHEX_SHA512t256 SHA512t256;
 	char _start[0];
 } HASHHEX;
 
