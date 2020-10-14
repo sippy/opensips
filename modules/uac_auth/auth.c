@@ -242,7 +242,10 @@ int do_uac_auth(str *msg_body, str *method, str *uri, struct uac_credential *crd
 	str_const nc;
 
 	digest_calc = get_digest_calc(auth->algorithm);
-	DASSERT(digest_calc != NULL);
+	if (digest_calc == NULL) {
+		LM_ERR("digest algorithm (%d) unsupported\n", auth->algorithm);
+		return (-1);
+	}
 
 	/* before actually doing the authe, we check if the received password is
 	   a plain text password or a HA1 value ; we detect a HA1 (in the password
@@ -365,7 +368,7 @@ str* build_authorization_hdr(int code, str *uri,
 	}
 
 	/* compile then len */
-	len = (code==401?
+	len = (code==WWW_AUTH_CODE?
 		AUTHORIZATION_HDR_START_LEN:PROXY_AUTHORIZATION_HDR_START_LEN) +
 		USERNAME_FIELD_LEN + crd->auth_data.user.len + FIELD_SEPARATOR_LEN +
 		REALM_FIELD_LEN + crd->auth_data.realm.len + FIELD_SEPARATOR_LEN +
@@ -392,7 +395,7 @@ str* build_authorization_hdr(int code, str *uri,
 
 	p = auth_hdr.s;
 	/* header start */
-	if (code==401)
+	if (code==WWW_AUTH_CODE)
 	{
 		add_str(p, &str_init(AUTHORIZATION_HDR_START USERNAME_FIELD_S));
 	} else {

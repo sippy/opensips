@@ -44,6 +44,7 @@
 #include "api.h"
 #include "../../lib/dassert.h"
 #include "../../lib/digest_auth/digest_auth.h"
+#include "../../lib/digest_auth/digest_auth_calc.h"
 
 
 /*
@@ -70,7 +71,7 @@
  * Create {WWW,Proxy}-Authenticate header field
  */
 static inline char *build_auth_hf(int _retries, int _stale,
-    const str_const *_realm, int* _len, int _qop, alg_t alg,
+    const str_const *_realm, int* _len, int _qop, const str_const *alg_val,
     const str_const* _hf_name)
 {
 	char *hf, *p;
@@ -115,40 +116,10 @@ static inline char *build_auth_hf(int _retries, int _stale,
 		+qop_param.len
 		+CRLF_LEN ;
 
-	switch (alg) {
-	case ALG_UNSPEC:
-		alg_param.len = 0;
-		break;
-
-	case ALG_MD5:
-		alg_param = str_const_init(DIGEST_ALGORITHM ALG_MD5_STR);
-		break;
-
-	case ALG_MD5SESS:
-		alg_param = str_const_init(DIGEST_ALGORITHM ALG_MD5SESS_STR);
-		break;
-
-	case ALG_SHA256:
-		alg_param = str_const_init(DIGEST_ALGORITHM ALG_SHA256_STR);
-		break;
-
-	case ALG_SHA256SESS:
-		alg_param = str_const_init(DIGEST_ALGORITHM ALG_SHA256SESS_STR);
-		break;
-
-	case ALG_SHA512_256:
-		alg_param = str_const_init(DIGEST_ALGORITHM ALG_SHA512_256_STR);
-		break;
-
-	case ALG_SHA512_256SESS:
-		alg_param = str_const_init(DIGEST_ALGORITHM ALG_SHA512_256SESS_STR);
-		break;
-
-	default:
-		abort();
+	if (alg_val != NULL) {
+		alg_param = str_const_init(DIGEST_ALGORITHM);
+		*_len += alg_param.len + alg_val->len;
 	}
-	if (alg_param.len != 0)
-		*_len += alg_param.len;
 
 	p=hf=pkg_malloc(*_len+1);
 	if (!hf) {
@@ -172,9 +143,11 @@ static inline char *build_auth_hf(int _retries, int _stale,
 		memcpy(p, stale_param.s, stale_param.len);
 		p+=stale_param.len;
 	}
-	if (alg_param.len > 0) {
+	if (alg_val != NULL) {
 		memcpy(p, alg_param.s, alg_param.len);
 		p += alg_param.len;
+		memcpy(p, alg_val->s, alg_val->len);
+		p += alg_val->len;
 	}
 	memcpy(p, CRLF, CRLF_LEN ); p+=CRLF_LEN;
 	*p=0; /* zero terminator, just in case */
@@ -195,13 +168,15 @@ static inline int challenge(struct sip_msg* _msg, str *realm, int _qop,
 	hdr_types_t hftype = 0; /* Makes gcc happy */
 	struct sip_uri *uri;
 	str auth_hfs[LAST_ALG_SPTD - FIRST_ALG_SPTD + 1];
+	const str_const *alg_val;
+	const struct digest_auth_calc *digest_calc;
 
 	switch(_code) {
-	case 401:
+	case WWW_AUTH_CODE:
 		get_authorized_cred(_msg->authorization, &h);
 		hftype = HDR_AUTHORIZATION_T;
 		break;
-	case 407:
+	case PROXY_AUTH_CODE:
 		get_authorized_cred(_msg->proxy_auth, &h);
 		hftype = HDR_PROXYAUTH_T;
 		break;
@@ -227,8 +202,12 @@ static inline int challenge(struct sip_msg* _msg, str *realm, int _qop,
 	for (int i = LAST_ALG_SPTD; i >= FIRST_ALG_SPTD; i--) {
 		if ((algmask & (1 << i)) == 0)
 			continue;
+		digest_calc = get_digest_calc(i);
+		if (digest_calc == NULL)
+			continue;
+		alg_val = (i == ALG_UNSPEC) ? NULL : &digest_calc->algorithm_val;
 		auth_hfs[nalgs].s = build_auth_hf(0, (cred ? cred->stale : 0),
-		    str2const(realm), &auth_hfs[nalgs].len, _qop, i, _challenge_msg);
+		    str2const(realm), &auth_hfs[nalgs].len, _qop, alg_val, _challenge_msg);
 		if (!auth_hfs[nalgs].s) {
 			LM_ERR("failed to generate nonce\n");
 			ret = -1;
@@ -290,7 +269,7 @@ int fixup_qop(void** param)
  */
 int www_challenge(struct sip_msg* _msg, str* _realm, void* _qop)
 {
-	return challenge(_msg, _realm, (int)(long)_qop, 401,
+	return challenge(_msg, _realm, (int)(long)_qop, WWW_AUTH_CODE,
 	    &str_init(MESSAGE_401), &str_const_init(WWW_AUTH_HDR),
 	    ALGFLG_MD5 | ALGFLG_SHA256);
 }
@@ -301,7 +280,7 @@ int www_challenge(struct sip_msg* _msg, str* _realm, void* _qop)
  */
 int proxy_challenge(struct sip_msg* _msg, str* _realm, void* _qop)
 {
-	return challenge(_msg, _realm, (int)(long)_qop, 407,
+	return challenge(_msg, _realm, (int)(long)_qop, PROXY_AUTH_CODE,
 	    &str_init(MESSAGE_407), &str_const_init(PROXY_AUTH_HDR),
 	    ALGFLG_MD5 | ALGFLG_SHA256);
 }

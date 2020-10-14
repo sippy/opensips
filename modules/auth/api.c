@@ -114,7 +114,7 @@ static inline int find_credentials(struct sip_msg* _m, str* _realm,
 			auth_body_t *abp = (auth_body_t *)(ptr->parsed);
 			dig_cred_t *dcp = &(abp->digest);
 			r = &(abp->digest.realm);
-			if (r->len == _realm->len && dcp->alg.alg_parsed <= LAST_ALG_SPTD) {
+			if (r->len == _realm->len && get_digest_calc(dcp->alg.alg_parsed) != NULL) {
 				if (!strncasecmp(_realm->s, r->s, r->len)) {
 					*_h = ptr;
 					return 0;
@@ -279,7 +279,10 @@ int check_response(const dig_cred_t* _cred, const str* _method,
 	const struct digest_auth_calc *digest_calc;
 
 	digest_calc = get_digest_calc(_cred->alg.alg_parsed);
-	DASSERT(digest_calc != NULL);
+	if (digest_calc == NULL) {
+		LM_ERR("digest algorithm (%d) unsupported\n", _cred->alg.alg_parsed);
+		return (-1);
+	}
 
 	/*
 	 * First, we have to verify that the response received has
@@ -331,7 +334,10 @@ static int auth_calc_HA1(alg_t alg, const str* username, const str* realm,
 	    .user = *username, .passwd = *password};
 
 	digest_calc = get_digest_calc(alg);
-	DASSERT(digest_calc != NULL);
+	if (digest_calc == NULL) {
+		LM_ERR("digest algorithm (%d) unsupported\n", alg);
+		return (-1);
+	}
 	if (digest_calc->HA1(&creds, str2const(nonce), str2const(cnonce), sess_key) != 0)
 		return (-1);
 	return (0);

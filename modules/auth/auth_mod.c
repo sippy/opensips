@@ -417,7 +417,10 @@ static inline int auth_get_ha1(struct sip_msg *msg, dig_cred_t* digest,
 		    .user = _username->whole, .passwd = sval.rs};
 
 		digest_calc = get_digest_calc(digest->alg.alg_parsed);
-		DASSERT(digest_calc != NULL);
+		if (digest_calc == NULL) {
+			LM_ERR("digest algorithm (%d) unsupported\n", digest->alg.alg_parsed);
+			return -1;
+		}
 		/* Only plaintext passwords are stored in database,
 		 * we have to calculate HA1 */
 		if (digest_calc->HA1(&creds, NULL/*nonce*/, NULL/*cnonce*/, _ha1) != 0)
