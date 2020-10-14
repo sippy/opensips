@@ -53,6 +53,15 @@ typedef enum alg {
 #define ALGFLG_SHA512_256     (1 << ALG_SHA512_256)
 #define ALGFLG_SHA512_256SESS (1 << ALG_SHA512_256SESS)
 
+/* Canonical algorithm names */
+#define ALG_SESS_SFX           "-sess"
+#define ALG_MD5_STR            "MD5"
+#define ALG_MD5SESS_STR        ALG_MD5_STR ALG_SESS_SFX
+#define ALG_SHA256_STR         "SHA-256"
+#define ALG_SHA256SESS_STR     ALG_SHA256_STR ALG_SESS_SFX
+#define ALG_SHA512_256_STR     "SHA-512-256"
+#define ALG_SHA512_256SESS_STR ALG_SHA512_256_STR ALG_SESS_SFX
+
 /* Quality Of Protection used */
 typedef enum qop_type {
 	QOP_UNSPEC_D = 0,   /* QOP parameter not present in response */
@@ -60,6 +69,10 @@ typedef enum qop_type {
 	QOP_AUTHINT_D = 2,  /* Authentication with integrity checks */
 	QOP_OTHER_D = 4     /* Unknown */
 } qop_type_t;
+
+/* Canonical QOP names */
+#define QOP_AUTH_STR "auth"
+#define QOP_AUTHINT_STR "auth-int"
 
 
 /* Algorithm structure */

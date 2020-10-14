@@ -37,30 +37,14 @@
 #define DIGEST_SCHEME "digest"
 #define DIG_LEN 6
 
-#define QOP_AUTH_STR "auth"
-#define QOP_AUTH_STR_LEN 4
+#define QOP_AUTH_STR_LEN (sizeof(QOP_AUTH_STR) - 1)
+#define QOP_AUTHINT_STR_LEN (sizeof(QOP_AUTHINT_STR) - 1)
 
-#define QOP_AUTHINT_STR "auth-int"
-#define QOP_AUTHINT_STR_LEN 8
-
-#define ALG_SESS_SFX "-sess"
-
-#define ALG_MD5_STR "MD5"
 #define ALG_MD5_STR_LEN (sizeof(ALG_MD5_STR) - 1)
-
-#define ALG_MD5SESS_STR (ALG_MD5_STR ALG_SESS_SFX)
 #define ALG_MD5SESS_STR_LEN (sizeof(ALG_MD5SESS_STR) - 1)
-
-#define ALG_SHA256_STR "SHA-256"
 #define ALG_SHA256_STR_LEN (sizeof(ALG_SHA256_STR) - 1)
-
-#define ALG_SHA256SESS_STR (ALG_SHA256_STR ALG_SESS_SFX)
 #define ALG_SHA256SESS_STR_LEN (sizeof(ALG_SHA256SESS_STR) - 1)
-
-#define ALG_SHA512_256_STR "SHA-512-256"
 #define ALG_SHA512_256_STR_LEN (sizeof(ALG_SHA512_256_STR) - 1)
-
-#define ALG_SHA512_256SESS_STR (ALG_SHA512_256_STR ALG_SESS_SFX)
 #define ALG_SHA512_256SESS_STR_LEN (sizeof(ALG_SHA512_256SESS_STR) - 1)
 
 /*

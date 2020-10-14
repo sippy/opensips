@@ -32,9 +32,6 @@
 #include "digest_auth.h"
 #include "digest_auth_calc.h"
 
-#define ALGORITHM_VALUE_SHA256_S     "SHA-256"
-#define ALGORITHM_VALUE_SHA256SESS_S "SHA-256-sess"
-
 /*
  * calculate H(A1)
  */
@@ -178,7 +175,7 @@ const struct digest_auth_calc sha256_digest_calc = {
 	.response = &digest_calc_response,
 	.response_hash_bcmp = response_hash_bcmp,
 	.response_hash_fill = response_hash_fill,
-	.algorithm_val = str_const_init(ALGORITHM_VALUE_SHA256_S),
+	.algorithm_val = str_const_init(ALG_SHA256_STR),
 	.HASHLEN = HASHLEN_SHA256,
 	.HASHHEXLEN = HASHHEXLEN_SHA256
 };
@@ -189,7 +186,7 @@ const struct digest_auth_calc sha256sess_digest_calc = {
 	.response = &digest_calc_response_s,
 	.response_hash_bcmp = response_hash_bcmp,
 	.response_hash_fill = response_hash_fill,
-	.algorithm_val = str_const_init(ALGORITHM_VALUE_SHA256SESS_S),
+	.algorithm_val = str_const_init(ALG_SHA256SESS_STR),
 	.HASHLEN = HASHLEN_SHA256,
 	.HASHHEXLEN = HASHHEXLEN_SHA256
 };

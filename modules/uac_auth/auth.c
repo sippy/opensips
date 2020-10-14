@@ -351,9 +351,9 @@ str* build_authorization_hdr(int code, str *uri,
 
 	if((auth->flags&QOP_AUTH) || (auth->flags&QOP_AUTH_INT)) {
 		if (!(auth->flags&QOP_AUTH)) {
-			qop_val = str_const_init("auth-int");
+			qop_val = str_const_init(QOP_AUTHINT_STR);
 		} else {
-			qop_val = str_const_init("auth");
+			qop_val = str_const_init(QOP_AUTH_STR);
 		}
 	}
 

@@ -31,9 +31,6 @@
 #include "digest_auth.h"
 #include "digest_auth_calc.h"
 
-#define ALGORITHM_VALUE_MD5_S     "MD5"
-#define ALGORITHM_VALUE_MD5SESS_S "MD5-sess"
-
 /*
  * calculate H(A1)
  */
@@ -177,7 +174,7 @@ const struct digest_auth_calc md5_digest_calc = {
 	.response = &digest_calc_response,
 	.response_hash_bcmp = response_hash_bcmp,
 	.response_hash_fill = response_hash_fill,
-	.algorithm_val = str_const_init(ALGORITHM_VALUE_MD5_S),
+	.algorithm_val = str_const_init(ALG_MD5_STR),
 	.HASHLEN = HASHLEN_MD5,
 	.HASHHEXLEN = HASHHEXLEN_MD5
 };
@@ -188,7 +185,7 @@ const struct digest_auth_calc md5sess_digest_calc = {
 	.response = &digest_calc_response_s,
 	.response_hash_bcmp = response_hash_bcmp,
 	.response_hash_fill = response_hash_fill,
-	.algorithm_val = str_const_init(ALGORITHM_VALUE_MD5SESS_S),
+	.algorithm_val = str_const_init(ALG_MD5SESS_STR),
 	.HASHLEN = HASHLEN_MD5,
 	.HASHHEXLEN = HASHHEXLEN_MD5
 };

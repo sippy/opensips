@@ -30,6 +30,7 @@
 #include "../../data_lump.h"
 #include "../../mem/mem.h"
 #include "../../parser/digest/digest.h"
+#include "../../parser/digest/digest_parser.h"
 #include "../../pvar.h"
 #include "../../str.h"
 #include "../../ut.h"
@@ -56,16 +57,13 @@
  */
 #define MESSAGE_401        "Unauthorized"
 
-#define QOP_AUTH	  ", qop=\"auth\""
-#define QOP_AUTH_INT	  ", qop=\"auth-int\""
-#define QOP_AUTH_BOTH	  ", qop=\"auth,auth-int\""
+#define QOP_AUTH	  ", qop=\"" QOP_AUTH_STR "\""
+#define QOP_AUTH_INT	  ", qop=\"" QOP_AUTHINT_STR "\""
+#define QOP_AUTH_BOTH	  ", qop=\"" QOP_AUTH_STR "," QOP_AUTHINT_STR "\""
 #define STALE_PARAM	  ", stale=true"
 #define DIGEST_REALM	  ": Digest realm=\""
 #define DIGEST_NONCE	  "\", nonce=\""
 #define DIGEST_ALGORITHM  ", algorithm="
-#define ALGORITHM_MD5	  "MD5"
-#define ALGORITHM_SHA256  "SHA-256"
-#define ALGORITHM_SESS_SFX "-sess"
 
 
 /*
@@ -123,19 +121,19 @@ static inline char *build_auth_hf(int _retries, int _stale,
 		break;
 
 	case ALG_MD5:
-		alg_param = str_const_init(DIGEST_ALGORITHM ALGORITHM_MD5);
+		alg_param = str_const_init(DIGEST_ALGORITHM ALG_MD5_STR);
 		break;
 
 	case ALG_MD5SESS:
-		alg_param = str_const_init(DIGEST_ALGORITHM ALGORITHM_MD5 ALGORITHM_SESS_SFX);
+		alg_param = str_const_init(DIGEST_ALGORITHM ALG_MD5SESS_STR);
 		break;
 
 	case ALG_SHA256:
-		alg_param = str_const_init(DIGEST_ALGORITHM ALGORITHM_SHA256);
+		alg_param = str_const_init(DIGEST_ALGORITHM ALG_SHA256_STR);
 		break;
 
 	case ALG_SHA256SESS:
-		alg_param = str_const_init(DIGEST_ALGORITHM ALGORITHM_SHA256 ALGORITHM_SESS_SFX);
+		alg_param = str_const_init(DIGEST_ALGORITHM ALG_SHA256SESS_STR);
 		break;
 
 	default:
@@ -257,12 +255,12 @@ int fixup_qop(void** param)
 		return -1;
 	}
 	for (q = q_csv; q; q = q->next) {
-		if (!str_strcmp(&q->s, &str_init("auth")))  {
+		if (!str_strcmp(&q->s, &str_init(QOP_AUTH_STR)))  {
 			if (qop_type == QOP_TYPE_AUTH_INT)
 				qop_type = QOP_TYPE_BOTH;
 			else
 				qop_type = QOP_TYPE_AUTH;
-		} else if (!str_strcmp(&q->s, &str_init("auth-int"))) {
+		} else if (!str_strcmp(&q->s, &str_init(QOP_AUTHINT_STR))) {
 			if (qop_type == QOP_TYPE_AUTH)
 				qop_type = QOP_TYPE_BOTH;
 			else
