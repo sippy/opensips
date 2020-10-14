@@ -299,15 +299,20 @@ int check_response(const dig_cred_t* _cred, const str* _method,
 	digest_calc->response(_ha1, &ha2, str2const(&(_cred->nonce)),
 	    str2const(&(_cred->qop.qop_str)), str2const(&(_cred->nc)),
 	    str2const(&(_cred->cnonce)), &resp);
-	DASSERT(resp.hhex_len == digest_calc->HASHHEXLEN);
 
-	LM_DBG("our result = \'%s\'\n", resp.hhex._start);
+#if !defined(NO_DEBUG)
+	do {
+		char tmpb[digest_calc->HASHHEXLEN + 1];
+		LM_DBG("our result = \'%s\'\n",
+		    digest_calc->response_hash_fill(&resp, tmpb, sizeof(tmpb)));
+	} while (0);
+#endif
 
 	/*
 	 * And simply compare the strings, the user is
 	 * authorized if they match
 	 */
-	if (!memcmp(resp.hhex._start, _cred->response.s, digest_calc->HASHHEXLEN)) {
+	if (digest_calc->response_hash_bcmp(&resp, str2const(&_cred->response)) == 0) {
 		LM_DBG("authorization is OK\n");
 		return 0;
 	} else {

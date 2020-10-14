@@ -344,9 +344,10 @@ str* build_authorization_hdr(int code, str *uri,
 {
 	char *p;
 	int len;
-	const str_const response_val = {.s = response->hhex._start, .len = response->hhex_len};
 	str_const qop_val = STR_NULL_const;
 	static str auth_hdr = STR_NULL;
+	const struct digest_auth_calc *digest_calc = response->digest_calc;
+	int response_len = digest_calc->HASHHEXLEN;
 
 	if((auth->flags&QOP_AUTH) || (auth->flags&QOP_AUTH_INT)) {
 		if (!(auth->flags&QOP_AUTH)) {
@@ -365,8 +366,8 @@ str* build_authorization_hdr(int code, str *uri,
 		URI_FIELD_LEN + uri->len + FIELD_SEPARATOR_LEN +
 		(auth->opaque.len?
 			(OPAQUE_FIELD_LEN + auth->opaque.len + FIELD_SEPARATOR_LEN):0) +
-		RESPONSE_FIELD_LEN + response_val.len + FIELD_SEPARATOR_LEN +
-		ALGORITHM_FIELD_LEN + response->algorithm_val->len + CRLF_LEN;
+		RESPONSE_FIELD_LEN + response_len + FIELD_SEPARATOR_LEN +
+		ALGORITHM_FIELD_LEN + digest_calc->algorithm_val.len + CRLF_LEN;
 	if((auth->flags&QOP_AUTH) || (auth->flags&QOP_AUTH_INT))
 		len += QOP_FIELD_LEN + qop_val.len + FIELD_SEPARATOR_UQ_LEN +
 				NC_FIELD_LEN + auth_nc_cnonce->nc.len + FIELD_SEPARATOR_UQ_LEN +
@@ -418,10 +419,11 @@ str* build_authorization_hdr(int code, str *uri,
 	}
 	/* RESPONSE */
 	add_str(p, &str_init(FIELD_SEPARATOR_S RESPONSE_FIELD_S));
-	add_str(p, &response_val);
+	digest_calc->response_hash_fill(response, p, len - (p - auth_hdr.s));
+	p += response_len;
 	/* ALGORITHM */
 	add_str(p, &str_init(FIELD_SEPARATOR_S ALGORITHM_FIELD_S));
-	add_str(p, response->algorithm_val);
+	add_str(p, &digest_calc->algorithm_val);
 	add_str(p, &str_init(CRLF));
 
 	auth_hdr.len = p - auth_hdr.s;
