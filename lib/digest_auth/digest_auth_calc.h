@@ -29,6 +29,10 @@ struct digest_auth_calc {
 	void (*response)(const HASHHEX *ha1, const HASHHEX *ha2,
 	    const str_const *nonce, const str_const *qop_val, const str_const* nc,
 	    const str_const* cnonce, struct digest_auth_response *response);
+        int (*response_hash_bcmp)(const struct digest_auth_response *,
+	    const str_const *hex);
+        char *(*response_hash_fill)(const struct digest_auth_response *,
+            char *hex, int len);
 	const str_const algorithm_val;
 	int HASHLEN;
 	int HASHHEXLEN;

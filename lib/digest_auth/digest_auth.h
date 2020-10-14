@@ -40,20 +40,21 @@
 #define LAST_ALG_SPTD  (ALG_SHA256SESS)
 
 typedef union {
-	char MD5[HASHLEN_MD5];
-	char SHA256[HASHLEN_SHA256];
+	HASH_MD5 MD5;
+	HASH_SHA256 SHA256;
 } HASH;
 
 typedef union {
-	char MD5[HASHHEXLEN_MD5 + 1];
-	char SHA256[HASHHEXLEN_SHA256 + 1];
+	HASHHEX_MD5 MD5;
+	HASHHEX_SHA256 SHA256;
 	char _start[0];
 } HASHHEX;
 
+struct digest_auth_calc;
+
 struct digest_auth_response {
-	HASHHEX hhex;
-	int hhex_len;
-	const str_const *algorithm_val;
+	HASH RespHash;
+	const struct digest_auth_calc *digest_calc;
 };
 
 struct digest_auth_credential {
@@ -88,6 +89,38 @@ static inline void cvt_hex(const char *bin, char *hex, int HASHLEN, int HASHHEXL
         };
 
         hex[HASHHEXLEN] = '\0';
+}
+
+static inline int bcmp_hex(const char *bin, const char *hex, int HASHLEN)
+{
+        unsigned short i;
+        unsigned char j;
+
+        for (i = 0; i<HASHLEN; i++)
+        {
+                j = (bin[i] >> 4) & 0xf;
+                if (j <= 9)
+                {
+                        if (hex[i * 2] != (j + '0'))
+				return (1);
+                } else {
+                        if (hex[i * 2] != (j + 'a' - 10))
+				return (1);
+                }
+
+                j = bin[i] & 0xf;
+
+                if (j <= 9)
+                {
+                        if (hex[i * 2 + 1] != (j + '0'))
+				return (1);
+                } else {
+                        if (hex[i * 2 + 1] != (j + 'a' - 10))
+				return (1);
+                }
+        };
+
+        return (0);
 }
 
 #endif
