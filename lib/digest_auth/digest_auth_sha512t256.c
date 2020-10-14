@@ -51,12 +51,12 @@
 }
 
 #define SHA512t256_Final(buf, ctxpp) { \
-	unsigned int olen = HASHHEXLEN_SHA512t256; \
+	unsigned int olen = 0; \
 	if (EVP_DigestFinal_ex(*(ctxpp), (buf), &olen) != 1) { \
 		EVP_MD_CTX_free(*(ctxpp)); \
 		return (-1); \
 	} \
-	DASSERT(olen == HASHHEXLEN_SHA512t256); \
+	DASSERT(olen == HASHLEN_SHA512t256); \
 	EVP_MD_CTX_free(*(ctxpp)); \
 	*(ctxpp) = NULL; \
 }
