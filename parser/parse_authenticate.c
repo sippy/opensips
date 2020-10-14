@@ -291,12 +291,7 @@ int parse_authenticate_body( str body, struct authenticate_body *auth)
 				break;
 			case ALGORITHM_STATE:
 				auth->algorithm = parse_digest_algorithm(&val);
-				if (auth->algorithm == ALG_SHA512_256 ||
-				    auth->algorithm == ALG_SHA512_256SESS) {
-					LM_INFO("RFC 8760 (%.*s) is only available "
-					        "in OpenSIPS 3.2+\n", val.len, val.s);
-					ret = 1;
-				} else if (auth->algorithm == ALG_OTHER) {
+				if (auth->algorithm == ALG_OTHER) {
 					LM_INFO("bad algorithm \"%.*s\"\n", val.len, val.s);
 					goto error;
 				}

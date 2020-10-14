@@ -136,6 +136,14 @@ static inline char *build_auth_hf(int _retries, int _stale,
 		alg_param = str_const_init(DIGEST_ALGORITHM ALG_SHA256SESS_STR);
 		break;
 
+	case ALG_SHA512_256:
+		alg_param = str_const_init(DIGEST_ALGORITHM ALG_SHA512_256STR);
+		break;
+
+	case ALG_SHA512_256SESS:
+		alg_param = str_const_init(DIGEST_ALGORITHM ALG_SHA512_256SESS_STR);
+		break;
+
 	default:
 		abort();
 	}
