@@ -205,7 +205,7 @@ modparam("auth", "rpid_avp", "$avp(caller_rpid)")
 		<example>
 		<title><varname>username_spec</varname> parameter usage</title>
 		<programlisting format="linespecific">
-modparam("auth", "username_spec", "$avp(username)")
+modparam("auth", "username_spec", "$var(username)")
 </programlisting>
 		</example>
 	</section>
