@@ -1,7 +1,4 @@
 language: c
-compiler:
-  - gcc
-  - clang
 sudo: false
 addons:
   apt:
@@ -68,3 +65,11 @@ jobs:
         - GCOV_CMD="llvm-cov-9 gcov"
       before_install:
         - sudo apt-get -y install clang-9 llvm-9-dev libc++-9-dev libc++abi-9-dev
+    - name: "Build with Clang 10 @ Ubuntu 18"
+      dist: bionic
+      compiler: clang
+      env:
+        - CC=clang-10 AR=llvm-ar-10 RANLIB=llvm-ranlib-10
+        - GCOV_CMD="llvm-cov-10 gcov"
+      before_install:
+        - sudo apt-get -y install clang-10 llvm-10-dev libc++-10-dev libc++abi-10-dev
