@@ -31,7 +31,7 @@ addons:
       - libjson-c-dev
       - uuid-dev
 #      - libjwt-dev
-script: CC_EXTRA_OPTS=-Werror FASTER=1 NICER=0 make \
+script: CC_EXTRA_OPTS=${CC_EXTRA_OPTS:-"-Werror"} FASTER=1 NICER=0 make \
   exclude_modules="db_oracle osp sngtc cachedb_cassandra cachedb_couchbase cachedb_mongodb auth_jwt" all
 notifications:
   irc:
@@ -97,3 +97,5 @@ jobs:
       dist: bionic
       compiler: gcc
       arch: arm64
+      env:
+        - CC_EXTRA_OPTS="-Wall"
