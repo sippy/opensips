@@ -479,9 +479,11 @@ int run_reg_tm_cback(void *e_data, void *data, void *r_data)
 		}
 
 		if (statuscode==WWW_AUTH_CODE) {
-			parse_www_authenticate_header(msg, &auth);
+			parse_www_authenticate_header(msg, digest_algorithm_check,
+			    &auth);
 		} else if (statuscode==PROXY_AUTH_CODE) {
-			parse_proxy_authenticate_header(msg, &auth);
+			parse_proxy_authenticate_header(msg, digest_algorithm_check,
+			    &auth);
 		}
 		if (auth == NULL) {
 			LM_ERR("Unable to extract authentication info\n");

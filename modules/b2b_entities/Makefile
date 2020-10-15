@@ -5,6 +5,6 @@
 include ../../Makefile.defs
 auto_gen=
 NAME=b2b_entities.so
-LIBS= 
+LIBS=../../lib/digest_auth/libdigest_auth.a
 
 include ../../Makefile.modules
