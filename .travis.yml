@@ -30,6 +30,7 @@ addons:
       - libncurses5-dev
       - libjson-c-dev
       - uuid-dev
+      - python-dev
 #      - libjwt-dev
 script: CC_EXTRA_OPTS=${CC_EXTRA_OPTS:-"-Werror"} FASTER=1 NICER=0 make \
   exclude_modules="db_oracle osp sngtc cachedb_cassandra cachedb_couchbase cachedb_mongodb auth_jwt" all
