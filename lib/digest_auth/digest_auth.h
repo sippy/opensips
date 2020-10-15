@@ -1,7 +1,10 @@
 /*
  * digest_auth library
  *
+ * Copyright (C) 2001-2003 FhG Fokus
  * Copyright (C) 2011 VoIP Embedded Inc.
+ * Copyright (C) 2013 OpenSIPS Solutions
+ * Copyright (C) 2020 Maksym Sobolyev
  *
  * This file is part of opensips, a free SIP server.
  *
