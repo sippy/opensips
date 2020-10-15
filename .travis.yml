@@ -1,5 +1,4 @@
 language: c
-dist: bionic
 compiler:
   - gcc
   - clang
@@ -49,9 +48,23 @@ notifications:
     on_failure: always
 jobs:
   include:
-    - name: "Build with GCC @ Ubuntu 16"
+    - name: "Build with GCC 7 @ Ubuntu 18"
+      dist: bionic
+      compiler: gcc
+    - name: "Build with Clang 7 @ Ubuntu 18"
+      dist: bionic
+      compiler: clang
+    - name: "Build with GCC 7 @ Ubuntu 16"
       dist: xenial
       compiler: gcc
-    - name: "Build with Clang @ Ubuntu 16"
+    - name: "Build with Clang 7 @ Ubuntu 16"
       dist: xenial
       compiler: clang
+    - name: "Build with Clang 9 @ Ubuntu 18"
+      dist: bionic
+      compiler: clang
+      env:
+        - CC=clang-9 AR=llvm-ar-9 RANLIB=llvm-ranlib-9
+        - GCOV_CMD="llvm-cov-9 gcov"
+      before_install:
+        - sudo apt-get -y install clang-9 llvm-9-dev libc++-9-dev libc++abi-9-dev
