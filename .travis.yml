@@ -1,4 +1,5 @@
 language: c
+dist: bionic
 compiler:
   - gcc
   - clang
@@ -46,3 +47,11 @@ notifications:
     secure: MnRvw68QpJHUSZ/IRGUlAjQ62xs3LtEZ0g3pG7Bms0XotuK+YxmSZh7BgV61utuya295LTvdWZQYiutJ4+iPKdF7Mb1KCzaUbY6nrGaIbqif10CKwfIFRsENMhYUKOXdvg52103GNq3/V3/6PGX7Jtiaox9lHcfRhvljs+cUgSk=
     on_success: change
     on_failure: always
+jobs:
+  include:
+    - name: "Build with GCC @ Ubuntu 16"
+      dist: xenial
+      compiler: gcc
+    - name: "Build with Clang @ Ubuntu 16"
+      dist: xenial
+      compiler: clang
