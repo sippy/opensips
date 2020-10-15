@@ -57,6 +57,7 @@ typedef union {
 } HASHHEX;
 
 struct digest_auth_calc;
+struct authenticate_body;
 
 struct digest_auth_response {
 	HASH RespHash;
@@ -68,6 +69,8 @@ struct digest_auth_credential {
         str user;
         str passwd;
 };
+
+int digest_algorithm_check(const struct authenticate_body *auth);
 
 static inline void cvt_hex(const char *bin, char *hex, int HASHLEN, int HASHHEXLEN)
 {
