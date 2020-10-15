@@ -93,3 +93,7 @@ jobs:
         - GCOV_CMD="llvm-cov-10 gcov"
       before_install:
         - sudo apt-get -y install clang-10 llvm-10-dev libc++-10-dev libc++abi-10-dev
+    - name: "Build with GCC 7 @ Ubuntu 18 (ARM)"
+      dist: bionic
+      compiler: gcc
+      arch: arm
