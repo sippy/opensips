@@ -96,4 +96,4 @@ jobs:
     - name: "Build with GCC 7 @ Ubuntu 18 (ARM)"
       dist: bionic
       compiler: gcc
-      arch: arm
+      arch: arm64
