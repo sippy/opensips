@@ -98,5 +98,9 @@ jobs:
       dist: bionic
       compiler: gcc
       arch: arm64
-      env:
-        - CC_EXTRA_OPTS="-Wall"
+#      env:
+#        - CC_EXTRA_OPTS="-Wall"
+    - name: "Build with Clang 7 @ Ubuntu 18 (ARM)"
+      dist: bionic
+      compiler: clang
+      arch: arm64
