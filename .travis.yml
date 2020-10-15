@@ -102,3 +102,15 @@ jobs:
       dist: bionic
       compiler: clang
       arch: arm64
+    - name: "Build with GCC 7 @ Ubuntu 18 (ARM32)"
+      dist: bionic
+      compiler: gcc
+      arch: arm64
+      env:
+        - CC_EXTRA_OPTS="-Werror -m32"
+    - name: "Build with Clang 7 @ Ubuntu 18 (ARM32)"
+      dist: bionic
+      compiler: clang
+      arch: arm64
+      env:
+        - CC_EXTRA_OPTS="-Werror -m32"
