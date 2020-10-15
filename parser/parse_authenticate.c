@@ -327,14 +327,14 @@ error:
 
 
 int parse_authenticate_header(struct hdr_field *authenticate,
-                              struct authenticate_body **picked_auth)
+    match_auth_hf_function match_func, struct authenticate_body **picked_auth)
 {
 	void **parsed;
-	struct authenticate_body *auth_body;
+	struct authenticate_body *auth_body, *ret_auth;
 	int rc;
 
 	parsed = &(authenticate->parsed);
-	*picked_auth = NULL;
+	ret_auth = NULL;
 
 	while(*parsed == NULL)
 	{
@@ -342,18 +342,20 @@ int parse_authenticate_header(struct hdr_field *authenticate,
 		if (auth_body == NULL)
 		{
 			LM_ERR("oom\n");
-			*picked_auth = NULL;
+			*picked_auth = ret_auth;
 			return -1;
 		}
 
 		rc = parse_authenticate_body(authenticate->body, auth_body);
 		if (rc < 0) {
-			*picked_auth = NULL;
+			pkg_free(auth_body);
+			*picked_auth = ret_auth;
 			return -1;
 		}
 
-		if (rc == 0 && !*picked_auth)
-			*picked_auth = auth_body;
+		if (rc == 0 && !ret_auth &&
+		    (match_func == NULL || match_func(auth_body)))
+			ret_auth = auth_body;
 
 		*parsed = auth_body;
 
@@ -363,8 +365,9 @@ int parse_authenticate_header(struct hdr_field *authenticate,
 		else
 			break;
 	}
+	*picked_auth = ret_auth;
 
-	return picked_auth ? 0 : -1;
+	return ret_auth ? 0 : -1;
 }
 
 /*
@@ -375,14 +378,15 @@ int parse_authenticate_header(struct hdr_field *authenticate,
  *        -1 on failure.
  */
 int parse_www_authenticate_header(struct sip_msg *msg,
-                                  struct authenticate_body **picked_auth)
+    match_auth_hf_function match_func, struct authenticate_body **picked_auth)
 {
     if ( !msg->www_authenticate &&
 	(parse_headers(msg, HDR_WWW_AUTHENTICATE_F,0)==-1 || !msg->www_authenticate)) {
 	return -1;
     }
 
-    return parse_authenticate_header(msg->www_authenticate, picked_auth);
+    return parse_authenticate_header(msg->www_authenticate, match_func,
+	picked_auth);
 }
 
 
@@ -394,14 +398,15 @@ int parse_www_authenticate_header(struct sip_msg *msg,
  *        -1 on failure.
  */
 int parse_proxy_authenticate_header(struct sip_msg *msg,
-                                    struct authenticate_body **picked_auth)
+    match_auth_hf_function match_func, struct authenticate_body **picked_auth)
 {
     if ( !msg->proxy_authenticate &&
 	(parse_headers(msg, HDR_PROXY_AUTHENTICATE_F,0)==-1 || !msg->proxy_authenticate)) {
 	return -1;
     }
 
-    return parse_authenticate_header(msg->proxy_authenticate, picked_auth);
+    return parse_authenticate_header(msg->proxy_authenticate, match_func,
+	picked_auth);
 }
 
 
