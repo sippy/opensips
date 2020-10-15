@@ -45,17 +45,27 @@ notifications:
     on_failure: always
 jobs:
   include:
-    - name: "Build with GCC 7 @ Ubuntu 18"
-      dist: bionic
-      compiler: gcc
-    - name: "Build with Clang 7 @ Ubuntu 18"
-      dist: bionic
-      compiler: clang
     - name: "Build with GCC 7 @ Ubuntu 16"
       dist: xenial
       compiler: gcc
     - name: "Build with Clang 7 @ Ubuntu 16"
       dist: xenial
+      compiler: clang
+    - name: "Build with GCC 7 @ Ubuntu 18"
+      dist: bionic
+      compiler: gcc
+    - name: "Build with GCC 9 @ Ubuntu 18"
+      dist: bionic
+      compiler: gcc
+      env:
+        - CC=gcc-9 AR=gcc-ar-9 RANLIB=gcc-ranlib-9
+        - GCOV_CMD="gcov-9"
+      before_install:
+        - sudo apt install software-properties-common
+        - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+        - sudo apt-get -y install gcc-9 g++-9
+    - name: "Build with Clang 7 @ Ubuntu 18"
+      dist: bionic
       compiler: clang
     - name: "Build with Clang 9 @ Ubuntu 18"
       dist: bionic
