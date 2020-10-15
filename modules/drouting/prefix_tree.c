@@ -34,7 +34,7 @@ extern int inode;
 extern int unode;
 
 #define DR_PREFIX_ARRAY_SIZE 128
-static char *dr_char2idx = NULL;
+static signed char *dr_char2idx = NULL;
 
 /* number of children under a prefix node */
 int ptree_children = 0;
@@ -50,7 +50,7 @@ int init_prefix_tree( char *extra_prefix_chars )
 {
 	int i;
 
-	dr_char2idx = (char *)pkg_malloc
+	dr_char2idx = (signed char *)pkg_malloc
 		( DR_PREFIX_ARRAY_SIZE * sizeof(unsigned char) );
 	if (dr_char2idx==NULL) {
 		LM_ERR("not enought pkg mem for the prefix array\n");
