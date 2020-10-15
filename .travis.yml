@@ -32,7 +32,7 @@ addons:
       - librabbitmq-dev
       - liblua5.1-0-dev
       - libncurses5-dev
-      - libjson0-dev
+      - libjson-c-dev
       - uuid-dev
 #      - libjwt-dev
 script: CC_EXTRA_OPTS=-Werror FASTER=1 NICER=0 make \
