@@ -53,7 +53,7 @@
 #ifdef NO_ATOMIC_OPS
 typedef unsigned int stat_val;
 #else
-typedef _Atomic(int) stat_val;
+typedef _Atomic(unsigned long) stat_val;
 #endif
 
 typedef unsigned long (*stat_function)(void *);
