@@ -889,7 +889,8 @@ ifeq		($(CC_NAME), suncc)
 			# -Dinline="" # add this if cc < 5.3 (define inline as null)
 else
 ifeq		($(CC_NAME), clang)
-			CFLAGS+=$(CC_OPTIMIZE_FLAG) -Wall -funroll-loops -fno-common
+			CFLAGS+=-m32 $(CC_OPTIMIZE_FLAG) -Wall -funroll-loops -fno-common
+			LDFLAGS+=-m32
 else
 				#other compilers
 $(error 			Unsupported compiler ($(CC):$(CC_NAME)), try gcc)
