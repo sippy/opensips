@@ -108,11 +108,11 @@ jobs:
       env:
         - CC_EXTRA_OPTS="-Werror -m32"
       before_install:
-        - sudo apt-get -y install libc6-dev:i386 libstdc++6-dev:i386
+        - sudo apt-get -y install libc6-dev:i386 libstdc++6:i386
     - name: "Build with Clang 7 @ Ubuntu 18 (32-bit)"
       dist: bionic
       compiler: clang
       env:
         - CC_EXTRA_OPTS="-Werror -m32"
       before_install:
-        - sudo apt-get -y install libc6-dev:i386 libstdc++6-dev:i386
+        - sudo apt-get -y install libc6-dev:i386 libstdc++6:i386
