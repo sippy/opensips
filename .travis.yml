@@ -119,11 +119,11 @@ jobs:
         - MAKE_TGT="opensips"
       before_install:
         - sudo apt-get -y install libc6-dev:i386 libstdc++6:i386 libgcc1:i386 lib32gcc-7-dev
-        - for pkg in libsqlite3-dev:i386 libsctp-dev:i386 libradcli-dev:i386 \
-          unixodbc-dev:i386 libconfuse-dev:i386 libmysqlclient-dev:i386 \
-          libxml2-dev:i386 libpq-dev:i386 zlib1g-dev:i386 libperl-dev:i386 \
-          libdb-dev:i386 libldap2-dev:i386 libcurl4-gnutls-dev:i386 \
-          libpcre3-dev:i386 libmemcached-dev:i386 libmicrohttpd-dev:i386 \
-          liblua5.1-0-dev:i386 libncurses5-dev:i386 libjson-c-dev:i386 \
-          python-dev:i386; do echo "Installing ${pkg}"; sudo apt-get -y install ${pkg}; done
+        - for pkg in libsqlite3-dev libsctp-dev libradcli-dev \
+          unixodbc-dev libconfuse-dev libmysqlclient-dev \
+          libxml2-dev libpq-dev zlib1g-dev libperl-dev \
+          libdb-dev libldap2-dev libcurl4-gnutls-dev \
+          libpcre3-dev libmemcached-dev libmicrohttpd-dev \
+          liblua5.1-0-dev libncurses5-dev libjson-c-dev \
+          python-dev; do echo "Installing ${pkg}:i386"; sudo apt-get -y install "${pkg}:i386"; done
 
