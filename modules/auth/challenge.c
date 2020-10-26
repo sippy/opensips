@@ -306,9 +306,11 @@ int www_challenge(struct sip_msg* _msg, str* _realm, void* _qop,
 int proxy_challenge(struct sip_msg* _msg, str* _realm, void* _qop,
     void *_algflags)
 {
-	alg_t algflags;
+	alg_t algflags = ALGFLG_UNSPEC;
 
-	memcpy(&algflags, _algflags, sizeof(algflags));
+	if (_algflags != NULL) {
+		memcpy(&algflags, _algflags, sizeof(algflags));
+	}
 	return challenge(_msg, _realm, (int)(long)_qop, PROXY_AUTH_CODE,
 	    &str_init(MESSAGE_407), &str_const_init(PROXY_AUTH_HDR),
 	    algflags);
