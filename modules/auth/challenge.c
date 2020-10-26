@@ -281,6 +281,8 @@ int fixup_algorithms(void** param)
 			return (-1);
 		algflags |= af;
 	}
+	free_csv_record(q_csv);
+
 	memcpy(param, &algflags, sizeof(algflags));
 	return (0);
 }
@@ -293,7 +295,7 @@ int www_challenge(struct sip_msg* _msg, str* _realm, void* _qop,
 {
 	alg_t algflags;
 
-	memcpy(&algflags, _algflags, sizeof(algflags));
+	memcpy(&algflags, &_algflags, sizeof(algflags));
 	return challenge(_msg, _realm, (int)(long)_qop, WWW_AUTH_CODE,
 	    &str_init(MESSAGE_401), &str_const_init(WWW_AUTH_HDR),
 	    algflags);
@@ -308,9 +310,7 @@ int proxy_challenge(struct sip_msg* _msg, str* _realm, void* _qop,
 {
 	alg_t algflags = ALGFLG_UNSPEC;
 
-	if (_algflags != NULL) {
-		memcpy(&algflags, _algflags, sizeof(algflags));
-	}
+	memcpy(&algflags, &_algflags, sizeof(algflags));
 	return challenge(_msg, _realm, (int)(long)_qop, PROXY_AUTH_CODE,
 	    &str_init(MESSAGE_407), &str_const_init(PROXY_AUTH_HDR),
 	    algflags);
