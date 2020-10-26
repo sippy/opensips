@@ -264,25 +264,54 @@ int fixup_qop(void** param)
 	return 0;
 }
 
+int fixup_algorithms(void** param)
+{
+	str *s = (str*)*param;
+	alg_t algflags = 0, af;
+	csv_record *q_csv, *q;
+
+	q_csv = parse_csv_record(s);
+	if (!q_csv) {
+		LM_ERR("Failed to parse list of algorithms\n");
+		return -1;
+	}
+	for (q = q_csv; q; q = q->next) {
+		af = parse_digest_algorithm(&q->s);
+		if (af >= ALG_OTHER)
+			return (-1);
+		algflags |= af;
+	}
+	memcpy(param, &algflags, sizeof(algflags));
+	return (0);
+}
+
 /*
  * Challenge a user to send credentials using WWW-Authorize header field
  */
-int www_challenge(struct sip_msg* _msg, str* _realm, void* _qop)
+int www_challenge(struct sip_msg* _msg, str* _realm, void* _qop,
+    void *_algflags)
 {
+	alg_t algflags;
+
+	memcpy(&algflags, _algflags, sizeof(algflags));
 	return challenge(_msg, _realm, (int)(long)_qop, WWW_AUTH_CODE,
 	    &str_init(MESSAGE_401), &str_const_init(WWW_AUTH_HDR),
-	    ALGFLG_MD5 | ALGFLG_SHA256);
+	    algflags);
 }
 
 
 /*
  * Challenge a user to send credentials using Proxy-Authorize header field
  */
-int proxy_challenge(struct sip_msg* _msg, str* _realm, void* _qop)
+int proxy_challenge(struct sip_msg* _msg, str* _realm, void* _qop,
+    void *_algflags)
 {
+	alg_t algflags;
+
+	memcpy(&algflags, _algflags, sizeof(algflags));
 	return challenge(_msg, _realm, (int)(long)_qop, PROXY_AUTH_CODE,
 	    &str_init(MESSAGE_407), &str_const_init(PROXY_AUTH_HDR),
-	    ALGFLG_MD5 | ALGFLG_SHA256);
+	    algflags);
 }
 
 
