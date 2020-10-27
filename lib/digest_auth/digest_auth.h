@@ -75,9 +75,13 @@ struct dauth_algorithm_match {
 	int algmask;
 };
 
-#define DAUTH_ALGMATCH_ALL (const struct dauth_algorithm_match){.algmask = ~0}
+#define DAUTH_ALGMATCH_ALL      (const struct dauth_algorithm_match){.algmask = ~0}
+#define DAUTH_ALGMATCH_MSK(_am) (const struct dauth_algorithm_match){.algmask = (_am)}
 
-#define DAUTH_AHFM_ANYSUP (&MATCH_AUTH_HF(dauth_algorithm_check, &DAUTH_ALGMATCH_ALL))
+#define DAUTH_AHFM_ANYSUP (&MATCH_AUTH_HF(dauth_algorithm_check, \
+    &DAUTH_ALGMATCH_ALL))
+#define DAUTH_AHFM_MSKSUP(_am) (&MATCH_AUTH_HF(dauth_algorithm_check, \
+    &DAUTH_ALGMATCH_MSK(_am)))
 
 int digest_algorithm_available(alg_t);
 int dauth_algorithm_check(const struct authenticate_body *,
