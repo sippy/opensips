@@ -51,14 +51,24 @@ struct authenticate_body {
 /*
  * WWW/Proxy-Authenticate header field parser
  */
-typedef int (*match_auth_hf_function)(const struct authenticate_body *);
+struct match_auth_hf_desc;
+typedef int (*match_auth_hf_function)(const struct authenticate_body *,
+    const struct match_auth_hf_desc *);
+
+struct match_auth_hf_desc {
+	match_auth_hf_function matchf;
+	const void *argp;
+};
+
+#define MATCH_AUTH_HF(_fn, _argp) (const struct match_auth_hf_desc){ \
+    .matchf = (_fn), .argp = (_argp)}
 
 int parse_proxy_authenticate_header(struct sip_msg *msg,
-    match_auth_hf_function mf, struct authenticate_body **picked_auth);
+    const struct match_auth_hf_desc *md, struct authenticate_body **picked_auth);
 int parse_www_authenticate_header(struct sip_msg *msg,
-    match_auth_hf_function mf, struct authenticate_body **picked_auth);
+    const struct match_auth_hf_desc *md, struct authenticate_body **picked_auth);
 int parse_authenticate_header(struct hdr_field *authenticate,
-    match_auth_hf_function mf, struct authenticate_body **picked_auth);
+    const struct match_auth_hf_desc *md, struct authenticate_body **picked_auth);
 static inline int _parse_authenticate_header(struct hdr_field *authenticate)
 {
 	struct authenticate_body *_;

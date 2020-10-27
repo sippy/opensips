@@ -327,7 +327,7 @@ error:
 
 
 int parse_authenticate_header(struct hdr_field *authenticate,
-    match_auth_hf_function match_func, struct authenticate_body **picked_auth)
+    const struct match_auth_hf_desc *md, struct authenticate_body **picked_auth)
 {
 	void **parsed;
 	struct authenticate_body *auth_body, *ret_auth;
@@ -354,7 +354,7 @@ int parse_authenticate_header(struct hdr_field *authenticate,
 		}
 
 		if (rc == 0 && !ret_auth &&
-		    (match_func == NULL || match_func(auth_body)))
+		    (md == NULL || md->matchf(auth_body, md)))
 			ret_auth = auth_body;
 
 		*parsed = auth_body;
@@ -378,14 +378,14 @@ int parse_authenticate_header(struct hdr_field *authenticate,
  *        -1 on failure.
  */
 int parse_www_authenticate_header(struct sip_msg *msg,
-    match_auth_hf_function match_func, struct authenticate_body **picked_auth)
+    const struct match_auth_hf_desc *md, struct authenticate_body **picked_auth)
 {
     if ( !msg->www_authenticate &&
 	(parse_headers(msg, HDR_WWW_AUTHENTICATE_F,0)==-1 || !msg->www_authenticate)) {
 	return -1;
     }
 
-    return parse_authenticate_header(msg->www_authenticate, match_func,
+    return parse_authenticate_header(msg->www_authenticate, md,
 	picked_auth);
 }
 
@@ -398,14 +398,14 @@ int parse_www_authenticate_header(struct sip_msg *msg,
  *        -1 on failure.
  */
 int parse_proxy_authenticate_header(struct sip_msg *msg,
-    match_auth_hf_function match_func, struct authenticate_body **picked_auth)
+    const struct match_auth_hf_desc *md, struct authenticate_body **picked_auth)
 {
     if ( !msg->proxy_authenticate &&
 	(parse_headers(msg, HDR_PROXY_AUTHENTICATE_F,0)==-1 || !msg->proxy_authenticate)) {
 	return -1;
     }
 
-    return parse_authenticate_header(msg->proxy_authenticate, match_func,
+    return parse_authenticate_header(msg->proxy_authenticate, md,
 	picked_auth);
 }
 
