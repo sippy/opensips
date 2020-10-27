@@ -425,7 +425,8 @@ static inline int auth_get_ha1(struct sip_msg *msg, dig_cred_t* digest,
 		}
 		/* Only plaintext passwords are stored in database,
 		 * we have to calculate HA1 */
-		if (digest_calc->HA1(&creds, NULL/*nonce*/, NULL/*cnonce*/, _ha1) != 0)
+		if (digest_calc->HA1(&creds, str2const(&digest->nonce),
+		    str2const(&digest->cnonce), _ha1) != 0)
 			return -1;
 		LM_DBG("HA1 string calculated: %s\n", _ha1->_start);
 	} else {
