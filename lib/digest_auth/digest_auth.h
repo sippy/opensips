@@ -70,6 +70,7 @@ struct digest_auth_credential {
         str passwd;
 };
 
+int digest_algorithm_available(alg_t);
 int digest_algorithm_check(const struct authenticate_body *auth);
 
 static inline void cvt_hex(const char *bin, char *hex, int HASHLEN, int HASHHEXLEN)

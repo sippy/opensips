@@ -24,9 +24,9 @@
 
 #include "digest_auth.h"
 
-int digest_algorithm_check(const struct authenticate_body *auth)
+int digest_algorithm_available(alg_t algorithm)
 {
-        switch (auth->algorithm) {
+        switch (algorithm) {
         case ALG_UNSPEC:
         case ALG_MD5:
         case ALG_MD5SESS:
@@ -42,4 +42,10 @@ int digest_algorithm_check(const struct authenticate_body *auth)
 		break;
         }
         return (0);
+}
+
+int digest_algorithm_check(const struct authenticate_body *auth)
+{
+
+	return digest_algorithm_available(auth->algorithm);
 }
