@@ -80,6 +80,6 @@ int dauth_fixup_algorithms(void** param)
 	}
 	free_csv_record(q_csv);
 
-	memcpy(param, &algflags, sizeof(algflags));
+	*(intptr_t *)param = algflags;
 	return (0);
 }
