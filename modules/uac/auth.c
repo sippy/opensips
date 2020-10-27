@@ -242,7 +242,7 @@ void apply_cseq_decrement(struct cell* t, int type, struct tmcb_params *p)
 	apply_cseq_op(rpl, (int)cseq_req-(int)cseq_rpl);
 }
 
-int uac_auth( struct sip_msg *msg)
+int uac_auth( struct sip_msg *msg, int algmask)
 {
 	struct authenticate_body *auth = NULL;
 	str msg_body;
@@ -257,6 +257,7 @@ int uac_auth( struct sip_msg *msg)
 	str param, ttag;
 	char *p;
 	struct dlg_cell *dlg;
+	const struct match_auth_hf_desc *mdesc;
 
 	/* get transaction */
 	t = uac_tmb.t_gett();
@@ -288,12 +289,12 @@ int uac_auth( struct sip_msg *msg)
 		goto error;
 	}
 
+	mdesc = (algmask) ? DAUTH_AHFM_MSKSUP(algmask) :
+	    DAUTH_AHFM_ANYSUP;
 	if (code==WWW_AUTH_CODE) {
-		parse_www_authenticate_header(rpl,
-		    DAUTH_AHFM_ANYSUP, &auth);
+		parse_www_authenticate_header(rpl, mdesc, &auth);
 	} else if (code==PROXY_AUTH_CODE) {
-		parse_proxy_authenticate_header(rpl,
-		    DAUTH_AHFM_ANYSUP, &auth);
+		parse_proxy_authenticate_header(rpl, mdesc, &auth);
 	}
 
 	if (auth == NULL) {
