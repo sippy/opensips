@@ -58,6 +58,7 @@ typedef union {
 
 struct digest_auth_calc;
 struct authenticate_body;
+struct match_auth_hf_desc;
 
 struct digest_auth_response {
 	HASH RespHash;
@@ -70,8 +71,17 @@ struct digest_auth_credential {
         str passwd;
 };
 
+struct dauth_algorithm_match {
+	int algmask;
+};
+
+#define DAUTH_ALGMATCH_ALL (const struct dauth_algorithm_match){.algmask = ~0}
+
+#define DAUTH_AHFM_ANYSUP (&MATCH_AUTH_HF(dauth_algorithm_check, &DAUTH_ALGMATCH_ALL))
+
 int digest_algorithm_available(alg_t);
-int digest_algorithm_check(const struct authenticate_body *auth);
+int dauth_algorithm_check(const struct authenticate_body *,
+    const struct match_auth_hf_desc *);
 int dauth_fixup_algorithms(void** param);
 
 static inline void cvt_hex(const char *bin, char *hex, int HASHLEN, int HASHHEXLEN)

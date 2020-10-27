@@ -45,10 +45,15 @@ int digest_algorithm_available(alg_t algorithm)
         return (0);
 }
 
-int digest_algorithm_check(const struct authenticate_body *auth)
+int dauth_algorithm_check(const struct authenticate_body *auth,
+    const struct match_auth_hf_desc *mdp)
 {
+	const struct dauth_algorithm_match *damp;
 
-	return digest_algorithm_available(auth->algorithm);
+	if (!digest_algorithm_available(auth->algorithm))
+		return (0);
+	damp = (const struct dauth_algorithm_match *)mdp->argp;
+	return (ALG2ALGFLG(auth->algorithm) & damp->algmask);
 }
 
 int dauth_fixup_algorithms(void** param)
