@@ -31,7 +31,6 @@
 #define QOP_TYPE_BOTH      3
 
 int fixup_qop(void** param);
-int fixup_algorithms(void** param);
 
 /*
  * Challenge a user agent using WWW-Authenticate header field

@@ -264,34 +264,6 @@ int fixup_qop(void** param)
 	return 0;
 }
 
-int fixup_algorithms(void** param)
-{
-	str *s = (str*)*param;
-	alg_t af;
-	int algflags = 0;
-	csv_record *q_csv, *q;
-
-	q_csv = parse_csv_record(s);
-	if (!q_csv) {
-		LM_ERR("Failed to parse list of algorithms\n");
-		return -1;
-	}
-	for (q = q_csv; q; q = q->next) {
-		af = parse_digest_algorithm(&q->s);
-		if (!digest_algorithm_available(af)) {
-			LM_ERR("Unsupported algorithm type: \"%.*s\"\n",
-			    q->s.len, q->s.s);
-			free_csv_record(q_csv);
-			return (-1);
-		}
-		algflags |= ALG2ALGFLG(af);
-	}
-	free_csv_record(q_csv);
-
-	memcpy(param, &algflags, sizeof(algflags));
-	return (0);
-}
-
 /*
  * Challenge a user to send credentials using WWW-Authorize header field
  */

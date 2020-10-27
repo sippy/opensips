@@ -124,12 +124,12 @@ static cmd_export_t cmds[] = {
 	{"www_challenge", (cmd_function)www_challenge, {
 		{CMD_PARAM_STR,0,0},
 		{CMD_PARAM_STR|CMD_PARAM_OPT,fixup_qop,0},
-		{CMD_PARAM_STR|CMD_PARAM_OPT,fixup_algorithms,0}, {0,0,0}},
+		{CMD_PARAM_STR|CMD_PARAM_OPT,dauth_fixup_algorithms,0}, {0,0,0}},
 		REQUEST_ROUTE},
 	{"proxy_challenge", (cmd_function)proxy_challenge, {
 		{CMD_PARAM_STR,0,0},
 		{CMD_PARAM_STR|CMD_PARAM_OPT,fixup_qop,0},
-		{CMD_PARAM_STR|CMD_PARAM_OPT,fixup_algorithms,0}, {0,0,0}},
+		{CMD_PARAM_STR|CMD_PARAM_OPT,dauth_fixup_algorithms,0}, {0,0,0}},
 		REQUEST_ROUTE},
 	{"pv_www_authorize",    (cmd_function)pv_www_authorize, {
 		{CMD_PARAM_STR,0,0}, {0,0,0}},
