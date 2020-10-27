@@ -44,14 +44,16 @@ typedef enum alg {
 	ALG_OTHER = 7           /* Unknown */
 } alg_t;
 
+#define ALG2ALGFLG(_alg)      (1 << (_alg))
+
 /* Flags to enable/disable set of algorithms */
-#define ALGFLG_UNSPEC         (1 << ALG_UNSPEC)
-#define ALGFLG_MD5            (1 << ALG_MD5)
-#define ALGFLG_MD5SESS        (1 << ALG_MD5SESS)
-#define ALGFLG_SHA256         (1 << ALG_SHA256)
-#define ALGFLG_SHA256SESS     (1 << ALG_SHA256SESS)
-#define ALGFLG_SHA512_256     (1 << ALG_SHA512_256)
-#define ALGFLG_SHA512_256SESS (1 << ALG_SHA512_256SESS)
+#define ALGFLG_UNSPEC         ALG2ALGFLG(ALG_UNSPEC)
+#define ALGFLG_MD5            ALG2ALGFLG(ALG_MD5)
+#define ALGFLG_MD5SESS        ALG2ALGFLG(ALG_MD5SESS)
+#define ALGFLG_SHA256         ALG2ALGFLG(ALG_SHA256)
+#define ALGFLG_SHA256SESS     ALG2ALGFLG(ALG_SHA256SESS)
+#define ALGFLG_SHA512_256     ALG2ALGFLG(ALG_SHA512_256)
+#define ALGFLG_SHA512_256SESS ALG2ALGFLG(ALG_SHA512_256SESS)
 
 /* Canonical algorithm names */
 #define ALG_SESS_SFX           "-sess"
