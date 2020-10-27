@@ -278,7 +278,8 @@ int fixup_algorithms(void** param)
 	}
 	for (q = q_csv; q; q = q->next) {
 		af = parse_digest_algorithm(&q->s);
-		if (af >= ALG_OTHER) {
+		if (!digest_algorithm_available(af)) {
+			LM_ERR("Unsupported algorithm type: %d\n", af);
 			free_csv_record(q_csv);
 			return (-1);
 		}
