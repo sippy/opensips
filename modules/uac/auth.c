@@ -289,11 +289,11 @@ int uac_auth( struct sip_msg *msg)
 	}
 
 	if (code==WWW_AUTH_CODE) {
-		parse_www_authenticate_header(rpl, digest_algorithm_check,
-		    &auth);
+		parse_www_authenticate_header(rpl,
+		    DAUTH_AHFM_ANYSUP, &auth);
 	} else if (code==PROXY_AUTH_CODE) {
-		parse_proxy_authenticate_header(rpl, digest_algorithm_check,
-		    &auth);
+		parse_proxy_authenticate_header(rpl,
+		    DAUTH_AHFM_ANYSUP, &auth);
 	}
 
 	if (auth == NULL) {
