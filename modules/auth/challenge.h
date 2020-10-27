@@ -36,14 +36,14 @@ int fixup_qop(void** param);
  * Challenge a user agent using WWW-Authenticate header field
  */
 int www_challenge(struct sip_msg* _msg, str* _realm, void* _qop,
-    void *alg_flgs);
+    intptr_t alg_flgs);
 
 
 /*
  * Challenge a user agent using Proxy-Authenticate header field
  */
 int proxy_challenge(struct sip_msg* _msg, str* _realm, void* _qop,
-    void *alg_flgs);
+    intptr_t alg_flgs);
 
 
 /*

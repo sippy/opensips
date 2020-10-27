@@ -268,14 +268,12 @@ int fixup_qop(void** param)
  * Challenge a user to send credentials using WWW-Authorize header field
  */
 int www_challenge(struct sip_msg* _msg, str* _realm, void* _qop,
-    void *_algflags)
+    intptr_t algmask)
 {
-	int algflags;
 
-	memcpy(&algflags, &_algflags, sizeof(algflags));
 	return challenge(_msg, _realm, (int)(long)_qop, WWW_AUTH_CODE,
 	    &str_init(MESSAGE_401), &str_const_init(WWW_AUTH_HDR),
-	    algflags ? algflags : ALGFLG_UNSPEC);
+	    algmask ? algmask : ALGFLG_UNSPEC);
 }
 
 
@@ -283,14 +281,12 @@ int www_challenge(struct sip_msg* _msg, str* _realm, void* _qop,
  * Challenge a user to send credentials using Proxy-Authorize header field
  */
 int proxy_challenge(struct sip_msg* _msg, str* _realm, void* _qop,
-    void *_algflags)
+    intptr_t algmask)
 {
-	alg_t algflags;
 
-	memcpy(&algflags, &_algflags, sizeof(algflags));
 	return challenge(_msg, _realm, (int)(long)_qop, PROXY_AUTH_CODE,
 	    &str_init(MESSAGE_407), &str_const_init(PROXY_AUTH_HDR),
-	    algflags ? algflags : ALGFLG_UNSPEC);
+	    algmask ? algmask : ALGFLG_UNSPEC);
 }
 
 
