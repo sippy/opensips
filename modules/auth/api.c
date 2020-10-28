@@ -307,8 +307,8 @@ int check_response(const dig_cred_t* _cred, const str* _method,
 
 #if !defined(NO_DEBUG)
 	do {
-		char tmpb[digest_calc->HASHHEXLEN + 1];
-		LM_DBG("our result = \'%s\'\n",
+		char tmpb[digest_calc->HASHHEXLEN];
+		LM_DBG("our result = \'%.*s\'\n", digest_calc->HASHHEXLEN,
 		    digest_calc->response_hash_fill(&resp, tmpb, sizeof(tmpb)));
 	} while (0);
 #endif
