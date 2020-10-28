@@ -346,7 +346,6 @@ static void destroy(void)
 			shm_free(next_index);
 	}
 	dauth_nonce_context_dtor(ncp);
-	ncp = NULL;
 }
 
 static inline int auth_get_ha1(struct sip_msg *msg, dig_cred_t* digest,
