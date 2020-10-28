@@ -88,32 +88,4 @@ int dauth_algorithm_check(const struct authenticate_body *,
     const struct match_auth_hf_desc *);
 int dauth_fixup_algorithms(void** param);
 
-static inline void cvt_hex(const char *bin, char *hex, int HASHLEN, int HASHHEXLEN)
-{
-        unsigned short i;
-        unsigned char j;
-
-        for (i = 0; i<HASHLEN; i++)
-        {
-                j = (bin[i] >> 4) & 0xf;
-                if (j <= 9)
-                {
-                        hex[i * 2] = (j + '0');
-                } else {
-                        hex[i * 2] = (j + 'a' - 10);
-                }
-
-                j = bin[i] & 0xf;
-
-                if (j <= 9)
-                {
-                        hex[i * 2 + 1] = (j + '0');
-                } else {
-                        hex[i * 2 + 1] = (j + 'a' - 10);
-                }
-        };
-
-        hex[HASHHEXLEN] = '\0';
-}
-
 #endif

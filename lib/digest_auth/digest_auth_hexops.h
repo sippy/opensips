@@ -43,15 +43,15 @@ static inline uint64_t cvt_step(uint64_t val, uint64_t msk, int shft)
 #define VECTOR_BITS_MAX 256
 #define VECTOR_BYTES(bytelen) (bytelen > (VECTOR_BITS_MAX / 8) ?  (VECTOR_BITS_MAX / 8) : bytelen)
 
-static inline int bcmp_hex128(const char *bin, const char *hex, int HASHLEN)
+static inline int bcmp_hex128(const char *bin, const char *hex, int hashlen)
 {
-	const int inelem = VECTOR_BYTES(HASHLEN) / sizeof(uint64_t);
+	const int inelem = VECTOR_BYTES(hashlen) / sizeof(uint64_t);
 	uint64_t base;
 	uint64_t inws[inelem];
 
-	assert(HASHLEN >= sizeof(inws) && (HASHLEN % sizeof(inws) == 0));
+	assert(hashlen >= sizeof(inws) && (hashlen % sizeof(inws) == 0));
 	memset(&base, '0', sizeof(base));
-	for (int i = 0; i < HASHLEN; i += sizeof(inws)) {
+	for (int i = 0; i < hashlen; i += sizeof(inws)) {
 		uint64_t outw[inelem * 2];
 		memcpy(&inws, bin + i, sizeof(inws));
 		for (int ib = 0; ib < inelem; ib++) {
@@ -70,4 +70,33 @@ static inline int bcmp_hex128(const char *bin, const char *hex, int HASHLEN)
 	}
 
 	return (0);
+}
+
+static inline void cvt_hex128(const char *bin, char *hex, int hashlen, int hashhexlen)
+{
+	const int inelem = VECTOR_BYTES(hashlen) / sizeof(uint64_t);
+	uint64_t base;
+	uint64_t inws[inelem];
+
+	assert(hashlen >= sizeof(inws) && (hashlen % sizeof(inws) == 0));
+	assert(hashhexlen >= (hashlen * 2 + 1));
+	memset(&base, '0', sizeof(base));
+	for (int i = 0; i < hashlen; i += sizeof(inws)) {
+		uint64_t outw[inelem * 2];
+		memcpy(&inws, bin + i, sizeof(inws));
+		for (int ib = 0; ib < inelem; ib++) {
+			uint64_t inw = nibbleswap(inws[ib]);
+			for (int b = 0; b < 2; b++) {
+				uint64_t addmask;
+				outw[ib * 2 + b] = cvt_step(inw >> (32 * b) & 0xffffffff, 0x0000ffff, 16);
+				outw[ib * 2 + b] = cvt_step(outw[ib * 2 + b], 0x00ff000000ff, 8);
+				outw[ib * 2 + b] = cvt_step(outw[ib * 2 + b], 0x0f000f000f000f, 4);
+				addmask = base + (markbetween(outw[ib * 2 + b], 9, 16) >> 7) * ('a' - '0' - 0x0a);
+				outw[ib * 2 + b] += addmask;
+			}
+		}
+		memcpy(hex + (i * 2), &outw, sizeof(outw));
+	}
+
+	hex[hashhexlen] = '\0';
 }

@@ -51,7 +51,7 @@ static int _digest_calc_HA1(const struct digest_auth_credential *crd,
 	SHA256_Update(&Sha256Ctx, ":", 1);
 	SHA256_Update(&Sha256Ctx, crd->passwd.s, crd->passwd.len);
 	SHA256_Final((unsigned char *)HA1, &Sha256Ctx);
-	cvt_hex(HA1, sess_key->SHA256, HASHLEN_SHA256, HASHHEXLEN_SHA256);
+	cvt_hex128(HA1, sess_key->SHA256, HASHLEN_SHA256, HASHHEXLEN_SHA256);
 
 	if (issess != 0)
 	{
@@ -62,7 +62,7 @@ static int _digest_calc_HA1(const struct digest_auth_credential *crd,
 		SHA256_Update(&Sha256Ctx, ":", 1);
 		SHA256_Update(&Sha256Ctx, cnonce->s, cnonce->len);
 		SHA256_Final((unsigned char *)HA1, &Sha256Ctx);
-		cvt_hex(HA1, sess_key->SHA256, HASHLEN_SHA256, HASHHEXLEN_SHA256);
+		cvt_hex128(HA1, sess_key->SHA256, HASHLEN_SHA256, HASHHEXLEN_SHA256);
 	};
 	return (0);
 
@@ -95,7 +95,7 @@ static int digest_calc_HA2(const str_const *msg_body, const str_const *method,
 		SHA256_Init(&Sha256Ctx);
 		SHA256_Update(&Sha256Ctx, msg_body->s, msg_body->len);
 		SHA256_Final((unsigned char *)HENTITY, &Sha256Ctx);
-		cvt_hex(HENTITY, HENTITYHex, HASHLEN_SHA256, HASHHEXLEN_SHA256);
+		cvt_hex128(HENTITY, HENTITYHex, HASHLEN_SHA256, HASHHEXLEN_SHA256);
 	}
 
 	SHA256_Init(&Sha256Ctx);
@@ -110,7 +110,7 @@ static int digest_calc_HA2(const str_const *msg_body, const str_const *method,
 	};
 
 	SHA256_Final((unsigned char *)HA2, &Sha256Ctx);
-	cvt_hex(HA2, HA2Hex->SHA256, HASHLEN_SHA256, HASHHEXLEN_SHA256);
+	cvt_hex128(HA2, HA2Hex->SHA256, HASHLEN_SHA256, HASHHEXLEN_SHA256);
 	return (0);
 }
 
@@ -169,7 +169,7 @@ static char *response_hash_fill(const struct digest_auth_response *response, cha
 {
 	DASSERT(len > HASHHEXLEN_SHA256);
 
-	cvt_hex(response->RespHash.SHA256, hex, HASHLEN_SHA256, HASHHEXLEN_SHA256);
+	cvt_hex128(response->RespHash.SHA256, hex, HASHLEN_SHA256, HASHHEXLEN_SHA256);
 	return (hex);
 }
 
