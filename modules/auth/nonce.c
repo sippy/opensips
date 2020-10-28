@@ -95,7 +95,7 @@ static inline int hex2integer(char* _s)
  * Nonce value consists of the expires time (in seconds since 1.1 1970)
  * and a secret phrase
  */
-void calc_nonce(char* _nonce, int _expires, int _index, str* _secret)
+void calc_nonce(char* _nonce, const struct nonce_params *npp)
 {
 	MD5_CTX ctx;
 	unsigned char bin[16];
@@ -104,16 +104,16 @@ void calc_nonce(char* _nonce, int _expires, int _index, str* _secret)
 	MD5Init(&ctx);
 
 
-	integer2hex(_nonce, _expires);
+	integer2hex(_nonce, npp->expires);
 
 	if(!disable_nonce_check) {
-		integer2hex(_nonce + 8, _index);
+		integer2hex(_nonce + 8, npp->index);
 		offset = 16;
 	}
 
     MD5Update(&ctx, _nonce, offset);
 
-	MD5Update(&ctx, _secret->s, _secret->len);
+	MD5Update(&ctx, npp->secret->s, npp->secret->len);
 	MD5Final(bin, &ctx);
 	string2hex(bin, 16, _nonce + offset);
 	_nonce[offset + 32] = '\0';
@@ -143,9 +143,8 @@ time_t get_nonce_expires(str* _n)
  */
 int check_nonce(str* _nonce, str* _secret)
 {
-	int expires;
 	char non[NONCE_LEN + 1];
-    int index = 0;
+	struct nonce_params np = {.index = 0, .secret = str2const(_secret)};
 
 	if (_nonce->s == 0) {
 		return -1;  /* Invalid nonce */
@@ -155,11 +154,11 @@ int check_nonce(str* _nonce, str* _secret)
 		return 1; /* Lengths must be equal */
 	}
 
-	expires = get_nonce_expires(_nonce);
+	np.expires = get_nonce_expires(_nonce);
     if(!disable_nonce_check)
-		index = get_nonce_index(_nonce);
+		np.index = get_nonce_index(_nonce);
 
-    calc_nonce(non, expires, index, _secret);
+    calc_nonce(non, &np);
 
 
 	LM_DBG("comparing [%.*s] and [%.*s]\n",

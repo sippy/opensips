@@ -81,6 +81,7 @@ static inline char *build_auth_hf(int _retries, int _stale,
 	str_const stale_param = STR_NULL_const;
 	const str_const digest_realm = str_const_init(DIGEST_REALM);
 	const str_const nonce_param = str_const_init(DIGEST_NONCE);
+	struct nonce_params calc_np = {.secret = str2const(&secret)};
 
 	if(!disable_nonce_check) {
 		/* get the nonce index and mark it as used */
@@ -132,7 +133,9 @@ static inline char *build_auth_hf(int _retries, int _stale,
 	memcpy(p, digest_realm.s, digest_realm.len);p+=digest_realm.len;
 	memcpy(p, _realm->s, _realm->len);p+=_realm->len;
 	memcpy(p, nonce_param.s, nonce_param.len);p+=nonce_param.len;
-	calc_nonce(p, time(0) + nonce_expire, index, &secret);
+	calc_np.expires = time(0) + nonce_expire;
+	calc_np.index = index;
+	calc_nonce(p, &calc_np);
 	p+=((!disable_nonce_check)?NONCE_LEN:NONCE_LEN-8);
 	*p='"';p++;
 	if (_qop) {

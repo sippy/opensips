@@ -33,11 +33,16 @@
  */
 #define NONCE_LEN (16+32)
 
+struct nonce_params {
+	time_t expires;
+	int index;
+	const str_const *secret;
+};
 
 /*
  * Calculate nonce value
  */
-void calc_nonce(char* _nonce, int _expires, int _index, str* _secret);
+void calc_nonce(char* _nonce, const struct nonce_params *npp);
 
 
 /*
