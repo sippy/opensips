@@ -33,6 +33,7 @@
 #include "digest_auth_sha256.h"
 #include "digest_auth.h"
 #include "digest_auth_calc.h"
+#include "digest_auth_hexops.h"
 
 /*
  * calculate H(A1)
@@ -177,7 +178,7 @@ static int response_hash_bcmp(const struct digest_auth_response *response, const
 	if (hex->len != HASHHEXLEN_SHA256)
 		return (1);
 
-	return bcmp_hex(response->RespHash.SHA256, hex->s, HASHLEN_SHA256);
+	return bcmp_hex128(response->RespHash.SHA256, hex->s, HASHLEN_SHA256);
 }
 
 const struct digest_auth_calc sha256_digest_calc = {

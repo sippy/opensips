@@ -116,36 +116,4 @@ static inline void cvt_hex(const char *bin, char *hex, int HASHLEN, int HASHHEXL
         hex[HASHHEXLEN] = '\0';
 }
 
-static inline int bcmp_hex(const char *bin, const char *hex, int HASHLEN)
-{
-        unsigned short i;
-        unsigned char j;
-
-        for (i = 0; i<HASHLEN; i++)
-        {
-                j = (bin[i] >> 4) & 0xf;
-                if (j <= 9)
-                {
-                        if (hex[i * 2] != (j + '0'))
-				return (1);
-                } else {
-                        if (hex[i * 2] != (j + 'a' - 10))
-				return (1);
-                }
-
-                j = bin[i] & 0xf;
-
-                if (j <= 9)
-                {
-                        if (hex[i * 2 + 1] != (j + '0'))
-				return (1);
-                } else {
-                        if (hex[i * 2 + 1] != (j + 'a' - 10))
-				return (1);
-                }
-        };
-
-        return (0);
-}
-
 #endif

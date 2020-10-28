@@ -33,6 +33,7 @@
 #include "digest_auth_sha512t256.h"
 #include "digest_auth.h"
 #include "digest_auth_calc.h"
+#include "digest_auth_hexops.h"
 
 #define SHA512t256_Init(ctxpp) { \
 	*(ctxpp) = EVP_MD_CTX_new(); \
@@ -205,7 +206,7 @@ static int response_hash_bcmp(const struct digest_auth_response *response, const
 	if (hex->len != HASHHEXLEN_SHA512t256)
 		return (1);
 
-	return bcmp_hex(response->RespHash.SHA512t256, hex->s, HASHLEN_SHA512t256);
+	return bcmp_hex128(response->RespHash.SHA512t256, hex->s, HASHLEN_SHA512t256);
 }
 
 const struct digest_auth_calc sha512t256_digest_calc = {

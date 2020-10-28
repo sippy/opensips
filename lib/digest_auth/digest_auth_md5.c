@@ -33,6 +33,7 @@
 #include "digest_auth_md5.h"
 #include "digest_auth.h"
 #include "digest_auth_calc.h"
+#include "digest_auth_hexops.h"
 
 /*
  * calculate H(A1)
@@ -177,7 +178,7 @@ static int response_hash_bcmp(const struct digest_auth_response *response, const
 	if (hex->len != HASHHEXLEN_MD5)
 		return (1);
 
-	return bcmp_hex(response->RespHash.MD5, hex->s, HASHLEN_MD5);
+	return bcmp_hex128(response->RespHash.MD5, hex->s, HASHLEN_MD5);
 }
 
 const struct digest_auth_calc md5_digest_calc = {
