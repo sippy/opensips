@@ -216,7 +216,7 @@ struct nonce_context *dauth_nonce_context_new(int disable_nonce_check)
 {
 	struct nonce_context *rval;
 
-	rval = malloc(sizeof(*rval));
+	rval = pkg_malloc(sizeof(*rval));
 	if (rval == NULL)
 		return (NULL);
 	memset(rval, 0, sizeof(*rval));
@@ -229,6 +229,6 @@ void dauth_nonce_context_dtor(struct nonce_context *ncp)
 {
 
 	if (ncp->sec_rand != NULL)
-		free(ncp->sec_rand);
-	free(ncp);
+		pkg_free(ncp->sec_rand);
+	pkg_free(ncp);
 }
