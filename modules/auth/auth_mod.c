@@ -212,7 +212,7 @@ static int mod_init(void)
 		return -1;
 	}
 
-	ncp = dauth_nonce_context_new(_disable_nonce_check);
+	ncp = dauth_noncer_new(_disable_nonce_check);
 	if (ncp == NULL) {
 		LM_ERR("can't init nonce generator\n");
 		return -1;
@@ -231,8 +231,8 @@ static int mod_init(void)
 		ncp->secret.len = strlen(sec_param);
 	}
 
-	if (dauth_nonce_context_init(ncp) < 0) {
-		LM_ERR("dauth_nonce_context_init() failed\n");
+	if (dauth_noncer_init(ncp) < 0) {
+		LM_ERR("dauth_noncer_init() failed\n");
 		return -1;
 	}
 
@@ -332,7 +332,7 @@ static int mod_init(void)
 static int child_init(int _rank)
 {
 
-	dauth_child_reseed();
+	dauth_noncer_reseed();
 	return 0;
 }
 
@@ -357,7 +357,7 @@ static void destroy(void)
 		if(next_index)
 			shm_free(next_index);
 	}
-	dauth_nonce_context_dtor(ncp);
+	dauth_noncer_dtor(ncp);
 }
 
 static inline int auth_get_ha1(struct sip_msg *msg, dig_cred_t* digest,

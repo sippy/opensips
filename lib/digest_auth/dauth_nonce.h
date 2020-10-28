@@ -66,10 +66,10 @@ int get_nonce_index(const str_const * _nonce);
  */
 int is_nonce_stale(const str_const * _nonce);
 
-struct nonce_context *dauth_nonce_context_new(int disable_nonce_check);
-void dauth_nonce_context_dtor(struct nonce_context *);
+struct nonce_context *dauth_noncer_new(int disable_nonce_check);
+void dauth_noncer_dtor(struct nonce_context *);
 int generate_random_secret(struct nonce_context *ncp);
-int dauth_nonce_context_init(struct nonce_context *ncp);
-void dauth_child_reseed(void);
+int dauth_noncer_init(struct nonce_context *ncp);
+void dauth_noncer_reseed(void);
 
 #endif /* NONCE_H */

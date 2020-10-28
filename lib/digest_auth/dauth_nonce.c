@@ -232,7 +232,7 @@ e0:
 	return (-1);
 }
 
-int dauth_nonce_context_init(struct nonce_context *pub)
+int dauth_noncer_init(struct nonce_context *pub)
 {
 	struct nonce_context_priv *self = (typeof(self))pub;
 	const unsigned char *key, *iv;
@@ -257,7 +257,7 @@ e0:
 	return (-1);
 }
 
-void dauth_child_reseed(void)
+void dauth_noncer_reseed(void)
 {
 	struct {
 		pid_t pid;
@@ -272,7 +272,7 @@ void dauth_child_reseed(void)
 	RAND_add(&seed, sizeof(seed), (double)sizeof(seed) * 0.1);
 }
 
-struct nonce_context *dauth_nonce_context_new(int disable_nonce_check)
+struct nonce_context *dauth_noncer_new(int disable_nonce_check)
 {
 	struct nonce_context_priv *self;
 
@@ -307,7 +307,7 @@ e0:
 	return NULL;
 }
 
-void dauth_nonce_context_dtor(struct nonce_context *pub)
+void dauth_noncer_dtor(struct nonce_context *pub)
 {
 	struct nonce_context_priv *self = (typeof(self))pub;
 
