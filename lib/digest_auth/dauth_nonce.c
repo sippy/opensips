@@ -257,6 +257,18 @@ e0:
 	return (-1);
 }
 
+#if defined(CLOCK_REALTIME_PRECISE)
+#define MYCLOCK_REALTIME CLOCK_REALTIME_PRECISE
+#else
+#define MYCLOCK_REALTIME CLOCK_REALTIME
+#endif
+#if defined(CLOCK_MONOTONIC_PRECISE)
+#define MYCLOCK_MONOTONIC CLOCK_MONOTONIC_PRECISE
+#else
+#define MYCLOCK_MONOTONIC CLOCK_MONOTONIC
+#endif
+
+
 void dauth_noncer_reseed(void)
 {
 	struct {
@@ -266,8 +278,8 @@ void dauth_noncer_reseed(void)
         } seed;
 
 	seed.pid = getpid();
-	clock_gettime(CLOCK_REALTIME_PRECISE, &seed.rtime);
-	clock_gettime(CLOCK_MONOTONIC_PRECISE, &seed.mtime);
+	clock_gettime(MYCLOCK_REALTIME, &seed.rtime);
+	clock_gettime(MYCLOCK_MONOTONIC, &seed.mtime);
 
 	RAND_add(&seed, sizeof(seed), (double)sizeof(seed) * 0.1);
 }
