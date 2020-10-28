@@ -39,7 +39,7 @@
 #include "auth_mod.h"
 #include "common.h"
 #include "challenge.h"
-#include "nonce.h"
+#include "../../lib/digest_auth/dauth_nonce.h"
 #include "index.h"
 #include "api.h"
 #include "../../lib/dassert.h"

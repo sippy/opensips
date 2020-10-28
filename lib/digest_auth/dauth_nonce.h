@@ -66,4 +66,6 @@ int get_nonce_index(str* _nonce);
  */
 int is_nonce_stale(str* _nonce);
 
+extern int disable_nonce_check;
+
 #endif /* NONCE_H */

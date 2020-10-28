@@ -30,9 +30,7 @@
 #include "../../dprint.h"
 #include "../../ut.h"
 #include "../../timer.h"
-#include "nonce.h"
-#include "index.h"
-#include "auth_mod.h"
+#include "dauth_nonce.h"
 
 
 /*

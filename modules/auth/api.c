@@ -27,7 +27,7 @@
 #include "../../str.h"
 #include "../../ut.h"
 #include "auth_mod.h"
-#include "nonce.h"
+#include "../../lib/digest_auth/dauth_nonce.h"
 #include "common.h"
 #include "api.h"
 #include "rpid.h"
