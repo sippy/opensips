@@ -28,8 +28,7 @@
 #include <time.h>
 
 struct nonce_context {
-        str_const secret;
-        char* sec_rand;
+        str_const secret; /* secret phrase used to generate nonce */
         int disable_nonce_check;
         int nonce_len;
 };
@@ -70,5 +69,7 @@ int is_nonce_stale(const str_const * _nonce);
 struct nonce_context *dauth_nonce_context_new(int disable_nonce_check);
 void dauth_nonce_context_dtor(struct nonce_context *);
 int generate_random_secret(struct nonce_context *ncp);
+int dauth_nonce_context_init(struct nonce_context *ncp);
+void dauth_child_reseed(void);
 
 #endif /* NONCE_H */

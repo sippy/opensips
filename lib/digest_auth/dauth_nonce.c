@@ -21,15 +21,22 @@
  */
 
 
+#include <assert.h>
 #include <time.h>
 #include <string.h>
 #include <sys/types.h>
 #include <netinet/in.h>
+
+#include <openssl/err.h>
+#include <openssl/evp.h>
+#include <openssl/rand.h>
+
 #include "../../md5global.h"
 #include "../../md5.h"
 #include "../../dprint.h"
 #include "../../ut.h"
 #include "../../timer.h"
+
 #include "dauth_nonce.h"
 
 #define RAND_SECRET_LEN 32
@@ -37,6 +44,12 @@
  * Length of nonce string in bytes
  */
 #define NONCE_LEN (16+32)
+
+struct nonce_context_priv {
+	struct nonce_context pub;
+	char* sec_rand;
+	EVP_CIPHER_CTX *ectx, *dctx;
+};
 
 /*
  * Convert an integer to its hex representation,
@@ -98,7 +111,7 @@ static inline int hex2integer(const char* _s)
  * Nonce value consists of the expires time (in seconds since 1.1 1970)
  * and a secret phrase
  */
-void calc_nonce(const struct nonce_context *ncp, char* _nonce,
+void calc_nonce(const struct nonce_context *pub, char* _nonce,
     const struct nonce_params *npp)
 {
 	MD5_CTX ctx;
@@ -110,14 +123,14 @@ void calc_nonce(const struct nonce_context *ncp, char* _nonce,
 
 	integer2hex(_nonce, npp->expires);
 
-	if(!ncp->disable_nonce_check) {
+	if(!pub->disable_nonce_check) {
 		integer2hex(_nonce + 8, npp->index);
 		offset = 16;
 	}
 
     MD5Update(&ctx, _nonce, offset);
 
-	MD5Update(&ctx, ncp->secret.s, ncp->secret.len);
+	MD5Update(&ctx, pub->secret.s, pub->secret.len);
 	MD5Final(bin, &ctx);
 	string2hex(bin, 16, _nonce + offset);
 	_nonce[offset + 32] = '\0';
@@ -145,7 +158,7 @@ time_t get_nonce_expires(const str_const* _n)
  * Check, if the nonce received from client is
  * correct
  */
-int check_nonce(const struct nonce_context *ncp, const str_const * _nonce)
+int check_nonce(const struct nonce_context *pub, const str_const * _nonce)
 {
 	char non[NONCE_LEN + 1];
 	struct nonce_params np = {.index = 0};
@@ -154,19 +167,19 @@ int check_nonce(const struct nonce_context *ncp, const str_const * _nonce)
 		return -1;  /* Invalid nonce */
 	}
 
-	if (_nonce->len != ncp->nonce_len) {
+	if (_nonce->len != pub->nonce_len) {
 		return 1; /* Lengths must be equal */
 	}
 
 	np.expires = get_nonce_expires(_nonce);
-    if(!ncp->disable_nonce_check)
+    if(!pub->disable_nonce_check)
 		np.index = get_nonce_index(_nonce);
 
-    calc_nonce(ncp, non, &np);
+    calc_nonce(pub, non, &np);
 
 
 	LM_DBG("comparing [%.*s] and [%.*s]\n",
-			_nonce->len, ZSW(_nonce->s), ncp->nonce_len, non);
+			_nonce->len, ZSW(_nonce->s), pub->nonce_len, non);
     if (!memcmp(non, _nonce->s, _nonce->len)) {
 		return 0;
 	}
@@ -188,47 +201,121 @@ int is_nonce_stale(const str_const * _n)
 	}
 }
 
-int generate_random_secret(struct nonce_context *ncp)
+int generate_random_secret(struct nonce_context *pub)
 {
-	int i;
+	struct nonce_context_priv *self = (typeof(self))pub;
+	int rc;
 
-	ncp->sec_rand = (char*)pkg_malloc(RAND_SECRET_LEN);
-	if (!ncp->sec_rand) {
+	self->sec_rand = (char*)pkg_malloc(RAND_SECRET_LEN);
+	if (!self->sec_rand) {
 		LM_ERR("no pkg memory left\n");
-		return -1;
+		goto e0;
 	}
 
 	/* the generator is seeded from the core */
-
-	for(i = 0; i < RAND_SECRET_LEN; i++) {
-		ncp->sec_rand[i] = 32 + (int)(95.0 * rand() / (RAND_MAX + 1.0));
+	rc = RAND_bytes((unsigned char *)self->sec_rand, RAND_SECRET_LEN);
+	if(rc != 1) {
+		LM_ERR("RAND_bytes() failed, error = %lu\n", ERR_get_error());
+		goto e1;
 	}
 
-	ncp->secret.s = ncp->sec_rand;
-	ncp->secret.len = RAND_SECRET_LEN;
+	pub->secret.s = self->sec_rand;
+	pub->secret.len = RAND_SECRET_LEN;
 
-	/*LM_DBG("Generated secret: '%.*s'\n", ncp->secret.len, ncp->secret.s); */
+	/*LM_DBG("Generated secret: '%.*s'\n", pub->secret.len, pub->secret.s); */
 
 	return 0;
+e1:
+	pkg_free(self->sec_rand);
+	self->sec_rand = NULL;
+e0:
+	return (-1);
+}
+
+int dauth_nonce_context_init(struct nonce_context *pub)
+{
+	struct nonce_context_priv *self = (typeof(self))pub;
+	const unsigned char *key, *iv;
+
+	if (pub->disable_nonce_check)
+		return 0;
+	key = (unsigned char *)pub->secret.s;
+	iv = (unsigned char *)(pub->secret.s + RAND_SECRET_LEN / 2);
+	if (EVP_EncryptInit_ex(self->ectx, EVP_aes_128_ecb(), NULL, key, iv) != 1) {
+		LM_ERR("EVP_EncryptInit_ex() failed\n");
+		goto e0;
+	}
+	assert(EVP_CIPHER_CTX_key_length(self->ectx) == RAND_SECRET_LEN / 2);
+	assert(EVP_CIPHER_CTX_iv_length(self->ectx) == RAND_SECRET_LEN / 2);
+	if (EVP_DecryptInit_ex(self->dctx, EVP_aes_128_ecb(), NULL,  key, iv) != 1) {
+		LM_ERR("EVP_DecryptInit_ex() failed\n");
+		goto e0;
+	}
+
+	return 0;
+e0:
+	return (-1);
+}
+
+void dauth_child_reseed(void)
+{
+	struct {
+		pid_t pid;
+		struct timespec rtime;
+		struct timespec mtime;
+        } seed;
+
+	seed.pid = getpid();
+	clock_gettime(CLOCK_REALTIME_PRECISE, &seed.rtime);
+	clock_gettime(CLOCK_MONOTONIC_PRECISE, &seed.mtime);
+
+	RAND_add(&seed, sizeof(seed), (double)sizeof(seed) * 0.1);
 }
 
 struct nonce_context *dauth_nonce_context_new(int disable_nonce_check)
 {
-	struct nonce_context *rval;
+	struct nonce_context_priv *self;
 
-	rval = pkg_malloc(sizeof(*rval));
-	if (rval == NULL)
-		return (NULL);
-	memset(rval, 0, sizeof(*rval));
-	rval->disable_nonce_check = disable_nonce_check;
-	rval->nonce_len = (!disable_nonce_check) ? NONCE_LEN : NONCE_LEN - 8;
-	return rval;
+	static_assert((typeof(self))&(self->pub) == self);
+
+	self = pkg_malloc(sizeof(*self));
+	if (self == NULL) {
+		LM_ERR("no pkg memory left\n");
+		goto e0;
+	}
+	memset(self, 0, sizeof(*self));
+	if (!disable_nonce_check) {
+		self->ectx = EVP_CIPHER_CTX_new();
+		if (self->ectx == NULL) {
+			LM_ERR("EVP_CIPHER_CTX_new failed\n");
+			goto e1;
+		}
+		self->dctx = EVP_CIPHER_CTX_new();
+		if (self->dctx == NULL) {
+			LM_ERR("EVP_CIPHER_CTX_new failed\n");
+			goto e2;
+		}
+	}
+	self->pub.disable_nonce_check = disable_nonce_check;
+	self->pub.nonce_len = (!disable_nonce_check) ? NONCE_LEN : NONCE_LEN - 8;
+	return &(self->pub);
+e2:
+	if (!disable_nonce_check) EVP_CIPHER_CTX_free(self->ectx);
+e1:
+	pkg_free(self);
+e0:
+	return NULL;
 }
 
-void dauth_nonce_context_dtor(struct nonce_context *ncp)
+void dauth_nonce_context_dtor(struct nonce_context *pub)
 {
+	struct nonce_context_priv *self = (typeof(self))pub;
 
-	if (ncp->sec_rand != NULL)
-		pkg_free(ncp->sec_rand);
-	pkg_free(ncp);
+	if (self->sec_rand != NULL)
+		pkg_free(self->sec_rand);
+	if (self->dctx != NULL)
+		EVP_CIPHER_CTX_free(self->dctx);
+	if (self->ectx != NULL)
+		EVP_CIPHER_CTX_free(self->ectx);
+	pkg_free(self);
 }
