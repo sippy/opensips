@@ -227,7 +227,7 @@ static int mod_init(void)
 	} else {
 		/* Otherwise use the parameter's value */
 		ncp->secret.s = sec_param;
-		ncp->secret.len = strlen(secret.s);
+		ncp->secret.len = strlen(sec_param);
 	}
 
 	if ( init_rpid_avp(rpid_avp_param)<0 ) {
