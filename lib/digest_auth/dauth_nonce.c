@@ -32,6 +32,11 @@
 #include "../../timer.h"
 #include "dauth_nonce.h"
 
+#define RAND_SECRET_LEN 32
+/*
+ * Length of nonce string in bytes
+ */
+#define NONCE_LEN (16+32)
 
 /*
  * Convert an integer to its hex representation,
@@ -69,7 +74,7 @@ static inline void integer2hex(char* _d, int _s)
 /*
  * Convert hex string to integer
  */
-static inline int hex2integer(char* _s)
+static inline int hex2integer(const char* _s)
 {
 	unsigned int i, res = 0;
 
@@ -93,7 +98,8 @@ static inline int hex2integer(char* _s)
  * Nonce value consists of the expires time (in seconds since 1.1 1970)
  * and a secret phrase
  */
-void calc_nonce(char* _nonce, const struct nonce_params *npp)
+void calc_nonce(const struct nonce_context *ncp, char* _nonce,
+    const struct nonce_params *npp)
 {
 	MD5_CTX ctx;
 	unsigned char bin[16];
@@ -104,14 +110,14 @@ void calc_nonce(char* _nonce, const struct nonce_params *npp)
 
 	integer2hex(_nonce, npp->expires);
 
-	if(!disable_nonce_check) {
+	if(!ncp->disable_nonce_check) {
 		integer2hex(_nonce + 8, npp->index);
 		offset = 16;
 	}
 
     MD5Update(&ctx, _nonce, offset);
 
-	MD5Update(&ctx, npp->secret->s, npp->secret->len);
+	MD5Update(&ctx, ncp->secret.s, ncp->secret.len);
 	MD5Final(bin, &ctx);
 	string2hex(bin, 16, _nonce + offset);
 	_nonce[offset + 32] = '\0';
@@ -120,7 +126,7 @@ void calc_nonce(char* _nonce, const struct nonce_params *npp)
 /*
  * Get nonce index
  */
-int get_nonce_index(str* _n)
+int get_nonce_index(const str_const * _n)
 {
     return hex2integer(_n->s + 8);
 }
@@ -129,7 +135,7 @@ int get_nonce_index(str* _n)
 /*
  * Get expiry time from nonce string
  */
-time_t get_nonce_expires(str* _n)
+time_t get_nonce_expires(const str_const* _n)
 {
 	return (time_t)hex2integer(_n->s);
 }
@@ -139,28 +145,28 @@ time_t get_nonce_expires(str* _n)
  * Check, if the nonce received from client is
  * correct
  */
-int check_nonce(str* _nonce, str* _secret)
+int check_nonce(const struct nonce_context *ncp, const str_const * _nonce)
 {
 	char non[NONCE_LEN + 1];
-	struct nonce_params np = {.index = 0, .secret = str2const(_secret)};
+	struct nonce_params np = {.index = 0};
 
 	if (_nonce->s == 0) {
 		return -1;  /* Invalid nonce */
 	}
 
-	if (NONCE_LEN != ((!disable_nonce_check)?_nonce->len:_nonce->len +8)) {
+	if (_nonce->len != ncp->nonce_len) {
 		return 1; /* Lengths must be equal */
 	}
 
 	np.expires = get_nonce_expires(_nonce);
-    if(!disable_nonce_check)
+    if(!ncp->disable_nonce_check)
 		np.index = get_nonce_index(_nonce);
 
-    calc_nonce(non, &np);
+    calc_nonce(ncp, non, &np);
 
 
 	LM_DBG("comparing [%.*s] and [%.*s]\n",
-			_nonce->len, ZSW(_nonce->s), ((!disable_nonce_check)?NONCE_LEN:NONCE_LEN-8), non);
+			_nonce->len, ZSW(_nonce->s), ncp->nonce_len, non);
     if (!memcmp(non, _nonce->s, _nonce->len)) {
 		return 0;
 	}
@@ -171,7 +177,7 @@ int check_nonce(str* _nonce, str* _secret)
 /*
  * Check if a nonce is stale
  */
-int is_nonce_stale(str* _n)
+int is_nonce_stale(const str_const * _n)
 {
 	if (!_n->s) return 0;
 
@@ -180,4 +186,49 @@ int is_nonce_stale(str* _n)
 	} else {
 		return 0;
 	}
+}
+
+int generate_random_secret(struct nonce_context *ncp)
+{
+	int i;
+
+	ncp->sec_rand = (char*)pkg_malloc(RAND_SECRET_LEN);
+	if (!ncp->sec_rand) {
+		LM_ERR("no pkg memory left\n");
+		return -1;
+	}
+
+	/* the generator is seeded from the core */
+
+	for(i = 0; i < RAND_SECRET_LEN; i++) {
+		ncp->sec_rand[i] = 32 + (int)(95.0 * rand() / (RAND_MAX + 1.0));
+	}
+
+	ncp->secret.s = ncp->sec_rand;
+	ncp->secret.len = RAND_SECRET_LEN;
+
+	/*LM_DBG("Generated secret: '%.*s'\n", ncp->secret.len, ncp->secret.s); */
+
+	return 0;
+}
+
+struct nonce_context *dauth_nonce_context_new(int disable_nonce_check)
+{
+	struct nonce_context *rval;
+
+	rval = malloc(sizeof(*rval));
+	if (rval == NULL)
+		return (NULL);
+	memset(rval, 0, sizeof(*rval));
+	rval->disable_nonce_check = disable_nonce_check;
+	rval->nonce_len = (!disable_nonce_check) ? NONCE_LEN : NONCE_LEN - 8;
+	return rval;
+}
+
+void dauth_nonce_context_dtor(struct nonce_context *ncp)
+{
+
+	if (ncp->sec_rand != NULL)
+		free(ncp->sec_rand);
+	free(ncp);
 }

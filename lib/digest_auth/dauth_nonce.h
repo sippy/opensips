@@ -27,45 +27,48 @@
 #include "../../str.h"
 #include <time.h>
 
-
-/*
- * Length of nonce string in bytes
- */
-#define NONCE_LEN (16+32)
+struct nonce_context {
+        str_const secret;
+        char* sec_rand;
+        int disable_nonce_check;
+        int nonce_len;
+};
 
 struct nonce_params {
 	time_t expires;
 	int index;
-	const str_const *secret;
 };
 
 /*
  * Calculate nonce value
  */
-void calc_nonce(char* _nonce, const struct nonce_params *npp);
+void calc_nonce(const struct nonce_context *ncp, char* _nonce,
+    const struct nonce_params *npp);
 
 
 /*
  * Check nonce value received from UA
  */
-int check_nonce(str* _nonce, str* _secret);
+int check_nonce(const struct nonce_context *ncp, const str_const * _nonce);
 
 
 /*
  * Get expiry time from nonce string
  */
-time_t get_nonce_expires(str* _nonce);
+time_t get_nonce_expires(const str_const * _nonce);
 
 /*
  * Get index from nonce string
  */
-int get_nonce_index(str* _nonce);
+int get_nonce_index(const str_const * _nonce);
 
 /*
  * Check if the nonce is stale
  */
-int is_nonce_stale(str* _nonce);
+int is_nonce_stale(const str_const * _nonce);
 
-extern int disable_nonce_check;
+struct nonce_context *dauth_nonce_context_new(int disable_nonce_check);
+void dauth_nonce_context_dtor(struct nonce_context *);
+int generate_random_secret(struct nonce_context *ncp);
 
 #endif /* NONCE_H */

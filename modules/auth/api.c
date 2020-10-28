@@ -215,13 +215,13 @@ auth_result_t pre_auth(struct sip_msg* _m, str* _realm, hdr_types_t _hftype,
 		goto ereply;
 	}
 
-	if (is_nonce_stale(&c->digest.nonce)) {
+	if (is_nonce_stale(str2const(&c->digest.nonce))) {
 		LM_DBG("stale nonce value received\n");
 		c->stale = 1;
 		return STALE_NONCE;
 	}
 
-	if (check_nonce(&c->digest.nonce, &secret) != 0) {
+	if (check_nonce(ncp, str2const(&c->digest.nonce)) != 0) {
 		LM_DBG("invalid nonce value received\n");
 		c->stale = 1;
 		return STALE_NONCE;
@@ -251,9 +251,9 @@ auth_result_t post_auth(struct sip_msg* _m, struct hdr_field* _h)
 		(_m->REQ_METHOD == METHOD_CANCEL))
 		return AUTHORIZED;
 
-	if(!disable_nonce_check) {
+	if(!ncp->disable_nonce_check) {
 		/* Verify if it is the first time this nonce is received */
-		index= get_nonce_index(&c->digest.nonce);
+		index= get_nonce_index(str2const(&c->digest.nonce));
 		if(index== -1) {
 			LM_ERR("failed to extract nonce index\n");
 			return ERROR;

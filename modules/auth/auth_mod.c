@@ -49,9 +49,8 @@
 #include "api.h"
 #include "../../parser/digest/digest_parser.h"
 #include "../../lib/digest_auth/digest_auth_calc.h"
+#include "../../lib/digest_auth/dauth_nonce.h"
 #include "../../lib/dassert.h"
-
-#define RAND_SECRET_LEN 32
 
 #define DEF_RPID_PREFIX ""
 #define DEF_RPID_SUFFIX ";party=calling;id-type=subscriber;screen=yes"
@@ -84,8 +83,7 @@ struct sig_binds sigb;
 char* sec_param    = 0;   /* If the parameter was not used, the secret phrase will be auto-generated */
 unsigned int nonce_expire = 30; /* Nonce lifetime - default 30 seconds */
 
-str secret;
-char* sec_rand = 0;
+struct nonce_context *ncp = NULL;
 
 int auth_calc_ha1 = 0;
 
@@ -114,7 +112,7 @@ char* nonce_buf= NULL;
 int* sec_monit= NULL;
 int* second= NULL;
 int* next_index= NULL;
-int disable_nonce_check = 0;
+static int _disable_nonce_check = 0;
 
 /*
  * Exported functions
@@ -162,7 +160,7 @@ static param_export_t params[] = {
 	{"username_spec",       STR_PARAM, &user_spec_param    },
 	{"password_spec",       STR_PARAM, &passwd_spec_param  },
 	{"calculate_ha1",       INT_PARAM, &auth_calc_ha1      },
-	{"disable_nonce_check", INT_PARAM, &disable_nonce_check},
+	{"disable_nonce_check", INT_PARAM, &_disable_nonce_check},
 	{0, 0, 0}
 };
 
@@ -202,36 +200,6 @@ struct module_exports exports = {
 	0           /* reload confirm function */
 };
 
-
-/*
- * Secret parameter was not used so we generate
- * a random value here
- */
-static inline int generate_random_secret(void)
-{
-	int i;
-
-	sec_rand = (char*)pkg_malloc(RAND_SECRET_LEN);
-	if (!sec_rand) {
-		LM_ERR("no pkg memory left\n");
-		return -1;
-	}
-
-	/* the generator is seeded from the core */
-
-	for(i = 0; i < RAND_SECRET_LEN; i++) {
-		sec_rand[i] = 32 + (int)(95.0 * rand() / (RAND_MAX + 1.0));
-	}
-
-	secret.s = sec_rand;
-	secret.len = RAND_SECRET_LEN;
-
-	/*LM_DBG("Generated secret: '%.*s'\n", secret.len, secret.s); */
-
-	return 0;
-}
-
-
 static int mod_init(void)
 {
 	str stmp;
@@ -243,17 +211,23 @@ static int mod_init(void)
 		return -1;
 	}
 
+	ncp = dauth_nonce_context_new(_disable_nonce_check);
+	if (ncp == NULL) {
+		LM_ERR("can't init nonce generator\n");
+		return -1;
+	}
+
 	/* If the parameter was not used */
 	if (sec_param == 0) {
 		/* Generate secret using random generator */
-		if (generate_random_secret() < 0) {
+		if (generate_random_secret(ncp) < 0) {
 			LM_ERR("failed to generate random secret\n");
 			return -3;
 		}
 	} else {
 		/* Otherwise use the parameter's value */
-		secret.s = sec_param;
-		secret.len = strlen(secret.s);
+		ncp->secret.s = sec_param;
+		ncp->secret.len = strlen(secret.s);
 	}
 
 	if ( init_rpid_avp(rpid_avp_param)<0 ) {
@@ -304,7 +278,7 @@ static int mod_init(void)
 		}
 	}
 
-	if(!disable_nonce_check)
+	if(!ncp->disable_nonce_check)
 	{
 		nonce_lock = (gen_lock_t*)lock_alloc();
 		if(nonce_lock== NULL)
@@ -352,9 +326,9 @@ static int mod_init(void)
 
 static void destroy(void)
 {
-	if (sec_rand) pkg_free(sec_rand);
-
-	if(!disable_nonce_check)
+	if (ncp == NULL)
+		return;
+	if(!ncp->disable_nonce_check)
 	{
 		if(nonce_lock)
 		{
@@ -371,6 +345,7 @@ static void destroy(void)
 		if(next_index)
 			shm_free(next_index);
 	}
+	dauth_nonce_context_dtor(ncp);
 }
 
 static inline int auth_get_ha1(struct sip_msg *msg, dig_cred_t* digest,

@@ -81,9 +81,9 @@ static inline char *build_auth_hf(int _retries, int _stale,
 	str_const stale_param = STR_NULL_const;
 	const str_const digest_realm = str_const_init(DIGEST_REALM);
 	const str_const nonce_param = str_const_init(DIGEST_NONCE);
-	struct nonce_params calc_np = {.secret = str2const(&secret)};
+	struct nonce_params calc_np;
 
-	if(!disable_nonce_check) {
+	if(!ncp->disable_nonce_check) {
 		/* get the nonce index and mark it as used */
 		index= reserve_nonce_index();
 		if(index == -1)
@@ -111,7 +111,7 @@ static inline char *build_auth_hf(int _retries, int _stale,
 	*_len+=digest_realm.len
 		+_realm->len
 		+nonce_param.len
-		+((!disable_nonce_check)?NONCE_LEN:NONCE_LEN-8)
+		+ncp->nonce_len
 		+1 /* '"' */
 		+stale_param.len
 		+qop_param.len
@@ -135,8 +135,8 @@ static inline char *build_auth_hf(int _retries, int _stale,
 	memcpy(p, nonce_param.s, nonce_param.len);p+=nonce_param.len;
 	calc_np.expires = time(0) + nonce_expire;
 	calc_np.index = index;
-	calc_nonce(p, &calc_np);
-	p+=((!disable_nonce_check)?NONCE_LEN:NONCE_LEN-8);
+	calc_nonce(ncp, p, &calc_np);
+	p+=ncp->nonce_len;
 	*p='"';p++;
 	if (_qop) {
 		memcpy(p, qop_param.s, qop_param.len);
