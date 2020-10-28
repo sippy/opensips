@@ -69,6 +69,7 @@ static void destroy(void);
  * Module initialization function prototype
  */
 static int mod_init(void);
+static int child_init(int _rank);
 
 int pv_proxy_authorize(struct sip_msg* msg, str* realm);
 int pv_www_authorize(struct sip_msg* msg, str* realm);
@@ -196,7 +197,7 @@ struct module_exports exports = {
 	mod_init,   /* module initialization function */
 	0,          /* response function */
 	destroy,    /* destroy function */
-	0,          /* child initialization function */
+	child_init, /* child initialization function */
 	0           /* reload confirm function */
 };
 
@@ -229,6 +230,12 @@ static int mod_init(void)
 		ncp->secret.s = sec_param;
 		ncp->secret.len = strlen(sec_param);
 	}
+
+	if (dauth_nonce_context_init(ncp) < 0) {
+		LM_ERR("dauth_nonce_context_init() failed\n");
+		return -1;
+	}
+
 
 	if ( init_rpid_avp(rpid_avp_param)<0 ) {
 		LM_ERR("failed to process rpid AVPs\n");
@@ -322,7 +329,12 @@ static int mod_init(void)
 	return 0;
 }
 
+static int child_init(int _rank)
+{
 
+	dauth_child_reseed();
+	return 0;
+}
 
 static void destroy(void)
 {
