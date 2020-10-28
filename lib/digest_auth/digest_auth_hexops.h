@@ -79,7 +79,7 @@ static inline void cvt_hex128(const char *bin, char *hex, int hashlen, int hashh
 	uint64_t inws[inelem];
 
 	assert(hashlen >= sizeof(inws) && (hashlen % sizeof(inws) == 0));
-	assert(hashhexlen >= (hashlen * 2 + 1));
+	assert(hashhexlen >= (hashlen * 2));
 	memset(&base, '0', sizeof(base));
 	for (int i = 0; i < hashlen; i += sizeof(inws)) {
 		uint64_t outw[inelem * 2];
@@ -97,6 +97,4 @@ static inline void cvt_hex128(const char *bin, char *hex, int hashlen, int hashh
 		}
 		memcpy(hex + (i * 2), &outw, sizeof(outw));
 	}
-
-	hex[hashhexlen] = '\0';
 }
