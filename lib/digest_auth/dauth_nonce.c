@@ -79,7 +79,6 @@ int calc_nonce(const struct nonce_context *pub, char* _nonce,
 {
 	struct nonce_context_priv *self = (typeof(self))pub;
 	unsigned char ebin[RAND_SECRET_LEN + 1];
-	unsigned char *edata = ebin + RAND_SECRET_LEN / 2;
 	int rc, elen;
 	unsigned char dbin[RAND_SECRET_LEN], *bp;
 	unsigned char *riv = dbin;
