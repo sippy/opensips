@@ -89,7 +89,7 @@ static inline char *build_auth_hf(int _retries, int _stale,
 		if(index == -1)
 		{
 			LM_ERR("no more nonces can be generated\n");
-			return 0;
+			goto e0;
 		}
 		LM_DBG("nonce index= %d\n", index);
 	}
@@ -125,8 +125,7 @@ static inline char *build_auth_hf(int _retries, int _stale,
 	p=hf=pkg_malloc(*_len+1);
 	if (!hf) {
 		LM_ERR("no pkg memory left\n");
-		*_len=0;
-		return 0;
+		goto e1;
 	}
 
 	memcpy(p, _hf_name->s, _hf_name->len); p+=_hf_name->len;
@@ -135,7 +134,10 @@ static inline char *build_auth_hf(int _retries, int _stale,
 	memcpy(p, nonce_param.s, nonce_param.len);p+=nonce_param.len;
 	calc_np.expires = time(0) + nonce_expire;
 	calc_np.index = index;
-	calc_nonce(ncp, p, &calc_np);
+	if (calc_nonce(ncp, p, &calc_np) != 0) {
+		LM_ERR("calc_nonce failed\n");
+		goto e2;
+	}
 	p+=ncp->nonce_len;
 	*p='"';p++;
 	if (_qop) {
@@ -157,6 +159,12 @@ static inline char *build_auth_hf(int _retries, int _stale,
 
 	LM_DBG("'%s'\n", hf);
 	return hf;
+e2:
+	pkg_free(hf);
+e1:
+	*_len=0;
+e0:
+	return NULL;
 }
 
 /*
