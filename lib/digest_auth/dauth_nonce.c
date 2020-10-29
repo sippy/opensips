@@ -42,34 +42,18 @@
 /*
  * Length of nonce string in bytes
  */
-#define NONCE_LEN (RAND_SECRET_LEN * 4)
+#define NONCE_LEN       43
 
 struct nonce_context_priv {
 	struct nonce_context pub;
 	char* sec_rand;
 	EVP_CIPHER_CTX *ectx, *dctx;
+	EVP_ENCODE_CTX *b64;
 };
 
-/*
- * Convert hex string to integer
- */
-static inline uint64_t hex2integer(unsigned const char* _s)
-{
-	uint64_t i, res = 0;
-
-	for(i = 0; i < sizeof(i) * 2; i++) {
-		res *= 16;
-		if ((_s[i] >= '0') && (_s[i] <= '9')) {
-			res += _s[i] - '0';
-		} else if ((_s[i] >= 'a') && (_s[i] <= 'f')) {
-			res += _s[i] - 'a' + 10;
-		} else if ((_s[i] >= 'A') && (_s[i] <= 'F')) {
-			res += _s[i] - 'A' + 10;
-		} else return 0;
-	}
-
-	return res;
-}
+static int Base64Encode(const str_const *message, char* b64buffer);
+static int Base64Decode(struct nonce_context_priv *self,
+    const str_const *b64message, unsigned char* obuffer);
 
 static void
 xor_bufs(unsigned char *rb, const unsigned char *ib1, const unsigned char *ib2,
@@ -97,16 +81,18 @@ int calc_nonce(const struct nonce_context *pub, char* _nonce,
     const struct nonce_params *npp)
 {
 	struct nonce_context_priv *self = (typeof(self))pub;
-	unsigned char riv[RAND_SECRET_LEN];
+	unsigned char ebin[RAND_SECRET_LEN * 2];
+	unsigned char *riv = ebin;
+	unsigned char *edata = ebin + RAND_SECRET_LEN;
 	int rc, elen;
 	unsigned char bin[RAND_SECRET_LEN], *bp;
 
-	rc = RAND_bytes(riv, sizeof(riv));
+	rc = RAND_bytes(riv, RAND_SECRET_LEN);
 	assert(rc == 1);
 
-	static_assert(sizeof(npp->expires) + sizeof(npp->index) <= sizeof(riv),
+	static_assert(sizeof(npp->expires) + sizeof(npp->index) <= RAND_SECRET_LEN,
 	    "RAND_SECRET_LEN is too small");
-	static_assert(sizeof(riv) % sizeof(uint64_t) == 0,
+	static_assert(RAND_SECRET_LEN % sizeof(uint64_t) == 0,
 	    "RAND_SECRET_LEN is not multiple of sizeof(uint64_t)");
 	bp = bin;
 	memcpy(bp, &npp->expires, sizeof(npp->expires));
@@ -119,14 +105,14 @@ int calc_nonce(const struct nonce_context *pub, char* _nonce,
 
 	xor_bufs(bin, bin, riv, RAND_SECRET_LEN);
 
-	unsigned char ebin[RAND_SECRET_LEN];
 	elen = 0;
-	rc = EVP_EncryptUpdate(self->ectx, ebin, &elen, bin, sizeof(bin));
-	assert(rc == 1 && elen == sizeof(ebin));
+	rc = EVP_EncryptUpdate(self->ectx, edata, &elen, bin, sizeof(bin));
+	assert(rc == 1 && elen == RAND_SECRET_LEN);
 
-	string2hex(riv, sizeof(riv), _nonce);
-	string2hex(ebin, sizeof(ebin), _nonce + (sizeof(riv) * 2));
-	_nonce[(sizeof(riv) + sizeof(ebin)) * 2] = '\0';
+	const str_const ebin_str = {.s = (const char *)ebin, .len = sizeof(ebin)};
+	rc = Base64Encode(&ebin_str, _nonce);
+	assert(rc == 0);
+	_nonce[NONCE_LEN] = '\0';
 	return (0);
 }
 
@@ -138,15 +124,10 @@ int decr_nonce(const struct nonce_context *pub, const str_const * _n,
 	const unsigned char *bp;
 	unsigned char dbin[RAND_SECRET_LEN];
 	int rc;
-	uint64_t *ip;
 
 	assert(_n->len >= NONCE_LEN);
-	bp = (const unsigned char *)_n->s;
-	for (ip = (uint64_t *)bin; ip < (uint64_t *)(bin + sizeof(bin));
-	    ip++, bp += sizeof(*ip) * 2) {
-		uint64_t oip = hex2integer(bp);
-		memcpy(ip, &oip, sizeof(oip));
-	}
+	rc = Base64Decode(self, _n, bin);
+	assert(rc == 0);
 	int dlen = 0;
 	bp = (const unsigned char *)bin;
 	rc = EVP_DecryptUpdate(self->dctx, dbin, &dlen, bp + RAND_SECRET_LEN,
@@ -271,8 +252,6 @@ int dauth_noncer_init(struct nonce_context *pub)
 	struct nonce_context_priv *self = (typeof(self))pub;
 	const unsigned char *key;
 
-	if (pub->disable_nonce_check)
-		return 0;
 	key = (unsigned char *)pub->secret.s;
 	if (EVP_EncryptInit_ex(self->ectx, EVP_aes_128_ecb(), NULL, key, NULL) != 1) {
 		LM_ERR("EVP_EncryptInit_ex() failed\n");
@@ -286,7 +265,6 @@ int dauth_noncer_init(struct nonce_context *pub)
 	}
 	assert(EVP_CIPHER_CTX_key_length(self->dctx) == RAND_SECRET_LEN);
 	EVP_CIPHER_CTX_set_padding(self->dctx, 0);
-
 	return 0;
 e0:
 	return (-1);
@@ -332,23 +310,29 @@ struct nonce_context *dauth_noncer_new(int disable_nonce_check)
 		goto e0;
 	}
 	memset(self, 0, sizeof(*self));
-	if (!disable_nonce_check) {
-		self->ectx = EVP_CIPHER_CTX_new();
-		if (self->ectx == NULL) {
-			LM_ERR("EVP_CIPHER_CTX_new failed\n");
-			goto e1;
-		}
-		self->dctx = EVP_CIPHER_CTX_new();
-		if (self->dctx == NULL) {
-			LM_ERR("EVP_CIPHER_CTX_new failed\n");
-			goto e2;
-		}
+	self->ectx = EVP_CIPHER_CTX_new();
+	if (self->ectx == NULL) {
+		LM_ERR("EVP_CIPHER_CTX_new failed\n");
+		goto e1;
 	}
+	self->dctx = EVP_CIPHER_CTX_new();
+	if (self->dctx == NULL) {
+		LM_ERR("EVP_CIPHER_CTX_new failed\n");
+		goto e2;
+	}
+	self->b64 = EVP_ENCODE_CTX_new();
+	if (self->b64 == NULL) {
+                LM_ERR("EVP_ENCODE_CTX_new() failed\n");
+		goto e3;
+	}
+
 	self->pub.disable_nonce_check = disable_nonce_check;
 	self->pub.nonce_len = NONCE_LEN;
 	return &(self->pub);
+e3:
+	EVP_CIPHER_CTX_free(self->dctx);
 e2:
-	if (!disable_nonce_check) EVP_CIPHER_CTX_free(self->ectx);
+	EVP_CIPHER_CTX_free(self->ectx);
 e1:
 	pkg_free(self);
 e0:
@@ -365,5 +349,36 @@ void dauth_noncer_dtor(struct nonce_context *pub)
 		EVP_CIPHER_CTX_free(self->dctx);
 	if (self->ectx != NULL)
 		EVP_CIPHER_CTX_free(self->ectx);
+	if (self->b64 != NULL)
+		EVP_ENCODE_CTX_free(self->b64);
 	pkg_free(self);
+}
+
+static int Base64Encode(const str_const *message, char* b64buffer)
+{
+        int rval;
+
+        rval = EVP_EncodeBlock((unsigned char *)b64buffer, (const unsigned char *)message->s,
+            message->len);
+        return rval == (NONCE_LEN + 1) ? 0 : -1;
+}
+
+static int Base64Decode(struct nonce_context_priv *self, const str_const *b64message,
+    unsigned char* obuffer)
+{
+        int rval, olen = 0;
+
+        EVP_DecodeInit(self->b64);
+        rval = EVP_DecodeUpdate(self->b64, obuffer, &olen,
+            (const unsigned char *)b64message->s, b64message->len);
+        if (rval != 1 || olen != 0)
+                return -1;
+        rval = EVP_DecodeUpdate(self->b64, obuffer + olen, &olen,
+            (const unsigned char *)"=", 1);
+        if (rval != 0 || olen != (RAND_SECRET_LEN * 2))
+                return -1;
+        rval = EVP_DecodeFinal(self->b64, obuffer + olen, &olen);
+        if (rval != 1 || olen != 0)
+                return -1;
+        return 0;
 }
