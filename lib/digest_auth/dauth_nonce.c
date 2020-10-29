@@ -42,7 +42,7 @@
 /*
  * Length of nonce string in bytes
  */
-#define NONCE_LEN (RAND_SECRET_LEN * 2)
+#define NONCE_LEN (RAND_SECRET_LEN * 4)
 
 struct nonce_context_priv {
 	struct nonce_context pub;
@@ -140,7 +140,7 @@ int decr_nonce(const struct nonce_context *pub, const str_const * _n,
 	int rc;
 	uint64_t *ip;
 
-	assert(_n->len >= RAND_SECRET_LEN * 2);
+	assert(_n->len >= NONCE_LEN);
 	bp = (const unsigned char *)_n->s;
 	for (ip = (uint64_t *)bin; ip < (uint64_t *)(bin + sizeof(bin));
 	    ip++, bp += sizeof(*ip) * 2) {
@@ -151,10 +151,12 @@ int decr_nonce(const struct nonce_context *pub, const str_const * _n,
 	bp = (const unsigned char *)bin;
 	rc = EVP_DecryptUpdate(self->dctx, dbin, &dlen, bp + RAND_SECRET_LEN,
 	    RAND_SECRET_LEN);
-	assert(rc == 1 && dlen == sizeof(dbin));
+	assert(rc == 1);
+	assert(dlen == sizeof(dbin));
 
-	xor_bufs(dbin, dbin, bin, RAND_SECRET_LEN);
+	xor_bufs(dbin, dbin, bp, RAND_SECRET_LEN);
 
+	bp = (const unsigned char *)dbin;
 	memcpy(&npp->expires, bp, sizeof(npp->expires));
 	bp += sizeof(npp->expires);
 	if(!pub->disable_nonce_check) {
