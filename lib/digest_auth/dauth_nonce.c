@@ -349,11 +349,11 @@ void dauth_noncer_dtor(struct nonce_context *pub)
 
 static int Base64Encode(const str_const *message, char* b64buffer)
 {
-        int rval;
+	int rval;
 
-        rval = EVP_EncodeBlock((unsigned char *)b64buffer, (const unsigned char *)message->s,
-            message->len);
-        return rval == (NONCE_LEN + 1) ? 0 : -1;
+	rval = EVP_EncodeBlock((unsigned char *)b64buffer, (const unsigned char *)message->s,
+	    message->len);
+	return (rval == NONCE_LEN) ? 0 : -1;
 }
 
 static int Base64Decode(const str_const *b64message, unsigned char* obuffer)
