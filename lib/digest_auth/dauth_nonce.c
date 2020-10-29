@@ -55,10 +55,13 @@ struct nonce_context_priv {
 };
 
 struct nonce_payload {
-	time_t expires;
 	int index;
-	int qop:2;
+	unsigned int qop:2;
 	alg_t alg:3;
+	struct {
+		time_t  sec:34;
+		unsigned int usec:20;
+	} expires;
 } __attribute__((__packed__));
 
 static_assert(sizeof(struct nonce_payload) <= RAND_SECRET_LEN / 2,
@@ -89,7 +92,7 @@ int calc_nonce(const struct nonce_context *pub, char* _nonce,
 	bp = dbin + RAND_SECRET_LEN / 2;
 	struct nonce_payload npl;
 	memset(&npl, 0, sizeof(npl));
-	npl.expires = npp->expires;
+	npl.expires.sec = npp->expires;
 	if(!pub->disable_nonce_check) {
 		npl.index = npp->index;
 	}
@@ -131,12 +134,13 @@ int decr_nonce(const struct nonce_context *pub, const str_const * _n,
 	bp = (const unsigned char *)dbin + RAND_SECRET_LEN / 2;
 	struct nonce_payload npl;
 	memcpy(&npl, bp, sizeof(npl));
-	npp->expires = npl.expires;
+	npp->expires = npl.expires.sec;
 	if(!pub->disable_nonce_check) {
 		npp->index = npl.index;
 	} else {
 		assert(npl.index == 0);
 	}
+	assert(npl.expires.usec == 0);
 	assert(npl.qop == 0);
 	assert(npl.alg == 0);
 	bp += sizeof(npl);
