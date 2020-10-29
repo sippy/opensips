@@ -1,6 +1,7 @@
 /*
  * Nonce related functions
  *
+ * Copyright (C) 2020 Maksym Sobolyev
  * Copyright (C) 2001-2003 FhG Fokus
  *
  * This file is part of opensips, a free SIP server.
@@ -31,15 +32,13 @@
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 
-#include "../../md5global.h"
-#include "../../md5.h"
 #include "../../dprint.h"
 #include "../../ut.h"
 #include "../../timer.h"
 
 #include "dauth_nonce.h"
 
-#define RAND_SECRET_LEN 32
+#define RAND_SECRET_LEN 16
 /*
  * Length of nonce string in bytes
  */
@@ -52,46 +51,13 @@ struct nonce_context_priv {
 };
 
 /*
- * Convert an integer to its hex representation,
- * destination array must be at least 8 bytes long,
- * this string is NOT zero terminated
- */
-static inline void integer2hex(char* _d, int _s)
-{
-	int i;
-	unsigned char j;
-	char* s;
-
-	_s = htonl(_s);
-	s = (char*)&_s;
-
-	for (i = 0; i < 4; i++) {
-
-		j = (s[i] >> 4) & 0xf;
-		if (j <= 9) {
-			_d[i * 2] = (j + '0');
-		} else {
-			_d[i * 2] = (j + 'a' - 10);
-		}
-
-		j = s[i] & 0xf;
-		if (j <= 9) {
-			_d[i * 2 + 1] = (j + '0');
-		} else {
-		       _d[i * 2 + 1] = (j + 'a' - 10);
-		}
-	}
-}
-
-
-/*
  * Convert hex string to integer
  */
-static inline int hex2integer(const char* _s)
+static inline uint64_t hex2integer(unsigned const char* _s)
 {
-	unsigned int i, res = 0;
+	uint64_t i, res = 0;
 
-	for(i = 0; i < 8; i++) {
+	for(i = 0; i < sizeof(i) * 2; i++) {
 		res *= 16;
 		if ((_s[i] >= '0') && (_s[i] <= '9')) {
 			res += _s[i] - '0';
@@ -105,52 +71,125 @@ static inline int hex2integer(const char* _s)
 	return res;
 }
 
+static void
+xor_bufs(unsigned char *rb, const unsigned char *ib1, const unsigned char *ib2,
+    int iblen)
+{
+	uint64_t ebin[iblen / sizeof(uint64_t)];
+	int j = 0;
+
+	for (int i = 0; i < sizeof(ebin); i+= sizeof(uint64_t), j++) {
+		uint64_t iw1, iw2;
+		memcpy(&iw1, ib1 + i, sizeof(iw1));
+		memcpy(&iw2, ib2 + i, sizeof(iw2));
+		ebin[j] = iw1 ^ iw2;
+	}
+	memcpy(rb, ebin, iblen);
+
+}
 
 /*
  * Calculate nonce value
  * Nonce value consists of the expires time (in seconds since 1.1 1970)
  * and a secret phrase
  */
-void calc_nonce(const struct nonce_context *pub, char* _nonce,
+int calc_nonce(const struct nonce_context *pub, char* _nonce,
     const struct nonce_params *npp)
 {
-	MD5_CTX ctx;
-	unsigned char bin[16];
-	unsigned int offset = 8;
+	struct nonce_context_priv *self = (typeof(self))pub;
+	unsigned char riv[RAND_SECRET_LEN];
+	int rc, elen;
+	unsigned char bin[RAND_SECRET_LEN], *bp;
 
-	MD5Init(&ctx);
+	rc = RAND_bytes(riv, sizeof(riv));
+	assert(rc == 1);
 
-
-	integer2hex(_nonce, npp->expires);
-
+	static_assert(sizeof(npp->expires) + sizeof(npp->index) <= sizeof(riv),
+	    "RAND_SECRET_LEN is too small");
+	static_assert(sizeof(riv) % sizeof(uint64_t) == 0,
+	    "RAND_SECRET_LEN is not multiple of sizeof(uint64_t)");
+	bp = bin;
+	memcpy(bp, &npp->expires, sizeof(npp->expires));
+	bp += sizeof(npp->expires);
 	if(!pub->disable_nonce_check) {
-		integer2hex(_nonce + 8, npp->index);
-		offset = 16;
+		memcpy(bp, &npp->index, sizeof(npp->index));
+		bp += sizeof(npp->index);
 	}
+	memset(bp, 0, sizeof(bin) - (bp - bin));
 
-    MD5Update(&ctx, _nonce, offset);
+	xor_bufs(bin, bin, riv, RAND_SECRET_LEN);
 
-	MD5Update(&ctx, pub->secret.s, pub->secret.len);
-	MD5Final(bin, &ctx);
-	string2hex(bin, 16, _nonce + offset);
-	_nonce[offset + 32] = '\0';
+	unsigned char ebin[RAND_SECRET_LEN];
+	elen = 0;
+	rc = EVP_EncryptUpdate(self->ectx, ebin, &elen, bin, sizeof(bin));
+	assert(rc == 1 && elen == sizeof(ebin));
+
+	string2hex(riv, sizeof(riv), _nonce);
+	string2hex(bp, sizeof(ebin), _nonce + (sizeof(riv) * 2));
+	_nonce[(sizeof(riv) + sizeof(ebin)) * 2] = '\0';
+	return (0);
 }
+
+int decr_nonce(const struct nonce_context *pub, const str_const * _n,
+    struct nonce_params *npp)
+{
+	struct nonce_context_priv *self = (typeof(self))pub;
+	unsigned char bin[RAND_SECRET_LEN * 2];
+	const unsigned char *bp;
+	unsigned char dbin[RAND_SECRET_LEN];
+	int rc;
+	uint64_t *ip;
+
+	assert(_n->len >= RAND_SECRET_LEN * 2);
+	bp = (const unsigned char *)_n->s;
+	for (ip = (uint64_t *)bin; ip < (uint64_t *)(bin + sizeof(bin));
+	    ip++, bp += sizeof(*ip) * 2) {
+		uint64_t oip = hex2integer(bp);
+		memcpy(ip, &oip, sizeof(oip));
+	}
+	int dlen = 0;
+	bp = (const unsigned char *)bin;
+	rc = EVP_DecryptUpdate(self->dctx, dbin, &dlen, bp + RAND_SECRET_LEN,
+	    RAND_SECRET_LEN);
+	assert(rc == 1 && dlen == sizeof(dbin));
+
+	xor_bufs(dbin, dbin, bin, RAND_SECRET_LEN);
+
+	memcpy(&npp->expires, bp, sizeof(npp->expires));
+	bp += sizeof(npp->expires);
+	if(!pub->disable_nonce_check) {
+		memcpy(&npp->index, bp, sizeof(npp->index));
+		bp += sizeof(npp->index);
+	}
+	if (sizeof(bin) > (bp - bin)) {
+		assert(bp[0] == 0);
+		assert(memcmp(bp, bp + 1, bp - bin - 1) == 0);
+	}
+	return (0);
+}
+
 
 /*
  * Get nonce index
  */
-int get_nonce_index(const str_const * _n)
+int get_nonce_index(const struct nonce_context *pub, const str_const * _n)
 {
-    return hex2integer(_n->s + 8);
+	struct nonce_params np;
+
+	decr_nonce(pub, _n, &np);
+	return (np.index);
 }
 
 
 /*
  * Get expiry time from nonce string
  */
-time_t get_nonce_expires(const str_const* _n)
+time_t get_nonce_expires(const struct nonce_context *pub, const str_const* _n)
 {
-	return (time_t)hex2integer(_n->s);
+	struct nonce_params np;
+
+	decr_nonce(pub, _n, &np);
+	return (np.expires);
 }
 
 
@@ -160,7 +199,6 @@ time_t get_nonce_expires(const str_const* _n)
  */
 int check_nonce(const struct nonce_context *pub, const str_const * _nonce)
 {
-	char non[NONCE_LEN + 1];
 	struct nonce_params np = {.index = 0};
 
 	if (_nonce->s == 0) {
@@ -171,30 +209,24 @@ int check_nonce(const struct nonce_context *pub, const str_const * _nonce)
 		return 1; /* Lengths must be equal */
 	}
 
-	np.expires = get_nonce_expires(_nonce);
-    if(!pub->disable_nonce_check)
-		np.index = get_nonce_index(_nonce);
+	if (decr_nonce(pub, _nonce, &np) != 0)
+		return 2;
 
-    calc_nonce(pub, non, &np);
+	if(pub->disable_nonce_check && np.index != 0)
+		return 2;
 
-
-	LM_DBG("comparing [%.*s] and [%.*s]\n",
-			_nonce->len, ZSW(_nonce->s), pub->nonce_len, non);
-    if (!memcmp(non, _nonce->s, _nonce->len)) {
-		return 0;
-	}
-	return 2;
+	return 0;
 }
 
 
 /*
  * Check if a nonce is stale
  */
-int is_nonce_stale(const str_const * _n)
+int is_nonce_stale(const struct nonce_context *pub, const str_const * _n)
 {
 	if (!_n->s) return 0;
 
-	if (get_nonce_expires(_n) < time(0)) {
+	if (get_nonce_expires(pub, _n) < time(0)) {
 		return 1;
 	} else {
 		return 0;
@@ -244,11 +276,12 @@ int dauth_noncer_init(struct nonce_context *pub)
 		LM_ERR("EVP_EncryptInit_ex() failed\n");
 		goto e0;
 	}
-	assert(EVP_CIPHER_CTX_key_length(self->ectx) == RAND_SECRET_LEN / 2);
+	assert(EVP_CIPHER_CTX_key_length(self->ectx) == RAND_SECRET_LEN);
 	if (EVP_DecryptInit_ex(self->dctx, EVP_aes_128_ecb(), NULL,  key, NULL) != 1) {
 		LM_ERR("EVP_DecryptInit_ex() failed\n");
 		goto e0;
 	}
+	assert(EVP_CIPHER_CTX_key_length(self->dctx) == RAND_SECRET_LEN);
 
 	return 0;
 e0:
@@ -287,7 +320,7 @@ struct nonce_context *dauth_noncer_new(int disable_nonce_check)
 	struct nonce_context_priv *self;
 
 	static_assert(offsetof(typeof(*self), pub) == 0,
-	    "offsetof(struct nonce_context_priv, pub) == 0");
+	    "offsetof(struct nonce_context_priv, pub) != 0");
 
 	self = pkg_malloc(sizeof(*self));
 	if (self == NULL) {

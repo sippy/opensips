@@ -41,7 +41,7 @@ struct nonce_params {
 /*
  * Calculate nonce value
  */
-void calc_nonce(const struct nonce_context *ncp, char* _nonce,
+int calc_nonce(const struct nonce_context *ncp, char* _nonce,
     const struct nonce_params *npp);
 
 
@@ -54,17 +54,20 @@ int check_nonce(const struct nonce_context *ncp, const str_const * _nonce);
 /*
  * Get expiry time from nonce string
  */
-time_t get_nonce_expires(const str_const * _nonce);
+time_t get_nonce_expires(const struct nonce_context *ncp,
+    const str_const * _nonce);
 
 /*
  * Get index from nonce string
  */
-int get_nonce_index(const str_const * _nonce);
+int get_nonce_index(const struct nonce_context *ncp,
+    const str_const * _nonce);
 
 /*
  * Check if the nonce is stale
  */
-int is_nonce_stale(const str_const * _nonce);
+int is_nonce_stale(const struct nonce_context *ncp,
+    const str_const * _nonce);
 
 struct nonce_context *dauth_noncer_new(int disable_nonce_check);
 void dauth_noncer_dtor(struct nonce_context *);
