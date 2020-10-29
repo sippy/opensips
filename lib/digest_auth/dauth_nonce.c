@@ -42,7 +42,7 @@
 /*
  * Length of nonce string in bytes
  */
-#define NONCE_LEN (16+32)
+#define NONCE_LEN (RAND_SECRET_LEN * 2)
 
 struct nonce_context_priv {
 	struct nonce_context pub;
@@ -341,7 +341,7 @@ struct nonce_context *dauth_noncer_new(int disable_nonce_check)
 		}
 	}
 	self->pub.disable_nonce_check = disable_nonce_check;
-	self->pub.nonce_len = (!disable_nonce_check) ? NONCE_LEN : NONCE_LEN - 8;
+	self->pub.nonce_len = NONCE_LEN;
 	return &(self->pub);
 e2:
 	if (!disable_nonce_check) EVP_CIPHER_CTX_free(self->ectx);
