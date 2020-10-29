@@ -146,9 +146,10 @@ int decr_nonce(const struct nonce_context *pub, const str_const * _n,
 		memcpy(&npp->index, bp, sizeof(npp->index));
 		bp += sizeof(npp->index);
 	}
-	if (sizeof(dbin) > (bp - dbin)) {
+	int tailbytes = sizeof(dbin) - (bp - dbin);
+	if (tailbytes > 0) {
 		assert(bp[0] == 0);
-		assert(memcmp(bp, bp + 1, bp - dbin - 1) == 0);
+		assert(tailbytes < 2 || memcmp(bp, bp + 1, tailbytes - 1) == 0);
 	}
 	return (0);
 }
