@@ -99,7 +99,7 @@ int calc_nonce(const struct nonce_context *pub, char* _nonce,
 	memset(bp, 0, sizeof(dbin) - (bp - dbin));
 
 	elen = 0;
-	rc = EVP_EncryptUpdate(self->ectx, edata, &elen, dbin, sizeof(dbin));
+	rc = EVP_EncryptUpdate(self->ectx, ebin, &elen, dbin, sizeof(dbin));
 	assert(rc == 1 && elen == sizeof(dbin));
 
 	ebin[sizeof(ebin) - 1] = '\0';
