@@ -235,20 +235,17 @@ e0:
 int dauth_noncer_init(struct nonce_context *pub)
 {
 	struct nonce_context_priv *self = (typeof(self))pub;
-	const unsigned char *key, *iv;
+	const unsigned char *key;
 
 	if (pub->disable_nonce_check)
 		return 0;
 	key = (unsigned char *)pub->secret.s;
-	iv = (unsigned char *)(pub->secret.s + RAND_SECRET_LEN / 2);
-	if (EVP_EncryptInit_ex(self->ectx, EVP_aes_128_ecb(), NULL, key, iv) != 1) {
+	if (EVP_EncryptInit_ex(self->ectx, EVP_aes_128_ecb(), NULL, key, NULL) != 1) {
 		LM_ERR("EVP_EncryptInit_ex() failed\n");
 		goto e0;
 	}
 	assert(EVP_CIPHER_CTX_key_length(self->ectx) == RAND_SECRET_LEN / 2);
-	LM_ERR("EVP_CIPHER_CTX_iv_length(self->ectx) = %d\n", EVP_CIPHER_CTX_iv_length(self->ectx));
-	assert(EVP_CIPHER_CTX_iv_length(self->ectx) == RAND_SECRET_LEN / 2);
-	if (EVP_DecryptInit_ex(self->dctx, EVP_aes_128_ecb(), NULL,  key, iv) != 1) {
+	if (EVP_DecryptInit_ex(self->dctx, EVP_aes_128_ecb(), NULL,  key, NULL) != 1) {
 		LM_ERR("EVP_DecryptInit_ex() failed\n");
 		goto e0;
 	}
