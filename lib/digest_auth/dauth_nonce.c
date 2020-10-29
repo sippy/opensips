@@ -288,7 +288,7 @@ struct nonce_context *dauth_noncer_new(int disable_nonce_check)
 {
 	struct nonce_context_priv *self;
 
-	static_assert((typeof(self))&(self->pub) == self);
+	static_assert((typeof(self))&(self->pub) == self, "(typeof(self))&(self->pub)");
 
 	self = pkg_malloc(sizeof(*self));
 	if (self == NULL) {
