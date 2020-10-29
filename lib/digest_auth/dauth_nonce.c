@@ -279,11 +279,13 @@ int dauth_noncer_init(struct nonce_context *pub)
 		goto e0;
 	}
 	assert(EVP_CIPHER_CTX_key_length(self->ectx) == RAND_SECRET_LEN);
+	EVP_CIPHER_CTX_set_padding(self->ectx, 0);
 	if (EVP_DecryptInit_ex(self->dctx, EVP_aes_128_ecb(), NULL,  key, NULL) != 1) {
 		LM_ERR("EVP_DecryptInit_ex() failed\n");
 		goto e0;
 	}
 	assert(EVP_CIPHER_CTX_key_length(self->dctx) == RAND_SECRET_LEN);
+	EVP_CIPHER_CTX_set_padding(self->dctx, 0);
 
 	return 0;
 e0:
