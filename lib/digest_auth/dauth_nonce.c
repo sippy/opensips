@@ -42,18 +42,19 @@
 /*
  * Length of nonce string in bytes
  */
-#define NONCE_LEN       43
+#define NONCE_LEN       44
+
+static_assert((NONCE_LEN * 6) % 8 == 0, "NONCE_LEN should not be padded");
+static_assert((NONCE_LEN * 6) / 8 >= RAND_SECRET_LEN * 2, "NONCE_LEN is too small");
 
 struct nonce_context_priv {
 	struct nonce_context pub;
 	char* sec_rand;
 	EVP_CIPHER_CTX *ectx, *dctx;
-	EVP_ENCODE_CTX *b64;
 };
 
 static int Base64Encode(const str_const *message, char* b64buffer);
-static int Base64Decode(struct nonce_context_priv *self,
-    const str_const *b64message, unsigned char* obuffer);
+static int Base64Decode(const str_const *b64message, unsigned char* obuffer);
 
 static void
 xor_bufs(unsigned char *rb, const unsigned char *ib1, const unsigned char *ib2,
@@ -81,7 +82,7 @@ int calc_nonce(const struct nonce_context *pub, char* _nonce,
     const struct nonce_params *npp)
 {
 	struct nonce_context_priv *self = (typeof(self))pub;
-	unsigned char ebin[RAND_SECRET_LEN * 2];
+	unsigned char ebin[RAND_SECRET_LEN * 2 + 1];
 	unsigned char *riv = ebin;
 	unsigned char *edata = ebin + RAND_SECRET_LEN;
 	int rc, elen;
@@ -109,6 +110,7 @@ int calc_nonce(const struct nonce_context *pub, char* _nonce,
 	rc = EVP_EncryptUpdate(self->ectx, edata, &elen, bin, sizeof(bin));
 	assert(rc == 1 && elen == RAND_SECRET_LEN);
 
+	ebin[sizeof(ebin) - 1] = '\0';
 	const str_const ebin_str = {.s = (const char *)ebin, .len = sizeof(ebin)};
 	rc = Base64Encode(&ebin_str, _nonce);
 	assert(rc == 0);
@@ -120,13 +122,13 @@ int decr_nonce(const struct nonce_context *pub, const str_const * _n,
     struct nonce_params *npp)
 {
 	struct nonce_context_priv *self = (typeof(self))pub;
-	unsigned char bin[RAND_SECRET_LEN * 2];
+	unsigned char bin[RAND_SECRET_LEN * 2 + 1];
 	const unsigned char *bp;
 	unsigned char dbin[RAND_SECRET_LEN];
 	int rc;
 
 	assert(_n->len >= NONCE_LEN);
-	rc = Base64Decode(self, _n, bin);
+	rc = Base64Decode(_n, bin);
 	assert(rc == 0);
 	int dlen = 0;
 	bp = (const unsigned char *)bin;
@@ -144,9 +146,9 @@ int decr_nonce(const struct nonce_context *pub, const str_const * _n,
 		memcpy(&npp->index, bp, sizeof(npp->index));
 		bp += sizeof(npp->index);
 	}
-	if (sizeof(bin) > (bp - bin)) {
+	if (sizeof(dbin) > (bp - dbin)) {
 		assert(bp[0] == 0);
-		assert(memcmp(bp, bp + 1, bp - bin - 1) == 0);
+		assert(memcmp(bp, bp + 1, bp - dbin - 1) == 0);
 	}
 	return (0);
 }
@@ -320,17 +322,10 @@ struct nonce_context *dauth_noncer_new(int disable_nonce_check)
 		LM_ERR("EVP_CIPHER_CTX_new failed\n");
 		goto e2;
 	}
-	self->b64 = EVP_ENCODE_CTX_new();
-	if (self->b64 == NULL) {
-                LM_ERR("EVP_ENCODE_CTX_new() failed\n");
-		goto e3;
-	}
 
 	self->pub.disable_nonce_check = disable_nonce_check;
 	self->pub.nonce_len = NONCE_LEN;
 	return &(self->pub);
-e3:
-	EVP_CIPHER_CTX_free(self->dctx);
 e2:
 	EVP_CIPHER_CTX_free(self->ectx);
 e1:
@@ -349,8 +344,6 @@ void dauth_noncer_dtor(struct nonce_context *pub)
 		EVP_CIPHER_CTX_free(self->dctx);
 	if (self->ectx != NULL)
 		EVP_CIPHER_CTX_free(self->ectx);
-	if (self->b64 != NULL)
-		EVP_ENCODE_CTX_free(self->b64);
 	pkg_free(self);
 }
 
@@ -363,22 +356,15 @@ static int Base64Encode(const str_const *message, char* b64buffer)
         return rval == (NONCE_LEN + 1) ? 0 : -1;
 }
 
-static int Base64Decode(struct nonce_context_priv *self, const str_const *b64message,
-    unsigned char* obuffer)
+static int Base64Decode(const str_const *b64message, unsigned char* obuffer)
 {
-        int rval, olen = 0;
+        int rval;
 
-        EVP_DecodeInit(self->b64);
-        rval = EVP_DecodeUpdate(self->b64, obuffer, &olen,
-            (const unsigned char *)b64message->s, b64message->len);
-        if (rval != 1 || olen != 0)
-                return -1;
-        rval = EVP_DecodeUpdate(self->b64, obuffer + olen, &olen,
-            (const unsigned char *)"=", 1);
-        if (rval != 0 || olen != (RAND_SECRET_LEN * 2))
-                return -1;
-        rval = EVP_DecodeFinal(self->b64, obuffer + olen, &olen);
-        if (rval != 1 || olen != 0)
-                return -1;
+        rval = EVP_DecodeBlock(obuffer, (const unsigned char *)b64message->s,
+            b64message->len);
+	if (rval != (RAND_SECRET_LEN * 2) + 1)
+		return -1;
+	if (obuffer[RAND_SECRET_LEN * 2] != '\0')
+		return -1;
         return 0;
 }
