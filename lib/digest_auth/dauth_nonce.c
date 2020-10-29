@@ -35,6 +35,7 @@
 #include "../../dprint.h"
 #include "../../ut.h"
 #include "../../timer.h"
+#include "../../parser/digest/digest_parser.h"
 
 #include "dauth_nonce.h"
 
@@ -52,6 +53,16 @@ struct nonce_context_priv {
 	char* sec_rand;
 	EVP_CIPHER_CTX *ectx, *dctx;
 };
+
+struct nonce_payload {
+	time_t expires;
+	int index;
+	int qop:2;
+	alg_t alg:3;
+} __attribute__((__packed__));
+
+static_assert(sizeof(struct nonce_payload) <= RAND_SECRET_LEN,
+    "struct nonce_payload is too big");
 
 static int Base64Encode(const str_const *message, char* b64buffer);
 static int Base64Decode(const str_const *b64message, unsigned char* obuffer);
@@ -96,12 +107,14 @@ int calc_nonce(const struct nonce_context *pub, char* _nonce,
 	static_assert(RAND_SECRET_LEN % sizeof(uint64_t) == 0,
 	    "RAND_SECRET_LEN is not multiple of sizeof(uint64_t)");
 	bp = bin;
-	memcpy(bp, &npp->expires, sizeof(npp->expires));
-	bp += sizeof(npp->expires);
+	struct nonce_payload npl;
+	memset(&npl, 0, sizeof(npl));
+	npl.expires = npp->expires;
 	if(!pub->disable_nonce_check) {
-		memcpy(bp, &npp->index, sizeof(npp->index));
-		bp += sizeof(npp->index);
+		npl.index = npp->index;
 	}
+	memcpy(bp, &npl, sizeof(npl));
+	bp += sizeof(npl);
 	memset(bp, 0, sizeof(bin) - (bp - bin));
 
 	xor_bufs(bin, bin, riv, RAND_SECRET_LEN);
@@ -127,9 +140,10 @@ int decr_nonce(const struct nonce_context *pub, const str_const * _n,
 	unsigned char dbin[RAND_SECRET_LEN];
 	int rc;
 
-	assert(_n->len >= NONCE_LEN);
+	assert(_n->len == NONCE_LEN);
 	rc = Base64Decode(_n, bin);
 	assert(rc == 0);
+	assert(bin[sizeof(bin) - 1] == '\0');
 	int dlen = 0;
 	bp = (const unsigned char *)bin;
 	rc = EVP_DecryptUpdate(self->dctx, dbin, &dlen, bp + RAND_SECRET_LEN,
@@ -140,12 +154,17 @@ int decr_nonce(const struct nonce_context *pub, const str_const * _n,
 	xor_bufs(dbin, dbin, bp, RAND_SECRET_LEN);
 
 	bp = (const unsigned char *)dbin;
-	memcpy(&npp->expires, bp, sizeof(npp->expires));
-	bp += sizeof(npp->expires);
+	struct nonce_payload npl;
+	memcpy(&npl, bp, sizeof(npl));
+	npp->expires = npl.expires;
 	if(!pub->disable_nonce_check) {
-		memcpy(&npp->index, bp, sizeof(npp->index));
-		bp += sizeof(npp->index);
+		npp->index = npl.index;
+	} else {
+		assert(npl.index == 0);
 	}
+	assert(npl.qop == 0);
+	assert(npl.alg == 0);
+	bp += sizeof(npl);
 	int tailbytes = sizeof(dbin) - (bp - dbin);
 	if (tailbytes > 0) {
 		assert(bp[0] == 0);
@@ -363,9 +382,5 @@ static int Base64Decode(const str_const *b64message, unsigned char* obuffer)
 
         rval = EVP_DecodeBlock(obuffer, (const unsigned char *)b64message->s,
             b64message->len);
-	if (rval != (RAND_SECRET_LEN * 2) + 1)
-		return -1;
-	if (obuffer[RAND_SECRET_LEN * 2] != '\0')
-		return -1;
-        return 0;
+        return (rval == (RAND_SECRET_LEN * 2) + 1) ? 0 : -1;
 }
