@@ -125,7 +125,7 @@ int calc_nonce(const struct nonce_context *pub, char* _nonce,
 	assert(rc == 1 && elen == sizeof(ebin));
 
 	string2hex(riv, sizeof(riv), _nonce);
-	string2hex(bp, sizeof(ebin), _nonce + (sizeof(riv) * 2));
+	string2hex(ebin, sizeof(ebin), _nonce + (sizeof(riv) * 2));
 	_nonce[(sizeof(riv) + sizeof(ebin)) * 2] = '\0';
 	return (0);
 }
