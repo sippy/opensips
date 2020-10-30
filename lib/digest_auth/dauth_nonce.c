@@ -123,15 +123,15 @@ int decr_nonce(const struct nonce_context *pub, const str_const * _n,
 	int rc;
 
 	if (_n->len != NONCE_LEN)
-		return (-1);
+		return -1;
 	rc = Base64Decode(_n, bin);
-	assert(rc == 0);
-	assert(bin[sizeof(bin) - 1] == '\0');
+	if (rc != 0 || bin[sizeof(bin) - 1] != '\0')
+		return -1;
 	int dlen = 0;
 	bp = (const unsigned char *)bin;
 	rc = EVP_DecryptUpdate(self->dctx, dbin, &dlen, bp, RAND_SECRET_LEN);
-	assert(rc == 1);
-	assert(dlen == sizeof(dbin));
+	if (rc != 1 || dlen != sizeof(dbin))
+		return -1;
 
 	bp = (const unsigned char *)dbin + RAND_SECRET_LEN / 2;
 	struct nonce_payload npl;
@@ -151,10 +151,12 @@ int decr_nonce(const struct nonce_context *pub, const str_const * _n,
 	bp += sizeof(npl);
 	int tailbytes = sizeof(dbin) - (bp - dbin);
 	if (tailbytes > 0) {
-		assert(bp[0] == 0);
-		assert(tailbytes < 2 || bcmp(bp, bp + 1, tailbytes - 1) == 0);
+		if (bp[0] != 0)
+			return -1;
+		if (tailbytes > 1 && bcmp(bp, bp + 1, tailbytes - 1) != 0)
+			return -1;
 	}
-	return (0);
+	return 0;
 }
 
 #define timespeccmp(tvp, uvp, cmp)                                      \
