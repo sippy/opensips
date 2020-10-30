@@ -71,8 +71,8 @@
  * Create {WWW,Proxy}-Authenticate header field
  */
 static inline char *build_auth_hf(int _retries, int _stale,
-    const str_const *_realm, int* _len, int _qop, const str_const *alg_val,
-    const str_const* _hf_name)
+    const str_const *_realm, int* _len, int _qop, alg_t alg,
+    const str_const *alg_val, const str_const* _hf_name)
 {
 	char *hf, *p;
 	int index = 0;
@@ -138,6 +138,7 @@ static inline char *build_auth_hf(int _retries, int _stale,
 	}
 	calc_np.expires.tv_sec += nonce_expire;
 	calc_np.index = index;
+	calc_np.alg = (alg == ALG_UNSPEC) ? ALG_MD5 : alg;
 	if (calc_nonce(ncp, p, &calc_np) != 0) {
 		LM_ERR("calc_nonce failed\n");
 		goto e2;
@@ -214,7 +215,7 @@ static inline int challenge(struct sip_msg* _msg, str *realm, int _qop,
 	}
 
 	nalgs = 0;
-	for (int i = LAST_ALG_SPTD; i >= FIRST_ALG_SPTD; i--) {
+	for (alg_t i = LAST_ALG_SPTD; i >= FIRST_ALG_SPTD; i--) {
 		if ((algmask & (1 << i)) == 0)
 			continue;
 		digest_calc = get_digest_calc(i);
@@ -222,7 +223,8 @@ static inline int challenge(struct sip_msg* _msg, str *realm, int _qop,
 			continue;
 		alg_val = (i == ALG_UNSPEC) ? NULL : &digest_calc->algorithm_val;
 		auth_hfs[nalgs].s = build_auth_hf(0, (cred ? cred->stale : 0),
-		    str2const(realm), &auth_hfs[nalgs].len, _qop, alg_val, _challenge_msg);
+		    str2const(realm), &auth_hfs[nalgs].len, _qop, i, alg_val,
+		    _challenge_msg);
 		if (!auth_hfs[nalgs].s) {
 			LM_ERR("failed to generate nonce\n");
 			ret = -1;

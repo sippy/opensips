@@ -199,9 +199,10 @@ auth_result_t pre_auth(struct sip_msg* _m, str* _realm, hdr_types_t _hftype,
 
 	/* Pointer to the parsed credentials */
 	c = (auth_body_t*)((*_h)->parsed);
+	dig_cred_t *dcp = &(c->digest);
 
 	/* Check credentials correctness here */
-	if (check_dig_cred(&(c->digest)) != E_DIG_OK) {
+	if (check_dig_cred(dcp) != E_DIG_OK) {
 		LM_DBG("received credentials are not filled properly\n");
 		emsg = &str_init(MESSAGE_400);
 		ecode = 400;
@@ -216,8 +217,15 @@ auth_result_t pre_auth(struct sip_msg* _m, str* _realm, hdr_types_t _hftype,
 	}
 
 	struct nonce_params np;
-	if (decr_nonce(ncp, str2const(&c->digest.nonce), &np) != 0) {
+	if (decr_nonce(ncp, str2const(&dcp->nonce), &np) != 0) {
 		LM_DBG("failed to decrypt nonce (stale/invalid)\n");
+		c->stale = 1;
+		return STALE_NONCE;
+	}
+	alg_t ealg = (dcp->alg.alg_parsed == ALG_UNSPEC) ? ALG_MD5 :
+	    dcp->alg.alg_parsed;
+	if (np.alg != ealg) {
+		LM_DBG("nonce does not match algorithm\n");
 		c->stale = 1;
 		return STALE_NONCE;
 	}
