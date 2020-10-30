@@ -215,8 +215,12 @@ static inline int challenge(struct sip_msg* _msg, str *realm, int _qop,
 	}
 
 	nalgs = 0;
+	if (algmask >= ALGFLG_SHA256 && _qop == 0) {
+		/* RFC8760 mandates QOP */
+		_qop = QOP_TYPE_AUTH;
+	}
 	for (int i = LAST_ALG_SPTD; i >= FIRST_ALG_SPTD; i--) {
-		if ((algmask & (1 << i)) == 0)
+		if ((algmask & ALG2ALGFLG(i)) == 0)
 			continue;
 		digest_calc = get_digest_calc(i);
 		if (digest_calc == NULL)
