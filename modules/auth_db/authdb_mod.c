@@ -78,27 +78,19 @@ static int fixup_check_outvar(void **param);
 struct sig_binds sigb;
 
 #define USER_COL "username"
-#define USER_COL_LEN (sizeof(USER_COL) - 1)
-
 #define DOMAIN_COL "domain"
-#define DOMAIN_COL_LEN (sizeof(DOMAIN_COL) - 1)
-
 #define PASS_COL "ha1"
-#define PASS_COL_LEN (sizeof(PASS_COL) - 1)
-
 #define PASS_COL_2 "ha1b"
-#define PASS_COL_2_LEN (sizeof(PASS_COL_2) - 1)
-
 #define DEFAULT_CRED_LIST "rpid"
 
 /*
  * Module parameter variables
  */
-static str db_url           = {NULL,0};
-str user_column             = {USER_COL, USER_COL_LEN};
-str domain_column           = {DOMAIN_COL, DOMAIN_COL_LEN};
-str pass_column             = {PASS_COL, PASS_COL_LEN};
-str pass_column_2           = {PASS_COL_2, PASS_COL_2_LEN};
+static str db_url           = STR_NULL;
+str user_column             = str_init(USER_COL);
+str domain_column           = str_init(DOMAIN_COL);
+str pass_column             = str_init(PASS_COL);
+str pass_column_2           = str_init(PASS_COL_2);
 
 str uri_user_column         = str_init("username");
 str uri_domain_column       = str_init("domain");
