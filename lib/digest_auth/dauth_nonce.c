@@ -34,8 +34,8 @@
 
 #include "../../dprint.h"
 #include "../../ut.h"
-#include "../../timer.h"
 #include "../../parser/digest/digest_parser.h"
+#include "../../lib/dassert.h"
 
 #include "dauth_nonce.h"
 
@@ -53,6 +53,9 @@ struct nonce_context_priv {
 	char* sec_rand;
 	EVP_CIPHER_CTX *ectx, *dctx;
 };
+
+static_assert(offsetof(struct nonce_context_priv, pub) == 0,
+    "nonce_context_priv.pub has to be the first member");
 
 struct nonce_payload {
 	int index;
@@ -87,7 +90,8 @@ int calc_nonce(const struct nonce_context *pub, char* _nonce,
 	unsigned char *riv = dbin;
 
 	rc = RAND_bytes(riv, RAND_SECRET_LEN / 2);
-	assert(rc == 1);
+	if (rc != 1)
+		return -1;
 
 	bp = dbin + RAND_SECRET_LEN / 2;
 	struct nonce_payload npl;
@@ -104,14 +108,16 @@ int calc_nonce(const struct nonce_context *pub, char* _nonce,
 
 	elen = 0;
 	rc = EVP_EncryptUpdate(self->ectx, ebin, &elen, dbin, sizeof(dbin));
-	assert(rc == 1 && elen == sizeof(dbin));
+	if (rc != 1 || elen != sizeof(dbin))
+		return -1;
 
 	ebin[sizeof(ebin) - 1] = '\0';
 	const str_const ebin_str = {.s = (const char *)ebin, .len = sizeof(ebin)};
 	rc = Base64Encode(&ebin_str, _nonce);
-	assert(rc == 0);
+	if (rc != 0)
+		return -1;
 	_nonce[NONCE_LEN] = '\0';
-	return (0);
+	return 0;
 }
 
 int decr_nonce(const struct nonce_context *pub, const str_const * _n,
@@ -223,13 +229,13 @@ int dauth_noncer_init(struct nonce_context *pub)
 		LM_ERR("EVP_EncryptInit_ex() failed\n");
 		goto e0;
 	}
-	assert(EVP_CIPHER_CTX_key_length(self->ectx) == pub->secret.len);
+	DASSERT(EVP_CIPHER_CTX_key_length(self->ectx) == pub->secret.len);
 	EVP_CIPHER_CTX_set_padding(self->ectx, 0);
 	if (EVP_DecryptInit_ex(self->dctx, EVP_aes_256_ecb(), NULL,  key, NULL) != 1) {
 		LM_ERR("EVP_DecryptInit_ex() failed\n");
 		goto e0;
 	}
-	assert(EVP_CIPHER_CTX_key_length(self->dctx) == pub->secret.len);
+	DASSERT(EVP_CIPHER_CTX_key_length(self->dctx) == pub->secret.len);
 	EVP_CIPHER_CTX_set_padding(self->dctx, 0);
 	return 0;
 e0:
@@ -266,9 +272,6 @@ void dauth_noncer_reseed(void)
 struct nonce_context *dauth_noncer_new(int disable_nonce_check)
 {
 	struct nonce_context_priv *self;
-
-	static_assert(offsetof(typeof(*self), pub) == 0,
-	    "offsetof(struct nonce_context_priv, pub) != 0");
 
 	self = pkg_malloc(sizeof(*self));
 	if (self == NULL) {
