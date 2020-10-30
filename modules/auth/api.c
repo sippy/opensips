@@ -30,6 +30,7 @@
 #include "../../lib/digest_auth/dauth_nonce.h"
 #include "common.h"
 #include "api.h"
+#include "challenge.h"
 #include "rpid.h"
 #include "index.h"
 #include "../../lib/digest_auth/digest_auth_calc.h"
@@ -229,7 +230,7 @@ auth_result_t pre_auth(struct sip_msg* _m, str* _realm, hdr_types_t _hftype,
 	}
 	qop_type_t qop = dcp->qop.qop_parsed;
 	if ((np.qop != qop) &&
-	    (np.qop != QOP_TYPE_BOTH || (qop != QOP_AUTH_D && qop != QOP_AUTHINT_D)) {
+	    (np.qop != QOP_TYPE_BOTH || (qop != QOP_AUTH_D && qop != QOP_AUTHINT_D))) {
 		LM_DBG("nonce does not match qop\n");
 		goto stalenonce;
 	}
