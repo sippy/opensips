@@ -36,6 +36,7 @@ struct nonce_context {
 struct nonce_params {
 	struct timespec expires;
 	int index;
+	qop_type_t qop;
 	alg_t alg;
 };
 
