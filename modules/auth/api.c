@@ -221,7 +221,7 @@ auth_result_t pre_auth(struct sip_msg* _m, str* _realm, hdr_types_t _hftype,
 		c->stale = 1;
 		return STALE_NONCE;
 	}
-	if (is_nonce_stale(&np)) {
+	if (is_nonce_stale(&np, nonce_expire)) {
 		LM_DBG("stale nonce value received\n");
 		c->stale = 1;
 		return STALE_NONCE;

@@ -53,7 +53,7 @@ int decr_nonce(const struct nonce_context *pub, const str_const * _n,
 /*
  * Check if the nonce is stale
  */
-int is_nonce_stale(const struct nonce_params *npp);
+int is_nonce_stale(const struct nonce_params *npp, int nonce_expire);
 
 struct nonce_context *dauth_noncer_new(int disable_nonce_check);
 void dauth_noncer_dtor(struct nonce_context *);

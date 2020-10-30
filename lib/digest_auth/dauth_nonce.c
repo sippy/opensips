@@ -165,15 +165,18 @@ int decr_nonce(const struct nonce_context *pub, const str_const * _n,
 /*
  * Check if a nonce is stale
  */
-int is_nonce_stale(const struct nonce_params *npp)
+int is_nonce_stale(const struct nonce_params *npp, int nonce_expire)
 {
 	struct timespec now;
 
 	if (clock_gettime(CLOCK_REALTIME, &now) != 0)
 		return (-1);
+	if (timespeccmp(&now, &npp->expires, >=))
+		return (1);
+	now.tv_sec += nonce_expire;
 	if (timespeccmp(&now, &npp->expires, <))
-		return 0;
-	return 1;
+		return 1;
+	return 0;
 }
 
 int generate_random_secret(struct nonce_context *pub)
