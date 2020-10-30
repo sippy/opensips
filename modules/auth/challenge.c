@@ -138,6 +138,7 @@ static inline char *build_auth_hf(int _retries, int _stale,
 	}
 	calc_np.expires.tv_sec += nonce_expire;
 	calc_np.index = index;
+	calc_np.qop = _qop;
 	calc_np.alg = (alg == ALG_UNSPEC) ? ALG_MD5 : alg;
 	if (calc_nonce(ncp, p, &calc_np) != 0) {
 		LM_ERR("calc_nonce failed\n");

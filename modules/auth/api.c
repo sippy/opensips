@@ -219,20 +219,23 @@ auth_result_t pre_auth(struct sip_msg* _m, str* _realm, hdr_types_t _hftype,
 	struct nonce_params np;
 	if (decr_nonce(ncp, str2const(&dcp->nonce), &np) != 0) {
 		LM_DBG("failed to decrypt nonce (stale/invalid)\n");
-		c->stale = 1;
-		return STALE_NONCE;
+		goto stalenonce;
 	}
 	alg_t ealg = (dcp->alg.alg_parsed == ALG_UNSPEC) ? ALG_MD5 :
 	    dcp->alg.alg_parsed;
 	if (np.alg != ealg) {
 		LM_DBG("nonce does not match algorithm\n");
-		c->stale = 1;
-		return STALE_NONCE;
+		goto stalenonce;
+	}
+	qop_type_t qop = dcp->qop.qop_parsed;
+	if ((np.qop != qop) &&
+	    (np.qop != QOP_TYPE_BOTH || (qop != QOP_AUTH_D && qop != QOP_AUTHINT_D)) {
+		LM_DBG("nonce does not match qop\n");
+		goto stalenonce;
 	}
 	if (is_nonce_stale(&np, nonce_expire)) {
 		LM_DBG("stale nonce value received\n");
-		c->stale = 1;
-		return STALE_NONCE;
+		goto stalenonce;
 	}
 	if(!ncp->disable_nonce_check) {
 		/* Verify if it is the first time this nonce is received */
@@ -240,8 +243,7 @@ auth_result_t pre_auth(struct sip_msg* _m, str* _realm, hdr_types_t _hftype,
 
 		if(!is_nonce_index_valid(np.index)) {
 			LM_DBG("nonce index not valid\n");
-			c->stale = 1;
-			return STALE_NONCE;
+			goto stalenonce;
 		}
 	}
 
@@ -251,6 +253,9 @@ ereply:
 		LM_ERR("failed to send %d reply\n", ecode);
 	}
 	return ERROR;
+stalenonce:
+	c->stale = 1;
+	return STALE_NONCE;
 }
 
 
