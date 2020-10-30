@@ -57,9 +57,9 @@ struct nonce_context_priv {
 struct nonce_payload {
 	int index;
 	unsigned int qop:2;
-	alg_t alg:3;
+	unsigned int alg:3;
 	struct {
-		time_t  sec:34;
+		time_t sec:34;
 		unsigned int usec:20;
 	} expires;
 } __attribute__((__packed__));
@@ -92,7 +92,8 @@ int calc_nonce(const struct nonce_context *pub, char* _nonce,
 	bp = dbin + RAND_SECRET_LEN / 2;
 	struct nonce_payload npl;
 	memset(&npl, 0, sizeof(npl));
-	npl.expires.sec = npp->expires;
+	npl.expires.sec = npp->expires.tv_sec;
+	npl.expires.usec = npp->expires.tv_nsec / 1000;
 	if(!pub->disable_nonce_check) {
 		npl.index = npp->index;
 	}
@@ -121,7 +122,8 @@ int decr_nonce(const struct nonce_context *pub, const str_const * _n,
 	unsigned char dbin[RAND_SECRET_LEN];
 	int rc;
 
-	assert(_n->len == NONCE_LEN);
+	if (_n->len != NONCE_LEN)
+		return (-1);
 	rc = Base64Decode(_n, bin);
 	assert(rc == 0);
 	assert(bin[sizeof(bin) - 1] == '\0');
@@ -134,13 +136,16 @@ int decr_nonce(const struct nonce_context *pub, const str_const * _n,
 	bp = (const unsigned char *)dbin + RAND_SECRET_LEN / 2;
 	struct nonce_payload npl;
 	memcpy(&npl, bp, sizeof(npl));
-	npp->expires = npl.expires.sec;
+	if (npl.expires.usec >= 1000000)
+		return -1;
+	npp->expires.tv_sec = npl.expires.sec;
+	npp->expires.tv_nsec = npl.expires.usec * 1000;
 	if(!pub->disable_nonce_check) {
 		npp->index = npl.index;
 	} else {
-		assert(npl.index == 0);
+		if (npl.index != 0)
+			return -1;
 	}
-	assert(npl.expires.usec == 0);
 	assert(npl.qop == 0);
 	assert(npl.alg == 0);
 	bp += sizeof(npl);
@@ -152,69 +157,23 @@ int decr_nonce(const struct nonce_context *pub, const str_const * _n,
 	return (0);
 }
 
-
-/*
- * Get nonce index
- */
-int get_nonce_index(const struct nonce_context *pub, const str_const * _n)
-{
-	struct nonce_params np;
-
-	decr_nonce(pub, _n, &np);
-	return (np.index);
-}
-
-
-/*
- * Get expiry time from nonce string
- */
-time_t get_nonce_expires(const struct nonce_context *pub, const str_const* _n)
-{
-	struct nonce_params np;
-
-	decr_nonce(pub, _n, &np);
-	return (np.expires);
-}
-
-
-/*
- * Check, if the nonce received from client is
- * correct
- */
-int check_nonce(const struct nonce_context *pub, const str_const * _nonce)
-{
-	struct nonce_params np = {.index = 0};
-
-	if (_nonce->s == 0) {
-		return -1;  /* Invalid nonce */
-	}
-
-	if (_nonce->len != pub->nonce_len) {
-		return 1; /* Lengths must be equal */
-	}
-
-	if (decr_nonce(pub, _nonce, &np) != 0)
-		return 2;
-
-	if(pub->disable_nonce_check && np.index != 0)
-		return 2;
-
-	return 0;
-}
-
+#define timespeccmp(tvp, uvp, cmp)                                      \
+	(((tvp)->tv_sec == (uvp)->tv_sec) ?                             \
+	    ((tvp)->tv_nsec cmp (uvp)->tv_nsec) :                       \
+	    ((tvp)->tv_sec cmp (uvp)->tv_sec))
 
 /*
  * Check if a nonce is stale
  */
-int is_nonce_stale(const struct nonce_context *pub, const str_const * _n)
+int is_nonce_stale(const struct nonce_params *npp)
 {
-	if (!_n->s) return 0;
+	struct timespec now;
 
-	if (get_nonce_expires(pub, _n) < time(0)) {
-		return 1;
-	} else {
+	if (clock_gettime(CLOCK_REALTIME, &now) != 0)
+		return (-1);
+	if (timespeccmp(&now, &npp->expires, <))
 		return 0;
-	}
+	return 1;
 }
 
 int generate_random_secret(struct nonce_context *pub)

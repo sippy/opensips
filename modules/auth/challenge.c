@@ -132,7 +132,11 @@ static inline char *build_auth_hf(int _retries, int _stale,
 	memcpy(p, digest_realm.s, digest_realm.len);p+=digest_realm.len;
 	memcpy(p, _realm->s, _realm->len);p+=_realm->len;
 	memcpy(p, nonce_param.s, nonce_param.len);p+=nonce_param.len;
-	calc_np.expires = time(0) + nonce_expire;
+	if (clock_gettime(CLOCK_REALTIME, &calc_np.expires) != 0) {
+		LM_ERR("clock_gettime failed\n");
+		goto e2;
+	}
+	calc_np.expires.tv_sec += nonce_expire;
 	calc_np.index = index;
 	if (calc_nonce(ncp, p, &calc_np) != 0) {
 		LM_ERR("calc_nonce failed\n");

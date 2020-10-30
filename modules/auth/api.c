@@ -215,16 +215,26 @@ auth_result_t pre_auth(struct sip_msg* _m, str* _realm, hdr_types_t _hftype,
 		goto ereply;
 	}
 
-	if (is_nonce_stale(ncp, str2const(&c->digest.nonce))) {
+	struct nonce_params np;
+	if (decr_nonce(ncp, str2const(&c->digest.nonce), &np) != 0) {
+		LM_DBG("failed to decrypt nonce (stale/invalid)\n");
+		c->stale = 1;
+		return STALE_NONCE;
+	}
+	if (is_nonce_stale(&np)) {
 		LM_DBG("stale nonce value received\n");
 		c->stale = 1;
 		return STALE_NONCE;
 	}
+	if(!ncp->disable_nonce_check) {
+		/* Verify if it is the first time this nonce is received */
+		LM_DBG("nonce index= %d\n", np.index);
 
-	if (check_nonce(ncp, str2const(&c->digest.nonce)) != 0) {
-		LM_DBG("invalid nonce value received\n");
-		c->stale = 1;
-		return STALE_NONCE;
+		if(!is_nonce_index_valid(np.index)) {
+			LM_DBG("nonce index not valid\n");
+			c->stale = 1;
+			return STALE_NONCE;
+		}
 	}
 
 	return DO_AUTHORIZATION;
@@ -242,33 +252,8 @@ ereply:
  */
 auth_result_t post_auth(struct sip_msg* _m, struct hdr_field* _h)
 {
-	auth_body_t* c;
-	int index;
-
-	c = (auth_body_t*)((_h)->parsed);
-
-	if ((_m->REQ_METHOD == METHOD_ACK) ||
-		(_m->REQ_METHOD == METHOD_CANCEL))
-		return AUTHORIZED;
-
-	if(!ncp->disable_nonce_check) {
-		/* Verify if it is the first time this nonce is received */
-		index= get_nonce_index(ncp, str2const(&c->digest.nonce));
-		if(index== -1) {
-			LM_ERR("failed to extract nonce index\n");
-			return ERROR;
-		}
-		LM_DBG("nonce index= %d\n", index);
-
-		if(!is_nonce_index_valid(index)) {
-			LM_DBG("nonce index not valid\n");
-			c->stale = 1;
-			return STALE_NONCE;
-		}
-	}
 
 	return AUTHORIZED;
-
 }
 
 int check_response(const dig_cred_t* _cred, const str* _method,
