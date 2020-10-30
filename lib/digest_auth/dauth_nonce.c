@@ -94,6 +94,7 @@ int calc_nonce(const struct nonce_context *pub, char* _nonce,
 	memset(&npl, 0, sizeof(npl));
 	npl.expires.sec = npp->expires.tv_sec;
 	npl.expires.usec = npp->expires.tv_nsec / 1000;
+	npl.alg = npp->alg;
 	if(!pub->disable_nonce_check) {
 		npl.index = npp->index;
 	}
@@ -140,6 +141,7 @@ int decr_nonce(const struct nonce_context *pub, const str_const * _n,
 		return -1;
 	npp->expires.tv_sec = npl.expires.sec;
 	npp->expires.tv_nsec = npl.expires.usec * 1000;
+	npp->alg = npl.alg;
 	if(!pub->disable_nonce_check) {
 		npp->index = npl.index;
 	} else {
@@ -147,7 +149,6 @@ int decr_nonce(const struct nonce_context *pub, const str_const * _n,
 			return -1;
 	}
 	assert(npl.qop == 0);
-	assert(npl.alg == 0);
 	bp += sizeof(npl);
 	int tailbytes = sizeof(dbin) - (bp - dbin);
 	if (tailbytes > 0) {

@@ -36,6 +36,7 @@ struct nonce_context {
 struct nonce_params {
 	struct timespec expires;
 	int index;
+	alg_t alg;
 };
 
 /*
