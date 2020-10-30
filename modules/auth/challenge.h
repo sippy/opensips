@@ -26,9 +26,9 @@
 
 #include "../../parser/msg_parser.h"
 
-#define QOP_TYPE_AUTH      1
-#define QOP_TYPE_AUTH_INT  2
-#define QOP_TYPE_BOTH      3
+#define QOP_TYPE_AUTH      QOP_AUTH_D
+#define QOP_TYPE_AUTH_INT  QOP_AUTHINT_D
+#define QOP_TYPE_BOTH      (QOP_AUTH_D + QOP_AUTHINT_D)
 
 int fixup_qop(void** param);
 
