@@ -129,7 +129,7 @@ static inline int get_ha1(dig_cred_t* digest, const str* _domain,
 		/* Only plaintext passwords are stored in database,
 		 * we have to calculate HA1 */
 		if (auth_api.calc_HA1(digest->alg.alg_parsed, &_username->whole,
-		    _domain, &result, 0, 0, _ha1) != 0)
+		    _domain, &result, &digest->nonce, &digest->cnonce, _ha1) != 0)
 			return (-1);
 		LM_DBG("HA1 string calculated: %s\n", _ha1->_start);
 	} else {
