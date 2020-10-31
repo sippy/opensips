@@ -720,6 +720,7 @@ int install_sigs(void)
 
 	memset(&act, 0, sizeof act);
 
+#if 0
 	act.sa_handler = sig_usr;
 	if (sigaction(SIGSEGV, &act, &sa_sys_segv) < 0) {
 		LM_INFO("failed to install custom SIGSEGV handler -- corefiles must "
@@ -729,6 +730,7 @@ int install_sigs(void)
 		LM_DBG("override SIGSEGV handler: success\n");
 		sa_sys_is_valid = 1;
 	}
+#endif
 
 	if (signal(SIGINT, sig_usr) == SIG_ERR ) {
 		LM_ERR("no SIGINT signal handler can be installed\n");
