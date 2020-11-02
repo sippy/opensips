@@ -51,6 +51,49 @@
 
 static str auth_500_err = str_init("Server Internal Error");
 
+static str *get_cred_column(alg_t alg, int u_domain_len)
+{
+	str *rval;
+
+	static db_ps_t auth_ha1_ps = NULL;
+	static db_ps_t auth_ha1b_ps = NULL;
+	static db_ps_t auth_ha1_sha256_ps = NULL;
+	static db_ps_t auth_ha1_sha512t256_ps = NULL;
+
+	if (calc_ha1) {
+		rval = &pass_column;
+		CON_PS_REFERENCE(auth_db_handle) = &auth_ha1_ps;
+		return rval;
+	}
+	switch(alg) {
+	case ALG_UNSPEC:
+	case ALG_MD5:
+		/* should we calculate the HA1, and is it calculated with domain? */
+		if (u_domain_len) {
+			rval = &pass_column_2;
+			CON_PS_REFERENCE(auth_db_handle) = &auth_ha1b_ps;
+			break;
+		}
+		/* else PASSTHROUTH */
+	case ALG_MD5SESS:
+		rval = &pass_column;
+		CON_PS_REFERENCE(auth_db_handle) = &auth_ha1_ps;
+		break;
+	case ALG_SHA256:
+	case ALG_SHA256SESS:
+		rval = &hash_column_sha256;
+		CON_PS_REFERENCE(auth_db_handle) = &auth_ha1_sha256_ps;
+		break;
+	case ALG_SHA512_256:
+	case ALG_SHA512_256SESS:
+		rval = &hash_column_sha512t256;
+		CON_PS_REFERENCE(auth_db_handle) = &auth_ha1_sha512t256_ps;
+		break;
+	default:
+		rval = NULL;
+	}
+	return (rval);
+}
 
 static inline int get_ha1(dig_cred_t* digest, const str* _domain,
     const str* _table, HASHHEX* _ha1, db_res_t** res)
@@ -60,8 +103,6 @@ static inline int get_ha1(dig_cred_t* digest, const str* _domain,
 	db_val_t vals[2];
 	db_key_t *col;
 	str result;
-	static db_ps_t auth_ha1_ps = NULL;
-	static db_ps_t auth_ha1b_ps = NULL;
 	struct username* _username = &digest->username;
 
 	int n, nc;
@@ -69,19 +110,16 @@ static inline int get_ha1(dig_cred_t* digest, const str* _domain,
 	col = pkg_malloc(sizeof(*col) * (credentials_n + 1));
 	if (col == NULL) {
 		LM_ERR("no more pkg memory\n");
-		return -1;
+		goto e0;
 	}
 
 	keys[0] = &user_column;
 	keys[1] = &domain_column;
 
-	/* should we calculate the HA1, and is it calculated with domain? */
-	if (_username->domain.len && !calc_ha1) {
-		col[0] = &pass_column_2 ;
-		CON_PS_REFERENCE(auth_db_handle) = &auth_ha1b_ps;
-	} else {
-		col[0] = &pass_column;
-		CON_PS_REFERENCE(auth_db_handle) = &auth_ha1_ps;
+	col[0] = get_cred_column(digest->alg.alg_parsed, _username->domain.len);
+	if (col[0] == NULL) {
+		LM_ERR("unsupported algorithm: %d\n", digest->alg.alg_parsed);
+		goto e1;
 	}
 
 	for (n = 0, cred=credentials; cred ; n++, cred=cred->next) {
@@ -102,16 +140,14 @@ static inline int get_ha1(dig_cred_t* digest, const str* _domain,
 
 	if (auth_dbf.use_table(auth_db_handle, _table) < 0) {
 		LM_ERR("failed to use_table\n");
-		pkg_free(col);
-		return -1;
+		goto e1;
 	}
 
 	n = (use_domain ? 2 : 1);
 	nc = 1 + credentials_n;
 	if (auth_dbf.query(auth_db_handle, keys, 0, vals, col, n, nc, 0, res) < 0) {
 		LM_ERR("failed to query database\n");
-		pkg_free(col);
-		return -1;
+		goto e1;
 	}
 	pkg_free(col);
 
@@ -144,6 +180,10 @@ static inline int get_ha1(dig_cred_t* digest, const str* _domain,
 		LM_DBG("HA1 string calculated: %s\n", _ha1->_start);
 
 	return 0;
+e1:
+	pkg_free(col);
+e0:
+	return -1;
 }
 
 
