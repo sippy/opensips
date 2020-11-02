@@ -50,7 +50,7 @@
  * increment this value if you change the table in
  * an backwards incompatible way
  */
-#define SUBSCRIBER_TABLE_VERSION 7
+#define SUBSCRIBER_TABLE_VERSION 8
 #define URI_TABLE_VERSION        2
 
 /*
