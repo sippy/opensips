@@ -38,17 +38,17 @@
 #define SHA512t256_Init(ctxpp) { \
 	*(ctxpp) = EVP_MD_CTX_new(); \
 	if (*(ctxpp) == NULL) \
-		return (-1); \
+		return -1; \
 	if (EVP_DigestInit_ex(*(ctxpp), EVP_sha512_256(), NULL) != 1) { \
 		EVP_MD_CTX_free(*(ctxpp)); \
-		return (-1); \
+		return -1; \
 	} \
 }
 
 #define SHA512t256_Update(ctxpp, m, mlen) { \
 	if (EVP_DigestUpdate(*(ctxpp), (m), (mlen)) != 1) { \
 		EVP_MD_CTX_free(*(ctxpp)); \
-		return (-1); \
+		return -1; \
 	} \
 }
 
@@ -56,7 +56,7 @@
 	unsigned int olen = 0; \
 	if (EVP_DigestFinal_ex(*(ctxpp), (buf), &olen) != 1) { \
 		EVP_MD_CTX_free(*(ctxpp)); \
-		return (-1); \
+		return -1; \
 	} \
 	DASSERT(olen == HASHLEN_SHA512t256); \
 	EVP_MD_CTX_free(*(ctxpp)); \
@@ -66,8 +66,8 @@
 /*
  * calculate H(A1)
  */
-static int _digest_calc_HA1(const struct digest_auth_credential *crd,
-    const str_const *nonce, const str_const *cnonce, int issess, HASHHEX *sess_key)
+static int digest_calc_HA1(const struct digest_auth_credential *crd,
+    HASHHEX *sess_key)
 {
 	EVP_MD_CTX *Sha512t256Ctx;
 	HASH_SHA512t256 HA1;
@@ -81,31 +81,27 @@ static int _digest_calc_HA1(const struct digest_auth_credential *crd,
 	SHA512t256_Final((unsigned char *)HA1, &Sha512t256Ctx);
 	cvt_hex128(HA1, sess_key->SHA512t256, HASHLEN_SHA512t256, HASHHEXLEN_SHA512t256);
 
-	if (issess != 0)
-	{
-		SHA512t256_Init(&Sha512t256Ctx);
-		SHA512t256_Update(&Sha512t256Ctx, sess_key->SHA512t256, HASHHEXLEN_SHA512t256);
-		SHA512t256_Update(&Sha512t256Ctx, ":", 1);
-		SHA512t256_Update(&Sha512t256Ctx, nonce->s, nonce->len);
-		SHA512t256_Update(&Sha512t256Ctx, ":", 1);
-		SHA512t256_Update(&Sha512t256Ctx, cnonce->s, cnonce->len);
-		SHA512t256_Final((unsigned char *)HA1, &Sha512t256Ctx);
-		cvt_hex128(HA1, sess_key->SHA512t256, HASHLEN_SHA512t256, HASHHEXLEN_SHA512t256);
-	};
-	return (0);
+	return 0;
 
 }
 
-static int digest_calc_HA1(const struct digest_auth_credential *crd,
-   const str_const *nonce, const str_const *cnonce, HASHHEX *sess_key)
+static int digest_calc_HA1sess(const str_const *nonce, const str_const *cnonce,
+    HASHHEX *sess_key)
 {
-	return (_digest_calc_HA1(crd, nonce, cnonce, 0, sess_key));
-}
+	EVP_MD_CTX *Sha512t256Ctx;
+	HASH_SHA512t256 HA1;
 
-static int digest_calc_HA1_s(const struct digest_auth_credential *crd,
-   const str_const *nonce, const str_const *cnonce, HASHHEX *sess_key)
-{
-	return (_digest_calc_HA1(crd, nonce, cnonce, 1, sess_key));
+	SHA512t256_Init(&Sha512t256Ctx);
+	SHA512t256_Update(&Sha512t256Ctx, sess_key->SHA512t256, HASHHEXLEN_SHA512t256);
+	SHA512t256_Update(&Sha512t256Ctx, ":", 1);
+	SHA512t256_Update(&Sha512t256Ctx, nonce->s, nonce->len);
+	SHA512t256_Update(&Sha512t256Ctx, ":", 1);
+	SHA512t256_Update(&Sha512t256Ctx, cnonce->s, cnonce->len);
+	SHA512t256_Final((unsigned char *)HA1, &Sha512t256Ctx);
+	cvt_hex128(HA1, sess_key->SHA512t256, HASHLEN_SHA512t256, HASHHEXLEN_SHA512t256);
+
+        return 0;
+
 }
 
 /*
@@ -139,7 +135,7 @@ static int digest_calc_HA2(const str_const *msg_body, const str_const *method,
 
 	SHA512t256_Final((unsigned char *)HA2, &Sha512t256Ctx);
 	cvt_hex128(HA2, HA2Hex->SHA512t256, HASHLEN_SHA512t256, HASHHEXLEN_SHA512t256);
-	return (0);
+	return 0;
 }
 
 /*
@@ -168,7 +164,7 @@ static int _digest_calc_response(const HASHHEX *ha1, const HASHHEX *ha2,
 	};
 	SHA512t256_Update(&Sha512t256Ctx, ha2->SHA512t256, HASHHEXLEN_SHA512t256);
 	SHA512t256_Final((unsigned char *)response->RespHash.SHA512t256, &Sha512t256Ctx);
-	return (0);
+	return 0;
 }
 
 static int digest_calc_response(const HASHHEX *ha1, const HASHHEX *ha2,
@@ -179,7 +175,7 @@ static int digest_calc_response(const HASHHEX *ha1, const HASHHEX *ha2,
 
 	rval = _digest_calc_response(ha1, ha2, nonce, qop_val, nc, cnonce, response);
 	response->digest_calc = &sha512t256_digest_calc;
-	return (rval);
+	return rval;
 }
 
 static int digest_calc_response_s(const HASHHEX *ha1, const HASHHEX *ha2,
@@ -190,7 +186,7 @@ static int digest_calc_response_s(const HASHHEX *ha1, const HASHHEX *ha2,
 
 	rval = _digest_calc_response(ha1, ha2, nonce, qop_val, nc, cnonce, response);
 	response->digest_calc = &sha512t256sess_digest_calc;
-	return (rval);
+	return rval;
 }
 
 static char *response_hash_fill(const struct digest_auth_response *response, char *hex, int len)
@@ -198,19 +194,20 @@ static char *response_hash_fill(const struct digest_auth_response *response, cha
 	DASSERT(len > HASHHEXLEN_SHA512t256);
 
 	cvt_hex128(response->RespHash.SHA512t256, hex, HASHLEN_SHA512t256, HASHHEXLEN_SHA512t256);
-	return (hex);
+	return hex;
 }
 
 static int response_hash_bcmp(const struct digest_auth_response *response, const str_const *hex)
 {
 	if (hex->len != HASHHEXLEN_SHA512t256)
-		return (1);
+		return 1;
 
 	return bcmp_hex128(response->RespHash.SHA512t256, hex->s, HASHLEN_SHA512t256);
 }
 
 const struct digest_auth_calc sha512t256_digest_calc = {
 	.HA1 = digest_calc_HA1,
+	.HA1sess = NULL,
 	.HA2 = digest_calc_HA2,
 	.response = &digest_calc_response,
 	.response_hash_bcmp = response_hash_bcmp,
@@ -221,7 +218,8 @@ const struct digest_auth_calc sha512t256_digest_calc = {
 };
 
 const struct digest_auth_calc sha512t256sess_digest_calc = {
-	.HA1 = digest_calc_HA1_s,
+	.HA1 = digest_calc_HA1,
+	.HA1sess = digest_calc_HA1sess,
 	.HA2 = digest_calc_HA2,
 	.response = &digest_calc_response_s,
 	.response_hash_bcmp = response_hash_bcmp,

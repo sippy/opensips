@@ -38,8 +38,8 @@
 /*
  * calculate H(A1)
  */
-static int _digest_calc_HA1(const struct digest_auth_credential *crd,
-    const str_const *nonce, const str_const *cnonce, int issess, HASHHEX *sess_key)
+static int digest_calc_HA1(const struct digest_auth_credential *crd,
+    HASHHEX *sess_key)
 {
 	SHA256_CTX Sha256Ctx;
 	HASH_SHA256 HA1;
@@ -53,31 +53,26 @@ static int _digest_calc_HA1(const struct digest_auth_credential *crd,
 	SHA256_Final((unsigned char *)HA1, &Sha256Ctx);
 	cvt_hex128(HA1, sess_key->SHA256, HASHLEN_SHA256, HASHHEXLEN_SHA256);
 
-	if (issess != 0)
-	{
-		SHA256_Init(&Sha256Ctx);
-		SHA256_Update(&Sha256Ctx, sess_key->SHA256, HASHHEXLEN_SHA256);
-		SHA256_Update(&Sha256Ctx, ":", 1);
-		SHA256_Update(&Sha256Ctx, nonce->s, nonce->len);
-		SHA256_Update(&Sha256Ctx, ":", 1);
-		SHA256_Update(&Sha256Ctx, cnonce->s, cnonce->len);
-		SHA256_Final((unsigned char *)HA1, &Sha256Ctx);
-		cvt_hex128(HA1, sess_key->SHA256, HASHLEN_SHA256, HASHHEXLEN_SHA256);
-	};
-	return (0);
+	return 0;
 
 }
 
-static int digest_calc_HA1(const struct digest_auth_credential *crd,
-   const str_const *nonce, const str_const *cnonce, HASHHEX *sess_key)
+static int digest_calc_HA1sess(const str_const *nonce, const str_const *cnonce,
+    HASHHEX *sess_key)
 {
-	return (_digest_calc_HA1(crd, nonce, cnonce, 0, sess_key));
-}
+	SHA256_CTX Sha256Ctx;
+	HASH_SHA256 HA1;
 
-static int digest_calc_HA1_s(const struct digest_auth_credential *crd,
-   const str_const *nonce, const str_const *cnonce, HASHHEX *sess_key)
-{
-	return (_digest_calc_HA1(crd, nonce, cnonce, 1, sess_key));
+	SHA256_Init(&Sha256Ctx);
+	SHA256_Update(&Sha256Ctx, sess_key->SHA256, HASHHEXLEN_SHA256);
+	SHA256_Update(&Sha256Ctx, ":", 1);
+	SHA256_Update(&Sha256Ctx, nonce->s, nonce->len);
+	SHA256_Update(&Sha256Ctx, ":", 1);
+	SHA256_Update(&Sha256Ctx, cnonce->s, cnonce->len);
+	SHA256_Final((unsigned char *)HA1, &Sha256Ctx);
+	cvt_hex128(HA1, sess_key->SHA256, HASHLEN_SHA256, HASHHEXLEN_SHA256);
+
+        return 0;
 }
 
 /*
@@ -111,7 +106,7 @@ static int digest_calc_HA2(const str_const *msg_body, const str_const *method,
 
 	SHA256_Final((unsigned char *)HA2, &Sha256Ctx);
 	cvt_hex128(HA2, HA2Hex->SHA256, HASHLEN_SHA256, HASHHEXLEN_SHA256);
-	return (0);
+	return 0;
 }
 
 /*
@@ -140,7 +135,7 @@ static int _digest_calc_response(const HASHHEX *ha1, const HASHHEX *ha2,
 	};
 	SHA256_Update(&Sha256Ctx, ha2->SHA256, HASHHEXLEN_SHA256);
 	SHA256_Final((unsigned char *)response->RespHash.SHA256, &Sha256Ctx);
-	return (0);
+	return 0;
 }
 
 static int digest_calc_response(const HASHHEX *ha1, const HASHHEX *ha2,
@@ -151,7 +146,7 @@ static int digest_calc_response(const HASHHEX *ha1, const HASHHEX *ha2,
 
 	rval = _digest_calc_response(ha1, ha2, nonce, qop_val, nc, cnonce, response);
 	response->digest_calc = &sha256_digest_calc;
-	return (rval);
+	return rval;
 }
 
 static int digest_calc_response_s(const HASHHEX *ha1, const HASHHEX *ha2,
@@ -162,7 +157,7 @@ static int digest_calc_response_s(const HASHHEX *ha1, const HASHHEX *ha2,
 
 	rval = _digest_calc_response(ha1, ha2, nonce, qop_val, nc, cnonce, response);
 	response->digest_calc = &sha256sess_digest_calc;
-	return (rval);
+	return rval;
 }
 
 static char *response_hash_fill(const struct digest_auth_response *response, char *hex, int len)
@@ -170,19 +165,20 @@ static char *response_hash_fill(const struct digest_auth_response *response, cha
 	DASSERT(len > HASHHEXLEN_SHA256);
 
 	cvt_hex128(response->RespHash.SHA256, hex, HASHLEN_SHA256, HASHHEXLEN_SHA256);
-	return (hex);
+	return hex;
 }
 
 static int response_hash_bcmp(const struct digest_auth_response *response, const str_const *hex)
 {
 	if (hex->len != HASHHEXLEN_SHA256)
-		return (1);
+		return 1;
 
 	return bcmp_hex128(response->RespHash.SHA256, hex->s, HASHLEN_SHA256);
 }
 
 const struct digest_auth_calc sha256_digest_calc = {
 	.HA1 = digest_calc_HA1,
+	.HA1sess = NULL,
 	.HA2 = digest_calc_HA2,
 	.response = &digest_calc_response,
 	.response_hash_bcmp = response_hash_bcmp,
@@ -193,7 +189,8 @@ const struct digest_auth_calc sha256_digest_calc = {
 };
 
 const struct digest_auth_calc sha256sess_digest_calc = {
-	.HA1 = digest_calc_HA1_s,
+	.HA1 = digest_calc_HA1,
+	.HA1sess = digest_calc_HA1sess,
 	.HA2 = digest_calc_HA2,
 	.response = &digest_calc_response_s,
 	.response_hash_bcmp = response_hash_bcmp,

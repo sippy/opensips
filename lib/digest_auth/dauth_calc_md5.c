@@ -38,8 +38,8 @@
 /*
  * calculate H(A1)
  */
-static int _digest_calc_HA1(const struct digest_auth_credential *crd,
-    const str_const *nonce, const str_const *cnonce, int issess, HASHHEX *sess_key)
+static int digest_calc_HA1(const struct digest_auth_credential *crd,
+    HASHHEX *sess_key)
 {
 	MD5_CTX Md5Ctx;
 	HASH_MD5 HA1;
@@ -53,31 +53,24 @@ static int _digest_calc_HA1(const struct digest_auth_credential *crd,
 	MD5Final(HA1, &Md5Ctx);
 	cvt_hex128(HA1, sess_key->MD5, HASHLEN_MD5, HASHHEXLEN_MD5);
 
-	if (issess != 0)
-	{
-		MD5Init(&Md5Ctx);
-		MD5Update(&Md5Ctx, sess_key->MD5, HASHHEXLEN_MD5);
-		MD5Update(&Md5Ctx, ":", 1);
-		MD5Update(&Md5Ctx, nonce->s, nonce->len);
-		MD5Update(&Md5Ctx, ":", 1);
-		MD5Update(&Md5Ctx, cnonce->s, cnonce->len);
-		MD5Final(HA1, &Md5Ctx);
-		cvt_hex128(HA1, sess_key->MD5, HASHLEN_MD5, HASHHEXLEN_MD5);
-	};
-	return (0);
-
+	return 0;
 }
 
-static int digest_calc_HA1(const struct digest_auth_credential *crd,
-   const str_const *nonce, const str_const *cnonce, HASHHEX *sess_key)
+static int digest_calc_HA1sess(const str_const *nonce, const str_const *cnonce,
+    HASHHEX *sess_key)
 {
-	return (_digest_calc_HA1(crd, nonce, cnonce, 0, sess_key));
-}
+	MD5_CTX Md5Ctx;
+	HASH_MD5 HA1;
 
-static int digest_calc_HA1_s(const struct digest_auth_credential *crd,
-   const str_const *nonce, const str_const *cnonce, HASHHEX *sess_key)
-{
-	return(_digest_calc_HA1(crd, nonce, cnonce, 1, sess_key));
+	MD5Init(&Md5Ctx);
+	MD5Update(&Md5Ctx, sess_key->MD5, HASHHEXLEN_MD5);
+	MD5Update(&Md5Ctx, ":", 1);
+	MD5Update(&Md5Ctx, nonce->s, nonce->len);
+	MD5Update(&Md5Ctx, ":", 1);
+	MD5Update(&Md5Ctx, cnonce->s, cnonce->len);
+	MD5Final(HA1, &Md5Ctx);
+	cvt_hex128(HA1, sess_key->MD5, HASHLEN_MD5, HASHHEXLEN_MD5);
+	return 0;
 }
 
 /*
@@ -111,7 +104,7 @@ static int digest_calc_HA2(const str_const *msg_body, const str_const *method,
 
 	MD5Final(HA2, &Md5Ctx);
 	cvt_hex128(HA2, HA2Hex->MD5, HASHLEN_MD5, HASHHEXLEN_MD5);
-	return (0);
+	return 0;
 }
 
 /*
@@ -140,7 +133,7 @@ static int _digest_calc_response(const HASHHEX *ha1, const HASHHEX *ha2,
 	};
 	MD5Update(&Md5Ctx, ha2->MD5, HASHHEXLEN_MD5);
 	MD5Final(response->RespHash.MD5, &Md5Ctx);
-	return (0);
+	return 0;
 }
 
 static int digest_calc_response(const HASHHEX *ha1, const HASHHEX *ha2,
@@ -151,7 +144,7 @@ static int digest_calc_response(const HASHHEX *ha1, const HASHHEX *ha2,
 
 	rval = _digest_calc_response(ha1, ha2, nonce, qop_val, nc, cnonce, response);
 	response->digest_calc = &md5_digest_calc;
-	return (rval);
+	return rval;
 }
 
 static int digest_calc_response_s(const HASHHEX *ha1, const HASHHEX *ha2,
@@ -162,7 +155,7 @@ static int digest_calc_response_s(const HASHHEX *ha1, const HASHHEX *ha2,
 
 	rval = _digest_calc_response(ha1, ha2, nonce, qop_val, nc, cnonce, response);
 	response->digest_calc = &md5sess_digest_calc;
-	return (rval);
+	return rval;
 }
 
 static char *response_hash_fill(const struct digest_auth_response *response, char *hex, int len)
@@ -170,19 +163,20 @@ static char *response_hash_fill(const struct digest_auth_response *response, cha
 	DASSERT(len > HASHHEXLEN_MD5);
 
 	cvt_hex128(response->RespHash.MD5, hex, HASHLEN_MD5, HASHHEXLEN_MD5);
-	return (hex);
+	return hex;
 }
 
 static int response_hash_bcmp(const struct digest_auth_response *response, const str_const *hex)
 {
 	if (hex->len != HASHHEXLEN_MD5)
-		return (1);
+		return 1;
 
 	return bcmp_hex128(response->RespHash.MD5, hex->s, HASHLEN_MD5);
 }
 
 const struct digest_auth_calc md5_digest_calc = {
 	.HA1 = digest_calc_HA1,
+	.HA1sess = NULL,
 	.HA2 = digest_calc_HA2,
 	.response = &digest_calc_response,
 	.response_hash_bcmp = response_hash_bcmp,
@@ -193,7 +187,8 @@ const struct digest_auth_calc md5_digest_calc = {
 };
 
 const struct digest_auth_calc md5sess_digest_calc = {
-	.HA1 = digest_calc_HA1_s,
+	.HA1 = digest_calc_HA1,
+	.HA1sess = digest_calc_HA1sess,
 	.HA2 = digest_calc_HA2,
 	.response = &digest_calc_response_s,
 	.response_hash_bcmp = response_hash_bcmp,

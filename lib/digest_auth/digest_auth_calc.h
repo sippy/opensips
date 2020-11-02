@@ -22,8 +22,10 @@ struct digest_auth_credential;
 struct digest_auth_response;
 
 struct digest_auth_calc {
-	int (*HA1)(const struct digest_auth_credential *, const str_const *,
-	    const str_const *, HASHHEX *) __attribute__ ((warn_unused_result));
+	int (*HA1)(const struct digest_auth_credential *, HASHHEX *)
+	    __attribute__ ((warn_unused_result));
+	int (*HA1sess)(const str_const *, const str_const *, HASHHEX *)
+	    __attribute__ ((warn_unused_result));
 	int (*HA2)(const str_const *, const str_const *, const str_const *,
 	    int, HASHHEX *) __attribute__ ((warn_unused_result));
 	int (*response)(const HASHHEX *ha1, const HASHHEX *ha2,
