@@ -30,7 +30,7 @@
 #include "../../parser/digest/digest_parser.h"
 #include "../../lib/dassert.h"
 
-#include "digest_auth_sha512t256.h"
+#include "dauth_calc_sha512t256.h"
 #include "digest_auth.h"
 #include "digest_auth_calc.h"
 #include "digest_auth_hexops.h"

@@ -30,9 +30,9 @@
 #ifndef _DIGEST_AUTH_H_
 #define _DIGEST_AUTH_H_
 
-#include "digest_auth_md5.h"
-#include "digest_auth_sha256.h"
-#include "digest_auth_sha512t256.h"
+#include "dauth_calc_md5.h"
+#include "dauth_calc_sha256.h"
+#include "dauth_calc_sha512t256.h"
 
 #define WWW_AUTH_CODE       401
 #define WWW_AUTH_HDR        "WWW-Authenticate"
