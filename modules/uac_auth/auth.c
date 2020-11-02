@@ -38,7 +38,7 @@
 #include "../../lib/dassert.h"
 
 #include "uac_auth.h"
-#include "../../lib/digest_auth/digest_auth_calc.h"
+#include "../../lib/digest_auth/dauth_calc.h"
 
 extern int            realm_avp_name;
 extern unsigned short realm_avp_type;

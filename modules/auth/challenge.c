@@ -44,7 +44,7 @@
 #include "api.h"
 #include "../../lib/dassert.h"
 #include "../../lib/digest_auth/digest_auth.h"
-#include "../../lib/digest_auth/digest_auth_calc.h"
+#include "../../lib/digest_auth/dauth_calc.h"
 
 
 /*
