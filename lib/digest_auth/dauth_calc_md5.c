@@ -33,7 +33,7 @@
 #include "dauth_calc_md5.h"
 #include "digest_auth.h"
 #include "digest_auth_calc.h"
-#include "digest_auth_hexops.h"
+#include "dauth_hexops.h"
 
 /*
  * calculate H(A1)
