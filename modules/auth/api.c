@@ -337,8 +337,12 @@ static int auth_calc_HA1(alg_t alg, const str* username, const str* realm,
 		LM_ERR("digest algorithm (%d) unsupported\n", alg);
 		return (-1);
 	}
-	if (digest_calc->HA1(&creds, str2const(nonce), str2const(cnonce), sess_key) != 0)
+	if (digest_calc->HA1(&creds, sess_key) != 0)
 		return (-1);
+	if (digest_calc->HA1sess != NULL)
+		if (digest_calc->HA1sess(str2const(nonce), str2const(cnonce),
+		    sess_key) != 0)
+			return (-1);
 	return (0);
 }
 

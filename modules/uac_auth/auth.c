@@ -276,8 +276,10 @@ int do_uac_auth(str *msg_body, str *method, str *uri, struct uac_credential *crd
 
 		/* do authentication */
 		if (!has_ha1)
-			if (digest_calc->HA1(&crd->auth_data, str2const(&auth->nonce),
-			    &cnonce, &ha1) != 0)
+			if (digest_calc->HA1(&crd->auth_data, &ha1) != 0)
+				return (-1);
+		if (digest_calc->HA1sess != NULL)
+			if (digest_calc->HA1sess(str2const(&auth->nonce), &cnonce, &ha1) != 0)
 				return (-1);
 		if (digest_calc->HA2(str2const(msg_body), str2const(method), str2const(uri),
 		    !(auth->flags&QOP_AUTH), &ha2) != 0)
@@ -291,8 +293,10 @@ int do_uac_auth(str *msg_body, str *method, str *uri, struct uac_credential *crd
 	} else {
 		/* do authentication */
 		if (!has_ha1)
-			if (digest_calc->HA1(&crd->auth_data, str2const(&auth->nonce),
-			    NULL/*cnonce*/, &ha1) != 0)
+			if (digest_calc->HA1(&crd->auth_data, &ha1) != 0)
+				return (-1);
+		if (digest_calc->HA1sess != NULL)
+			if (digest_calc->HA1sess(str2const(&auth->nonce), NULL/*cnonce*/, &ha1) != 0)
 				return (-1);
 		if (digest_calc->HA2(str2const(msg_body), str2const(method), str2const(uri),
 		    0, &ha2) != 0)

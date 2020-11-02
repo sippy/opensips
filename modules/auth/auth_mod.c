@@ -400,25 +400,28 @@ static inline int auth_get_ha1(struct sip_msg *msg, dig_cred_t* digest,
 	} else {
 		return 1;
 	}
+	const struct digest_auth_calc *digest_calc;
+	digest_calc = get_digest_calc(digest->alg.alg_parsed);
+	if (digest_calc == NULL) {
+		LM_ERR("digest algorithm (%d) unsupported\n", digest->alg.alg_parsed);
+		 return -1;
+	}
 	if (auth_calc_ha1) {
-		const struct digest_auth_calc *digest_calc;
 		struct digest_auth_credential creds = {.realm = *_domain,
 		    .user = _username->whole, .passwd = sval.rs};
-
-		digest_calc = get_digest_calc(digest->alg.alg_parsed);
-		if (digest_calc == NULL) {
-			LM_ERR("digest algorithm (%d) unsupported\n", digest->alg.alg_parsed);
-			return -1;
-		}
 		/* Only plaintext passwords are stored in database,
 		 * we have to calculate HA1 */
-		if (digest_calc->HA1(&creds, str2const(&digest->nonce),
-		    str2const(&digest->cnonce), _ha1) != 0)
+		if (digest_calc->HA1(&creds, _ha1) != 0)
 			return -1;
 		LM_DBG("HA1 string calculated: %s\n", _ha1->_start);
 	} else {
 		memcpy(_ha1->_start, sval.rs.s, sval.rs.len);
 		_ha1->_start[sval.rs.len] = '\0';
+	}
+	if (digest_calc->HA1sess != NULL) {
+		if (digest_calc->HA1sess(str2const(&digest->nonce),
+		    str2const(&digest->cnonce), _ha1) != 0)
+			return -1;
 	}
 
 	return 0;
