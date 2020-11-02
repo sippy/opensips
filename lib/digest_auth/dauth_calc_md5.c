@@ -32,7 +32,7 @@
 
 #include "dauth_calc_md5.h"
 #include "digest_auth.h"
-#include "digest_auth_calc.h"
+#include "dauth_calc.h"
 #include "dauth_hexops.h"
 
 /*

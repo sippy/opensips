@@ -21,7 +21,7 @@
 #include "../../parser/digest/digest_parser.h"
 
 #include "digest_auth.h"
-#include "digest_auth_calc.h"
+#include "dauth_calc.h"
 
 const struct digest_auth_calc* get_digest_calc(alg_t algorithm)
 {

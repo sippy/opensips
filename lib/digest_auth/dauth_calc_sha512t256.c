@@ -32,7 +32,7 @@
 
 #include "dauth_calc_sha512t256.h"
 #include "digest_auth.h"
-#include "digest_auth_calc.h"
+#include "dauth_calc.h"
 #include "dauth_hexops.h"
 
 #define SHA512t256_Init(ctxpp) { \
