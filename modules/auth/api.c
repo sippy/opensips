@@ -33,7 +33,7 @@
 #include "challenge.h"
 #include "rpid.h"
 #include "index.h"
-#include "../../lib/digest_auth/digest_auth_calc.h"
+#include "../../lib/digest_auth/dauth_calc.h"
 #include "../../lib/dassert.h"
 
 
@@ -325,25 +325,35 @@ int check_response(const dig_cred_t* _cred, const str* _method,
 	}
 }
 
-static int auth_calc_HA1(alg_t alg, const str* username, const str* realm,
-    const str* password, const str* nonce, const str* cnonce, HASHHEX *sess_key)
+static int auth_calc_HA1(const struct calc_HA1_arg *params, HASHHEX *sess_key)
 {
 	const struct digest_auth_calc *digest_calc;
-	struct digest_auth_credential creds = {.realm = *realm,
-	    .user = *username, .passwd = *password};
 
-	digest_calc = get_digest_calc(alg);
+	digest_calc = get_digest_calc(params->alg);
 	if (digest_calc == NULL) {
-		LM_ERR("digest algorithm (%d) unsupported\n", alg);
-		return (-1);
+		LM_ERR("digest algorithm (%d) unsupported\n", params->alg);
+		return -1;
 	}
-	if (digest_calc->HA1(&creds, sess_key) != 0)
-		return (-1);
+	if (!params->use_hashed) {
+		if (digest_calc->HA1(params->creds.open, sess_key) != 0)
+			return -1;
+	} else {
+		if (params->creds.ha1->len != digest_calc->HASHHEXLEN) {
+			LM_ERR("Incorrect length if pre-hashed credentials "
+			    "for the algorithm \"%s\": %d expected, %d provided\n",
+			    digest_calc->algorithm_val.s, digest_calc->HASHHEXLEN,
+			    params->creds.ha1->len);
+			return -1;
+		}
+		memcpy(sess_key->_start, params->creds.ha1->s,
+		    params->creds.ha1->len);
+	}
 	if (digest_calc->HA1sess != NULL)
-		if (digest_calc->HA1sess(str2const(nonce), str2const(cnonce),
-		    sess_key) != 0)
-			return (-1);
-	return (0);
+		if (digest_calc->HA1sess(str2const(params->nonce),
+		    str2const(params->cnonce), sess_key) != 0)
+			return -1;
+	sess_key->_start[digest_calc->HASHHEXLEN] = '\0';
+	return 0;
 }
 
 int bind_auth(auth_api_t* api)

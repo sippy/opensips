@@ -75,8 +75,18 @@ typedef int (*check_response_t)(const dig_cred_t* _cred, const str* _method,
 int check_response(const dig_cred_t* _cred, const str* _method,
     const str* _msg_body, const HASHHEX* _ha1);
 
-typedef int (*calc_HA1_t)(alg_t _alg, const str* _username, const str* _realm,
-    const str* _password, const str* _nonce, const str* _cnonce, HASHHEX *_sess_key)
+struct calc_HA1_arg {
+	int use_hashed;
+	alg_t alg;
+	union {
+		const struct digest_auth_credential *open;
+		const str *ha1;
+	} creds;
+	const str* nonce;
+	const str* cnonce;
+};
+
+typedef int (*calc_HA1_t)(const struct calc_HA1_arg *params, HASHHEX *_sess_key)
     __attribute__ ((warn_unused_result));
 
 /*

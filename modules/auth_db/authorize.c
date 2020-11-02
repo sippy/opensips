@@ -125,17 +125,23 @@ static inline int get_ha1(dig_cred_t* digest, const str* _domain,
 	result.s = (char*)ROW_VALUES(RES_ROWS(*res))[0].val.string_val;
 	result.len = strlen(result.s);
 
+	struct calc_HA1_arg cprms = {.alg = digest->alg.alg_parsed};
 	if (calc_ha1) {
 		/* Only plaintext passwords are stored in database,
 		 * we have to calculate HA1 */
-		if (auth_api.calc_HA1(digest->alg.alg_parsed, &_username->whole,
-		    _domain, &result, &digest->nonce, &digest->cnonce, _ha1) != 0)
-			return (-1);
-		LM_DBG("HA1 string calculated: %s\n", _ha1->_start);
+		cprms.creds.open = &(const struct digest_auth_credential){
+		    .realm = *_domain, .user = _username->whole, .passwd = result};
+		cprms.use_hashed = 0;
 	} else {
-		memcpy(_ha1->_start, result.s, result.len);
-		_ha1->_start[result.len] = '\0';
+		cprms.creds.ha1 = &result;
+		cprms.use_hashed = 1;
 	}
+	cprms.nonce = &digest->nonce;
+	cprms.cnonce = &digest->cnonce;
+	if (auth_api.calc_HA1(&cprms, _ha1) != 0)
+		return (-1);
+	if (calc_ha1)
+		LM_DBG("HA1 string calculated: %s\n", _ha1->_start);
 
 	return 0;
 }
