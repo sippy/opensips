@@ -75,6 +75,22 @@ static_assert(RAND_SECRET_LEN % sizeof(uint64_t) == 0,
 static int Base64Encode(const str_const *message, char* b64buffer);
 static int Base64Decode(const str_const *b64message, unsigned char* obuffer);
 
+static void
+xor_bufs(unsigned char *rb, const unsigned char *ib1, const unsigned char *ib2,
+    int iblen)
+{
+	uint64_t ebin[iblen / sizeof(uint64_t)];
+	int j = 0;
+
+	for (int i = 0; i < sizeof(ebin); i+= sizeof(uint64_t), j++) {
+		uint64_t iw1, iw2;
+		memcpy(&iw1, ib1 + i, sizeof(iw1));
+		memcpy(&iw2, ib2 + i, sizeof(iw2));
+		ebin[j] = iw1 ^ iw2;
+	}
+	memcpy(rb, ebin, iblen);
+}
+
 /*
  * Calculate nonce value
  * Nonce value consists of the expires time (in seconds since 1.1 1970)
@@ -107,6 +123,9 @@ int calc_nonce(const struct nonce_context *pub, char* _nonce,
 	bp += sizeof(npl);
 	memset(bp, 0, sizeof(dbin) - (bp - dbin));
 
+	bp = dbin + RAND_SECRET_LEN / 2;
+	xor_bufs(bp, bp, dbin, RAND_SECRET_LEN / 2);
+
 	elen = 0;
 	rc = EVP_EncryptUpdate(self->ectx, ebin, &elen, dbin, sizeof(dbin));
 	if (rc != 1 || elen != sizeof(dbin))
@@ -127,6 +146,7 @@ int decr_nonce(const struct nonce_context *pub, const str_const * _n,
 	struct nonce_context_priv *self = (typeof(self))pub;
 	unsigned char bin[RAND_SECRET_LEN + 1];
 	const unsigned char *bp;
+	unsigned char *wbp;
 	unsigned char dbin[RAND_SECRET_LEN];
 	int rc;
 
@@ -141,7 +161,10 @@ int decr_nonce(const struct nonce_context *pub, const str_const * _n,
 	if (rc != 1 || dlen != sizeof(dbin))
 		return -1;
 
-	bp = (const unsigned char *)dbin + RAND_SECRET_LEN / 2;
+	wbp = dbin + RAND_SECRET_LEN / 2;
+	xor_bufs(wbp, wbp, dbin, RAND_SECRET_LEN / 2);
+
+	bp = (const unsigned char *)wbp;
 	struct nonce_payload npl;
 	memcpy(&npl, bp, sizeof(npl));
 	if (npl.expires.usec >= 1000000)
