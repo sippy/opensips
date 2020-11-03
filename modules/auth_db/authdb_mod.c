@@ -82,8 +82,8 @@ struct sig_binds sigb;
 #define PASS_COL "ha1"
 #define PASS_COL_2 "ha1b"
 #define DEFAULT_CRED_LIST "rpid"
-#define HASH_COL_SHA256     "ha1_sha_256"
-#define HASH_COL_SHA512t256 "ha1_sha_512t256"
+#define HASH_COL_SHA256     "ha1_sha256"
+#define HASH_COL_SHA512t256 "ha1_sha512t256"
 
 /*
  * Module parameter variables
