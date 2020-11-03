@@ -33,9 +33,12 @@ addons:
       - uuid-dev
       - python-dev
 #      - libjwt-dev
-script: CC_EXTRA_OPTS=${CC_EXTRA_OPTS:-"-Werror"} FASTER=1 NICER=0 make \
-  exclude_modules="db_oracle osp sngtc cachedb_cassandra cachedb_couchbase \
-  cachedb_mongodb auth_jwt" ${MAKE_TGT:-"all"}
+before_script:
+  - sh scripts/build/setup_tap.sh
+script:
+  - CC_EXTRA_OPTS=${CC_EXTRA_OPTS:-"-Werror"} FASTER=1 NICER=0 make \
+      exclude_modules="db_oracle osp sngtc cachedb_cassandra cachedb_couchbase \
+      cachedb_mongodb auth_jwt" ${MAKE_TGT:-all opensips_test}
 notifications:
   irc:
     channels:
@@ -100,13 +103,13 @@ jobs:
       compiler: gcc
       env:
         - CC_EXTRA_OPTS="-Werror -m32"
-        - MAKE_TGT="opensips"
+        - MAKE_TGT="opensips opensips_test"
       before_install:
         - sudo apt-get -y install libc6-dev:i386 libstdc++6:i386 lib32gcc-7-dev
     - name: "Build Core with Clang 7 @ Ubuntu 18 (i386)"
       compiler: clang
       env:
         - CC_EXTRA_OPTS="-Werror -m32"
-        - MAKE_TGT="opensips"
+        - MAKE_TGT="opensips opensips_test"
       before_install:
         - sudo apt-get -y install libc6-dev:i386 libstdc++6:i386 lib32gcc-7-dev

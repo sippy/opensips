@@ -53,7 +53,7 @@ test_core_objs = cachedb/test/test_backends.o mem/test/test_malloc.o \
  lib/test/test_csv.o
 
 $(NAME)_test: $(NAME) $(test_core_objs)
-	$(LD) $(LDFLAGS) $(test_core_objs) lib$(NAME).a -ltap -o $@
+	$(LD) $(LDFLAGS) $(test_core_objs) lib$(NAME).a $(LIBS) $(TWEAK_LIBS) -ltap -o $@
 
 main.o: main.c $(ALLDEP) $(NEWREVISION)
 ifeq (,$(FASTER))
