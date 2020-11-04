@@ -69,14 +69,6 @@
     </column>
 
     <column>
-        <name>ha1b</name>
-        <type>string</type>
-        <size>&domain_len;</size>
-        <default/>
-        <description>md5(username@domain:realm:password)</description>
-    </column>
-
-    <column>
         <name>ha1_sha256</name>
         <type>string</type>
         <size>&domain_len;</size>

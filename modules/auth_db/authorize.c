@@ -51,12 +51,11 @@
 
 static str auth_500_err = str_init("Server Internal Error");
 
-static str *get_cred_column(alg_t alg, int u_domain_len)
+static str *get_cred_column(alg_t alg)
 {
 	str *rval;
 
 	static db_ps_t auth_ha1_ps = NULL;
-	static db_ps_t auth_ha1b_ps = NULL;
 	static db_ps_t auth_ha1_sha256_ps = NULL;
 	static db_ps_t auth_ha1_sha512t256_ps = NULL;
 
@@ -68,13 +67,6 @@ static str *get_cred_column(alg_t alg, int u_domain_len)
 	switch(alg) {
 	case ALG_UNSPEC:
 	case ALG_MD5:
-		/* should we calculate the HA1, and is it calculated with domain? */
-		if (u_domain_len) {
-			rval = &pass_column_2;
-			CON_PS_REFERENCE(auth_db_handle) = &auth_ha1b_ps;
-			break;
-		}
-		/* else PASSTHROUTH */
 	case ALG_MD5SESS:
 		rval = &pass_column;
 		CON_PS_REFERENCE(auth_db_handle) = &auth_ha1_ps;
@@ -116,7 +108,7 @@ static inline int get_ha1(dig_cred_t* digest, const str* _domain,
 	keys[0] = &user_column;
 	keys[1] = &domain_column;
 
-	col[0] = get_cred_column(digest->alg.alg_parsed, _username->domain.len);
+	col[0] = get_cred_column(digest->alg.alg_parsed);
 	if (col[0] == NULL) {
 		LM_ERR("unsupported algorithm: %d\n", digest->alg.alg_parsed);
 		goto e1;
