@@ -26,6 +26,7 @@
 #include "../lib/test/test_csv.h"
 #include "../parser/test/test_parser.h"
 #include "../mem/test/test_malloc.h"
+#include "../lib/digest_auth/test/test_dauth.h"
 #include "../str.h"
 
 #include "../lib/list.h"
@@ -66,6 +67,7 @@ int run_unit_tests(void)
 		//test_malloc();
 		test_lib_csv();
 		test_parser();
+		test_digest_calc();
 
 	/* module tests */
 	} else {
