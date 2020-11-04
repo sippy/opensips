@@ -162,7 +162,7 @@ static int digest_calc_response_s(const HASHHEX *ha1, const HASHHEX *ha2,
 
 static char *response_hash_fill(const struct digest_auth_response *response, char *hex, int len)
 {
-	DASSERT(len > HASHHEXLEN_SHA256);
+	DASSERT(len >= HASHHEXLEN_SHA256);
 
 	cvt_hex128(response->RespHash.SHA256, hex, HASHLEN_SHA256, HASHHEXLEN_SHA256);
 	return hex;
