@@ -1,7 +1,5 @@
 /*
- * Digest Authentication Module
- *
- * Copyright (C) 2001-2003 FhG Fokus
+ * Copyright (C) 2020 Maksym Sobolyev
  *
  * This file is part of opensips, a free SIP server.
  *
@@ -18,28 +16,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+ *
  */
 
-#ifndef COMMON_H
-#define COMMON_H
+#ifndef _dassert_h
+#define _dassert_h
 
-#include "../../parser/msg_parser.h"
+#if !defined(NO_DEBUG)
+#include <assert.h>
 
-#define MESSAGE_400 "Bad Request"
-#define MESSAGE_500 "Server Internal Error"
+# define DASSERT(x) assert((x))
+#else
+# define DASSERT(x) /* assert(x) */
+#endif
 
-
-/*
- * Return parsed To or From, host part of the parsed uri is realm
- */
-int get_realm(struct sip_msg* _m, hdr_types_t _hftype, struct sip_uri** _u);
-
-
-/*
- * Create a response with given code and reason phrase
- * Optionally add new headers specified in _hdr
- */
-int send_resp(struct sip_msg* _m, int _code, const str* _reason,
-	const str hdrs[], int nhdrs);
-
-#endif /* COMMON_H */
+#endif /* _dassert_h */

@@ -27,38 +27,40 @@
 #include "../../str.h"
 #include <time.h>
 
+struct nonce_context {
+        str_const secret; /* secret phrase used to generate nonce */
+        int disable_nonce_check;
+        int nonce_len;
+};
 
-/*
- * Length of nonce string in bytes
- */
-#define NONCE_LEN (16+32)
-
+struct nonce_params {
+	struct timespec expires;
+	int index;
+	qop_type_t qop;
+	alg_t alg;
+};
 
 /*
  * Calculate nonce value
  */
-void calc_nonce(char* _nonce, int _expires, int _index, str* _secret);
-
-
-/*
- * Check nonce value received from UA
- */
-int check_nonce(str* _nonce, str* _secret);
-
+int calc_nonce(const struct nonce_context *ncp, char* _nonce,
+    const struct nonce_params *npp);
 
 /*
- * Get expiry time from nonce string
+ * Decrypt nonce value
  */
-time_t get_nonce_expires(str* _nonce);
-
-/*
- * Get index from nonce string
- */
-int get_nonce_index(str* _nonce);
+int decr_nonce(const struct nonce_context *pub, const str_const * _n,
+    struct nonce_params *npp);
 
 /*
  * Check if the nonce is stale
  */
-int is_nonce_stale(str* _nonce);
+int is_nonce_stale(const struct nonce_params *npp, int nonce_expire);
+
+struct nonce_context *dauth_noncer_new(int disable_nonce_check);
+void dauth_noncer_dtor(struct nonce_context *);
+int generate_random_secret(struct nonce_context *ncp);
+int dauth_noncer_init(struct nonce_context *ncp);
+void dauth_noncer_reseed(void);
 
 #endif /* NONCE_H */

@@ -43,12 +43,14 @@ static const struct tts {
 	/* Case #1 */
 		.ts = str_init("Digest realm=\"[::1]\",nonce=\"ak/bKmGcoPPWdj0AUWv/ldViLInmkiJ2Kct5p/LapNo\","
                                "qop=auth,algorithm=SHA-512-256"),
-		.tres = -1
+		.tres = 1
 	}, {
 	/* Case #2 */
 		.ts = str_init("Digest realm=\"[::1]\",nonce=\"kp5XbciCMxVbeZm2d58YZCfaAjW/2T7XtuYwIeZoz1o\","
                                "qop=auth,algorithm=SHA-256"),
-		.tres = -1
+		.tres = 0,
+		.aflags = QOP_AUTH, .aalg = ALG_SHA256, .anonce = "kp5XbciCMxVbeZm2d58YZCfaAjW/2T7XtuYwIeZoz1o",
+		.arealm = "[::1]"
 	}, {
 	/* Case #3 */
 		.ts = str_init("Digest stale=false,realm=\"[::1]\",nonce=\"esWk1wFa4bUBKzkmfKId++Y83eWzD9edBCGTwLV4Juk\","
