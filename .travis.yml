@@ -36,8 +36,9 @@ addons:
 before_script:
   - sh scripts/build/setup_tap.sh
 script:
-  - CC_EXTRA_OPTS=${CC_EXTRA_OPTS:-"-Werror -Idist/libtap"} make \
-      LD_EXTRA_OPTS=-Ldist/libtap FASTER=1 NICER=0 \
+  - CC_EXTRA_OPTS=${CC_EXTRA_OPTS:-"-Werror -Idist/libtap"} \
+      LD_EXTRA_OPTS=${LD_EXTRA_OPTS:-"-Idist/libtap"} make \
+      FASTER=1 NICER=0 \
       exclude_modules="db_oracle osp sngtc cachedb_cassandra cachedb_couchbase \
       cachedb_mongodb auth_jwt" ${MAKE_TGT:-all opensips_test}
   - set -e; if [ -e opensips_test ]; then ./opensips_test; fi
@@ -58,6 +59,7 @@ jobs:
       env:
         - CC=mips64-linux-gnuabi64-gcc AR=mips64-linux-gnuabi64-ar RANLIB=mips64-linux-gnuabi64-ranlib
         - CC_EXTRA_OPTS="-Werror -Idist/libtap"
+        - LD_EXTRA_OPTS="-Ldist/libtap -static"
         - MAKE_TGT="opensips opensips_test"
       before_install:
         - sudo apt-get -y install gcc-mips64-linux-gnuabi64 libc-dev-mips64-cross qemu-user-static
