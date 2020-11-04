@@ -24,7 +24,7 @@
 #include <ctype.h>
 #include <string.h>
 
-#include "openssl/evp.h"
+#include <openssl/evp.h>
 
 #include "../../str.h"
 #include "../../parser/digest/digest_parser.h"
