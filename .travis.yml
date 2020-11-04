@@ -119,6 +119,7 @@ jobs:
       compiler: gcc
       env:
         - CC=mips64-linux-gnuabi64-gcc AR=mips64-linux-gnuabi64-ar RANLIB=mips64-linux-gnuabi64-ranlib
+        - CC_EXTRA_OPTS="-Werror -Idist/libtap"
         - MAKE_TGT="opensips opensips_test"
       before_install:
         - sudo apt-get -y install gcc-mips64-linux-gnuabi64 libc-dev-mips64-cross qemu-user-static
