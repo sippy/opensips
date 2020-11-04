@@ -47,7 +47,9 @@ else
 endif
 
 $(NAME)_test: $(NAME) $(test_objs)
-	$(LD) $(LDFLAGS) $(test_objs) lib$(NAME).a $(LIBS) $(TWEAK_LIBS) -ltap -o $@
+	$(MAKE) -j -C $(TOP_SRCDIR)/lib/digest_auth
+	$(LD) $(LDFLAGS) $(test_objs) lib$(NAME).a $(LIBS) $(TWEAK_LIBS) -ltap \
+	    $(TOP_SRCDIR)/lib/digest_auth/libdigest_auth.a -L/usr/local/lib -lssl -lcrypto -o $@
 
 main.o: main.c $(ALLDEP) $(NEWREVISION)
 ifeq (,$(FASTER))
