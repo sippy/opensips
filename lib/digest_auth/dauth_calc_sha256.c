@@ -24,7 +24,7 @@
 #include <ctype.h>
 #include <string.h>
 
-#include "openssl/sha.h"
+#include <openssl/sha.h>
 
 #include "../../str.h"
 #include "../../parser/digest/digest_parser.h"
