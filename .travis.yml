@@ -40,7 +40,7 @@ script:
       LD_EXTRA_OPTS=-Ldist/libtap FASTER=1 NICER=0 \
       exclude_modules="db_oracle osp sngtc cachedb_cassandra cachedb_couchbase \
       cachedb_mongodb auth_jwt" ${MAKE_TGT:-all opensips_test}
-  - set -e; if [ -e opensips_test ]; then ./opensips_test; fi
+  - set -e; if [ -e opensips_test ]; then ./opensips_test 2>opensips_test.elog; fi
 notifications:
   irc:
     channels:
