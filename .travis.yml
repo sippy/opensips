@@ -107,14 +107,14 @@ jobs:
         - CC_EXTRA_OPTS="-Werror -m32 -Idist/libtap"
         - MAKE_TGT="opensips opensips_test"
       before_install:
-        - sudo apt-get -y install libc6-dev:i386 libstdc++6:i386 lib32gcc-7-dev
+        - sudo apt-get -y install libc6-dev:i386 libstdc++6:i386 libssl-dev:i386 lib32gcc-7-dev
     - name: "Build Core with Clang 7 @ Ubuntu 18 (i386)"
       compiler: clang
       env:
         - CC_EXTRA_OPTS="-Werror -m32 -Idist/libtap"
         - MAKE_TGT="opensips opensips_test"
       before_install:
-        - sudo apt-get -y install libc6-dev:i386 libstdc++6:i386 lib32gcc-7-dev
+        - sudo apt-get -y install libc6-dev:i386 libstdc++6:i386 libssl-dev:i386 lib32gcc-7-dev
     - name: "Build Core with GCC 7 @ Ubuntu 18 (MIPS64)"
       compiler: gcc
       env:
