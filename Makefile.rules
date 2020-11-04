@@ -46,14 +46,8 @@ else
 	$(Q)$(LD) $(LDFLAGS) $(objs) $(extra_objs) $(misclibs) $(LIBS) $(TWEAK_LIBS) -o $(NAME)
 endif
 
-test_core_objs = cachedb/test/test_backends.o mem/test/test_malloc.o \
- parser/test/test_oob.o  parser/test/test_parse_authenticate_body.o \
- parser/test/test_parse_fcaps.o  parser/test/test_parser.o \
- parser/test/test_parse_qop.o test/unit_tests.o test/ut.o \
- lib/test/test_csv.o
-
-$(NAME)_test: $(NAME) $(test_core_objs)
-	$(LD) $(LDFLAGS) $(test_core_objs) lib$(NAME).a $(LIBS) $(TWEAK_LIBS) -ltap -o $@
+$(NAME)_test: $(NAME) $(test_objs)
+	$(LD) $(LDFLAGS) $(test_objs) lib$(NAME).a $(LIBS) $(TWEAK_LIBS) -ltap -o $@
 
 main.o: main.c $(ALLDEP) $(NEWREVISION)
 ifeq (,$(FASTER))
