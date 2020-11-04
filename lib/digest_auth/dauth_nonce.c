@@ -59,12 +59,10 @@ static_assert(offsetof(struct nonce_context_priv, pub) == 0,
 
 struct nonce_payload {
 	int index;
-	unsigned int qop:2;
-	unsigned int alg:3;
-	struct {
-		time_t sec:34;
-		unsigned int usec:20;
-	} expires;
+	uint64_t qop:2;
+	uint64_t alg:3;
+	uint64_t expires_sec:34;
+	uint64_t expires_usec:20;
 } __attribute__((__packed__));
 
 static_assert(sizeof(struct nonce_payload) <= RAND_SECRET_LEN / 2,
@@ -112,8 +110,8 @@ int calc_nonce(const struct nonce_context *pub, char* _nonce,
 	bp = dbin + RAND_SECRET_LEN / 2;
 	struct nonce_payload npl;
 	memset(&npl, 0, sizeof(npl));
-	npl.expires.sec = npp->expires.tv_sec;
-	npl.expires.usec = npp->expires.tv_nsec / 1000;
+	npl.expires_sec = npp->expires.tv_sec;
+	npl.expires_usec = npp->expires.tv_nsec / 1000;
 	npl.qop = npp->qop;
 	npl.alg = npp->alg;
 	if(!pub->disable_nonce_check) {
@@ -167,10 +165,10 @@ int decr_nonce(const struct nonce_context *pub, const str_const * _n,
 	bp = (const unsigned char *)wbp;
 	struct nonce_payload npl;
 	memcpy(&npl, bp, sizeof(npl));
-	if (npl.expires.usec >= 1000000)
+	if (npl.expires_usec >= 1000000)
 		return -1;
-	npp->expires.tv_sec = npl.expires.sec;
-	npp->expires.tv_nsec = npl.expires.usec * 1000;
+	npp->expires.tv_sec = npl.expires_sec;
+	npp->expires.tv_nsec = npl.expires_usec * 1000;
 	npp->alg = npl.alg;
 	npp->qop = npl.qop;
 	if(!pub->disable_nonce_check) {
