@@ -63,3 +63,7 @@ jobs:
         - MAKE_TGT="opensips opensips_test"
       before_install:
         - sudo apt-get -y install gcc-mips64-linux-gnuabi64 libc-dev-mips64-cross qemu-user-static
+        - sudo mkdir "/usr/mips64-linux-gnuabi64/etc"
+        - sudo touch "/usr/mips64-linux-gnuabi64/etc/ld.so.cache"
+        - sudo mkdir "/etc/qemu-binfmt"
+        - sudo ln -sf "/usr/mips64-linux-gnuabi64" "/etc/qemu-binfmt/mips64"
