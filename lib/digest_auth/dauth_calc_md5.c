@@ -160,7 +160,7 @@ static int digest_calc_response_s(const HASHHEX *ha1, const HASHHEX *ha2,
 
 static char *response_hash_fill(const struct digest_auth_response *response, char *hex, int len)
 {
-	DASSERT(len > HASHHEXLEN_MD5);
+	DASSERT(len >= HASHHEXLEN_MD5);
 
 	cvt_hex128(response->RespHash.MD5, hex, HASHLEN_MD5, HASHHEXLEN_MD5);
 	return hex;
