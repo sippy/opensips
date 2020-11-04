@@ -36,7 +36,8 @@ addons:
 before_script:
   - sh scripts/build/setup_tap.sh
 script:
-  - CC_EXTRA_OPTS=${CC_EXTRA_OPTS:-"-Werror"} FASTER=1 NICER=0 make \
+  - CC_EXTRA_OPTS=${CC_EXTRA_OPTS:-"-Werror -Idist/libtap"} make \
+      LD_EXTRA_OPTS=-Ldist/libtap FASTER=1 NICER=0 \
       exclude_modules="db_oracle osp sngtc cachedb_cassandra cachedb_couchbase \
       cachedb_mongodb auth_jwt" ${MAKE_TGT:-all opensips_test}
   - set -e; if [ -e opensips_test ]; then ./opensips_test; fi
@@ -103,14 +104,14 @@ jobs:
     - name: "Build Core with GCC 7 @ Ubuntu 18 (i386)"
       compiler: gcc
       env:
-        - CC_EXTRA_OPTS="-Werror -m32"
+        - CC_EXTRA_OPTS="-Werror -m32 -Idist/libtap"
         - MAKE_TGT="opensips opensips_test"
       before_install:
         - sudo apt-get -y install libc6-dev:i386 libstdc++6:i386 lib32gcc-7-dev
     - name: "Build Core with Clang 7 @ Ubuntu 18 (i386)"
       compiler: clang
       env:
-        - CC_EXTRA_OPTS="-Werror -m32"
+        - CC_EXTRA_OPTS="-Werror -m32 -Idist/libtap"
         - MAKE_TGT="opensips opensips_test"
       before_install:
         - sudo apt-get -y install libc6-dev:i386 libstdc++6:i386 lib32gcc-7-dev
