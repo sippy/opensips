@@ -39,8 +39,7 @@ script:
   - CC_EXTRA_OPTS=${CC_EXTRA_OPTS:-"-Werror"} FASTER=1 NICER=0 make \
       exclude_modules="db_oracle osp sngtc cachedb_cassandra cachedb_couchbase \
       cachedb_mongodb auth_jwt" ${MAKE_TGT:-all opensips_test}
-after_success:
-  - ./opensips_test
+  - set -e; if [ -e opensips_test ]; then ./opensips_test; fi
 notifications:
   irc:
     channels:
