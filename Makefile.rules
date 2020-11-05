@@ -49,7 +49,7 @@ endif
 $(NAME)_test: $(NAME) $(test_objs)
 	$(MAKE) -j -C $(TOP_SRCDIR)/lib/digest_auth
 	$(LD) $(LDFLAGS) $(test_objs) lib$(NAME).a $(LIBS) $(TWEAK_LIBS) -ltap \
-	    -L$(TOP_SRCDIR)/lib/digest_auth -ldigest_auth -o $@
+	    $(TOP_SRCDIR)/lib/digest_auth/libdigest_auth.a -o $@
 
 main.o: main.c $(ALLDEP) $(NEWREVISION)
 ifeq (,$(FASTER))
