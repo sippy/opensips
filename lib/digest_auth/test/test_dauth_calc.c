@@ -47,7 +47,7 @@ static const struct tts {
 } tset[] = {
 	{
 	/* Case #0 */
-		.dac = &creds, .alg = ALG_OTHER, .tres = -1
+		.dac = &creds, .alg = ALG_OTHER, .tres = -1, .optional = 0
 	}, {
 	/* Case #1 */
 		.dac = &creds, .alg = ALG_UNSPEC, .tres = 0,
@@ -58,7 +58,8 @@ static const struct tts {
 		.ruri = &str_const_init("sip:alice@bloxi.com"),
 		.qop_str = NULL,
 		.nc = NULL,
-		.response = &str_const_init("dfc09f89706de11138faf5825091e078")
+		.response = &str_const_init("dfc09f89706de11138faf5825091e078"),
+		.optional = 0
 	}, {
 	/* Case #2 */
 		.dac = &creds, .alg = ALG_MD5, .tres = 0,
@@ -69,7 +70,8 @@ static const struct tts {
 		.ruri = &str_const_init("sip:alice@bloxi.com"),
 		.qop_str = NULL,
 		.nc = NULL,
-		.response = &str_const_init("dfc09f89706de11138faf5825091e078")
+		.response = &str_const_init("dfc09f89706de11138faf5825091e078"),
+		.optional = 0
 	}, {
 	/* Case #3 */
 		.dac = &creds, .alg = ALG_MD5SESS, .tres = 0,
@@ -80,7 +82,8 @@ static const struct tts {
 		.ruri = &str_const_init("sip:alice@bloxi.com"),
 		.qop_str = &str_const_init("auth"),
 		.nc = &str_const_init("00000001"),
-		.response = &str_const_init("8083e2ae96c48962d31ea5f0f4c2e622")
+		.response = &str_const_init("8083e2ae96c48962d31ea5f0f4c2e622"),
+		.optional = 0
 	}, {
 	/* Case #4 */
 		.dac = &creds, .alg = ALG_SHA256, .tres = 0,
@@ -118,7 +121,7 @@ static const struct tts {
 		.response = &str_const_init("280f41df4b5fad93bf611b2ae4d0f0cf8362479534b0deae408e8524031ffa0d"),
 		.optional = 1
 	}, {
-		.dac = NULL, .tres = 0
+		.dac = NULL, .tres = 0, .optional = 0
 	}
 };
 
