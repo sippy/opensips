@@ -82,7 +82,7 @@
 #define TRB_STRCASESTARTS(sarg, S) ((sarg)->len >= (sizeof(S) - 1) && \
   !turbo_casebcmp((sarg)->s, (S), (sizeof(S) - 1)))
 
-#define STR_ADVANCE_BY(sptr, incr) {(sptr)->s += (incr); (sptr)->len -= (incr);}
+#define STR_ADVANCE_BY(sptr, incr) {int _t = (incr); (sptr)->s += _t; (sptr)->len -= _t;}
 #define STR_ADVANCE(sptr) STR_ADVANCE_BY(sptr, 1)
 #define STR_ADVANCE_IF_STARTS(sarg, S) (str_advance_if_starts((sarg), (S), (sizeof(S) - 1)))
 
@@ -243,11 +243,11 @@ int parse_authenticate_body( str body, struct authenticate_body *auth)
 		if (quoted_val)
 		{
 			STR_ADVANCE(&body);
-			val.s = body.s;
-			while (body.len > 0 && *body.s != '\"')
-				STR_ADVANCE(&body);
-			if (body.len == 0)
+			char *cp = memchr(body.s, '\"', body.len);
+			if (cp == NULL)
 				goto error;
+			val.s = body.s;
+			STR_ADVANCE_BY(&body, cp - body.s);
 		} else {
 			val.s = body.s;
 			while (body.len > 0 && !is_ws(*body.s) && *body.s != ',')
