@@ -43,6 +43,7 @@ static const struct tts {
 	alg_t alg;
 	int tres;
 	const str_const *response;
+	int optional;
 } tset[] = {
 	{
 	/* Case #0 */
@@ -90,7 +91,8 @@ static const struct tts {
 		.ruri = &str_const_init("sip:alice@bloxi.com"),
 		.qop_str = &str_const_init("auth-int"),
 		.nc = &str_const_init("00000001"),
-		.response = &str_const_init("4b9d33a782d2011ae33bd2fd28409bf873c39ac11175a2e695a553d821b0d5aa")
+		.response = &str_const_init("4b9d33a782d2011ae33bd2fd28409bf873c39ac11175a2e695a553d821b0d5aa"),
+		.optional = 1
 	}, {
 	/* Case #5 */
 		.dac = &creds, .alg = ALG_SHA256SESS, .tres = 0,
@@ -101,7 +103,8 @@ static const struct tts {
 		.ruri = &str_const_init("sip:alice@bloxi.com"),
 		.qop_str = &str_const_init("auth-int"),
 		.nc = &str_const_init("00000001"),
-		.response = &str_const_init("7e923bfb6bf07c2d740f7285e1ccc2aee04709a18564e08854470defd929fea2")
+		.response = &str_const_init("7e923bfb6bf07c2d740f7285e1ccc2aee04709a18564e08854470defd929fea2"),
+		.optional = 1
 	}, {
 	/* Case #6 */
 		.dac = &creds, .alg = ALG_SHA512_256SESS, .tres = 0,
@@ -112,7 +115,8 @@ static const struct tts {
 		.ruri = &str_const_init("sip:alice@bloxi.com"),
 		.qop_str = &str_const_init("auth-int"),
 		.nc = &str_const_init("00000001"),
-		.response = &str_const_init("280f41df4b5fad93bf611b2ae4d0f0cf8362479534b0deae408e8524031ffa0d")
+		.response = &str_const_init("280f41df4b5fad93bf611b2ae4d0f0cf8362479534b0deae408e8524031ffa0d"),
+		.optional = 1
 	}, {
 		.dac = NULL, .tres = 0
 	}
@@ -126,8 +130,7 @@ void test_digest_calc(void)
 	HASHHEX ha1, ha2;
 
         for (i = 0; tset[i].dac != NULL; i++) {
-		if ((tset[i].alg == ALG_SHA512_256 || tset[i].alg == ALG_SHA512_256SESS)
-		    && !digest_algorithm_available(tset[i].alg))
+		if (tset[i].optional && !digest_algorithm_available(tset[i].alg))
 			continue;
 		dcalc = get_digest_calc(tset[i].alg);
 		if (tset[i].tres == -1) {
