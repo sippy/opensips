@@ -18,6 +18,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
  */
 
+#define _BSD_SOURCE             /* See feature_test_macros(7) */
+#include <endian.h>
+
 #include <inttypes.h>
 #include <assert.h>
 #include <string.h>
@@ -55,7 +58,7 @@ static inline int bcmp_hex128(const char *bin, const char *hex, int hashlen)
 		uint64_t outw[inelem * 2];
 		memcpy(&inws, bin + i, sizeof(inws));
 		for (int ib = 0; ib < inelem; ib++) {
-			uint64_t inw = nibbleswap(inws[ib]);
+			uint64_t inw = nibbleswap(htole64(inws[ib]));
 			for (int b = 0; b < 2; b++) {
 				uint64_t addmask;
 				outw[ib * 2 + b] = cvt_step(inw >> (32 * b) & 0xffffffff, 0x0000ffff, 16);
@@ -85,7 +88,7 @@ static inline void cvt_hex128(const char *bin, char *hex, int hashlen, int hashh
 		uint64_t outw[inelem * 2];
 		memcpy(&inws, bin + i, sizeof(inws));
 		for (int ib = 0; ib < inelem; ib++) {
-			uint64_t inw = nibbleswap(inws[ib]);
+			uint64_t inw = nibbleswap(htole64(inws[ib]));
 			for (int b = 0; b < 2; b++) {
 				uint64_t addmask;
 				outw[ib * 2 + b] = cvt_step(inw >> (32 * b) & 0xffffffff, 0x0000ffff, 16);
