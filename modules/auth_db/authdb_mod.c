@@ -80,7 +80,6 @@ struct sig_binds sigb;
 #define USER_COL "username"
 #define DOMAIN_COL "domain"
 #define PASS_COL "ha1"
-#define PASS_COL_2 "ha1b"
 #define DEFAULT_CRED_LIST "rpid"
 #define HASH_COL_SHA256     "ha1_sha256"
 #define HASH_COL_SHA512t256 "ha1_sha512t256"
@@ -92,7 +91,6 @@ static str db_url           = STR_NULL;
 str user_column             = str_init(USER_COL);
 str domain_column           = str_init(DOMAIN_COL);
 str pass_column             = str_init(PASS_COL);
-str pass_column_2           = str_init(PASS_COL_2);
 str hash_column_sha256      = str_init(HASH_COL_SHA256);
 str hash_column_sha512t256  = str_init(HASH_COL_SHA512t256);
 
@@ -153,7 +151,6 @@ static param_export_t params[] = {
 	{"user_column",       STR_PARAM, &user_column.s       },
 	{"domain_column",     STR_PARAM, &domain_column.s     },
 	{"password_column",   STR_PARAM, &pass_column.s       },
-	{"password_column_2", STR_PARAM, &pass_column_2.s     },
 	{"hash_column_sha256", STR_PARAM, &hash_column_sha256 },
 	{"hash_column_sha512t256", STR_PARAM, &hash_column_sha512t256 },
 	{"uri_user_column",   STR_PARAM, &uri_user_column.s   },
@@ -227,7 +224,6 @@ static int mod_init(void)
 	user_column.len = strlen(user_column.s);
 	domain_column.len = strlen(domain_column.s);
 	pass_column.len = strlen(pass_column.s);
-	pass_column_2.len = strlen(pass_column_2.s);
 	hash_column_sha256.len = strlen(hash_column_sha256.s);
 	hash_column_sha512t256.len = strlen(hash_column_sha512t256.s);
 
