@@ -31,8 +31,10 @@ int digest_algorithm_available(alg_t algorithm)
         case ALG_UNSPEC:
         case ALG_MD5:
         case ALG_MD5SESS:
+#if defined(SHA_256_ENABLE)
         case ALG_SHA256:
         case ALG_SHA256SESS:
+#endif
 #if defined(SHA_512_256_ENABLE)
         case ALG_SHA512_256:
         case ALG_SHA512_256SESS:

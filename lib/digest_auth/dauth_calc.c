@@ -37,6 +37,7 @@ const struct digest_auth_calc* get_digest_calc(alg_t algorithm)
 		digest_calc = &md5sess_digest_calc;
 		break;
 
+#if defined(SHA_256_ENABLE)
 	case ALG_SHA256:
 		digest_calc = &sha256_digest_calc;
 		break;
@@ -44,6 +45,7 @@ const struct digest_auth_calc* get_digest_calc(alg_t algorithm)
 	case ALG_SHA256SESS:
 		digest_calc = &sha256sess_digest_calc;
 		break;
+#endif
 #if defined(SHA_512_256_ENABLE)
 	case ALG_SHA512_256:
 		digest_calc = &sha512t256_digest_calc;
