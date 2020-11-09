@@ -52,6 +52,7 @@ extern char* nonce_buf;
 extern int* sec_monit;
 extern int* second;
 extern int* next_index;
+extern int disable_nonce_check;
 extern struct nonce_context *ncp;
 
 #endif /* AUTH_MOD_H */

@@ -114,9 +114,7 @@ int calc_nonce(const struct nonce_context *pub, char* _nonce,
 	npl.expires_usec = npp->expires.tv_nsec / 1000;
 	npl.qop = npp->qop;
 	npl.alg = npp->alg;
-	if(!pub->disable_nonce_check) {
-		npl.index = npp->index;
-	}
+	npl.index = npp->index;
 	memcpy(bp, &npl, sizeof(npl));
 	bp += sizeof(npl);
 	memset(bp, 0, sizeof(dbin) - (bp - dbin));
@@ -171,12 +169,7 @@ int decr_nonce(const struct nonce_context *pub, const str_const * _n,
 	npp->expires.tv_nsec = npl.expires_usec * 1000;
 	npp->alg = npl.alg;
 	npp->qop = npl.qop;
-	if(!pub->disable_nonce_check) {
-		npp->index = npl.index;
-	} else {
-		if (npl.index != 0)
-			return -1;
-	}
+	npp->index = npl.index;
 	bp += sizeof(npl);
 	int tailbytes = sizeof(dbin) - (bp - dbin);
 	if (tailbytes > 0) {
@@ -291,7 +284,7 @@ void dauth_noncer_reseed(void)
 	RAND_add(&seed, sizeof(seed), (double)sizeof(seed) * 0.1);
 }
 
-struct nonce_context *dauth_noncer_new(int disable_nonce_check)
+struct nonce_context *dauth_noncer_new()
 {
 	struct nonce_context_priv *self;
 
@@ -312,7 +305,6 @@ struct nonce_context *dauth_noncer_new(int disable_nonce_check)
 		goto e2;
 	}
 
-	self->pub.disable_nonce_check = disable_nonce_check;
 	self->pub.nonce_len = NONCE_LEN;
 	return &(self->pub);
 e2:

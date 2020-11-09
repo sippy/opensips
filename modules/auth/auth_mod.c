@@ -113,7 +113,7 @@ char* nonce_buf= NULL;
 int* sec_monit= NULL;
 int* second= NULL;
 int* next_index= NULL;
-static int _disable_nonce_check = 0;
+int disable_nonce_check = 0;
 
 /*
  * Exported functions
@@ -161,7 +161,7 @@ static param_export_t params[] = {
 	{"username_spec",       STR_PARAM, &user_spec_param    },
 	{"password_spec",       STR_PARAM, &passwd_spec_param  },
 	{"calculate_ha1",       INT_PARAM, &auth_calc_ha1      },
-	{"disable_nonce_check", INT_PARAM, &_disable_nonce_check},
+	{"disable_nonce_check", INT_PARAM, &disable_nonce_check},
 	{0, 0, 0}
 };
 
@@ -212,7 +212,7 @@ static int mod_init(void)
 		return -1;
 	}
 
-	ncp = dauth_noncer_new(_disable_nonce_check);
+	ncp = dauth_noncer_new();
 	if (ncp == NULL) {
 		LM_ERR("can't init nonce generator\n");
 		return -1;
@@ -285,7 +285,7 @@ static int mod_init(void)
 		}
 	}
 
-	if(!ncp->disable_nonce_check)
+	if(!disable_nonce_check)
 	{
 		nonce_lock = (gen_lock_t*)lock_alloc();
 		if(nonce_lock== NULL)
@@ -340,7 +340,7 @@ static void destroy(void)
 {
 	if (ncp == NULL)
 		return;
-	if(!ncp->disable_nonce_check)
+	if(!disable_nonce_check)
 	{
 		if(nonce_lock)
 		{

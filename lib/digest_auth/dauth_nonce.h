@@ -29,7 +29,6 @@
 
 struct nonce_context {
         str_const secret; /* secret phrase used to generate nonce */
-        int disable_nonce_check;
         int nonce_len;
 };
 
@@ -57,7 +56,7 @@ int decr_nonce(const struct nonce_context *pub, const str_const * _n,
  */
 int is_nonce_stale(const struct nonce_params *npp, int nonce_expire);
 
-struct nonce_context *dauth_noncer_new(int disable_nonce_check);
+struct nonce_context *dauth_noncer_new();
 void dauth_noncer_dtor(struct nonce_context *);
 int generate_random_secret(struct nonce_context *ncp);
 int dauth_noncer_init(struct nonce_context *ncp);

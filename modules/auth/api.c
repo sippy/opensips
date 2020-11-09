@@ -238,7 +238,7 @@ auth_result_t pre_auth(struct sip_msg* _m, str* _realm, hdr_types_t _hftype,
 		LM_DBG("stale nonce value received\n");
 		goto stalenonce;
 	}
-	if(!ncp->disable_nonce_check) {
+	if(!disable_nonce_check) {
 		/* Verify if it is the first time this nonce is received */
 		LM_DBG("nonce index= %d\n", np.index);
 
@@ -246,6 +246,9 @@ auth_result_t pre_auth(struct sip_msg* _m, str* _realm, hdr_types_t _hftype,
 			LM_DBG("nonce index not valid\n");
 			goto stalenonce;
 		}
+	} else if (np.index != 0) {
+		LM_DBG("nonce index not valid\n");
+		goto stalenonce;
 	}
 
 	return DO_AUTHORIZATION;

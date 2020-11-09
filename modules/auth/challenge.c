@@ -208,7 +208,7 @@ static inline int challenge(struct sip_msg* _msg, str *realm, int _qop,
 		/* RFC8760 mandates QOP */
 		_qop = QOP_TYPE_AUTH;
 	}
-	if(!ncp->disable_nonce_check) {
+	if(!disable_nonce_check) {
 		/* get the nonce index and mark it as used */
 		index= reserve_nonce_index();
 		if(index == -1)
