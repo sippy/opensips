@@ -284,7 +284,7 @@ void dauth_noncer_reseed(void)
 	RAND_add(&seed, sizeof(seed), (double)sizeof(seed) * 0.1);
 }
 
-struct nonce_context *dauth_noncer_new()
+struct nonce_context *dauth_noncer_new(void)
 {
 	struct nonce_context_priv *self;
 
