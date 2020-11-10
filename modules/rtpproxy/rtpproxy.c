@@ -1370,11 +1370,66 @@ child_init(int rank)
 	return connect_rtpproxies();
 }
 
+static int
+connect_rtpp_node(const struct rtpp_node *pnode)
+{
+	int n, s;
+	char *cp, *hostname;
+	struct addrinfo hints, *res;
+
+	/*
+	 * This is UDP, TCP or UDP6. Detect host and port; lookup host;
+	 * do connect() in order to specify peer address
+	 */
+	hostname = (char*)pkg_malloc(sizeof(char) * (strlen(pnode->rn_address) + 1));
+	if (hostname==NULL) {
+		LM_ERR("no more pkg memory\n");
+		goto e0;
+	}
+	strcpy(hostname, pnode->rn_address);
+
+	cp = strrchr(hostname, ':');
+	if (cp != NULL) {
+		*cp = '\0';
+		cp++;
+	}
+	if (cp == NULL || *cp == '\0')
+		cp = CPORT;
+
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_flags = 0;
+	hints.ai_family = (pnode->rn_umode == CM_UDP6 || pnode->rn_umode == CM_TCP6) ? AF_INET6 : AF_INET;
+	hints.ai_socktype = (pnode->rn_umode == CM_TCP || pnode->rn_umode == CM_TCP6) ? SOCK_STREAM : SOCK_DGRAM;
+	if ((n = getaddrinfo(hostname, cp, &hints, &res)) != 0) {
+		LM_ERR("%s\n", gai_strerror(n));
+		goto e1;
+	}
+
+	s = socket(hints.ai_family, hints.ai_socktype, 0);
+	if (s == -1) {
+		LM_ERR("can't create socket\n");
+		goto e2;
+	}
+	if (connect(s, res->ai_addr, res->ai_addrlen) == -1) {
+		LM_ERR("can't connect to a RTP proxy\n");
+		goto e3;
+	}
+	pkg_free(hostname);
+	freeaddrinfo(res);
+	LM_DBG("connected %s\n", pnode->rn_address);
+	return s;
+e3:
+	close(s);
+e2:
+	freeaddrinfo(res);
+e1:
+	pkg_free(hostname);
+e0:
+	return -1;
+}
+
 int connect_rtpproxies(void)
 {
-	int n;
-	char *cp;
-	struct addrinfo hints, *res;
 	struct rtpp_set  *rtpp_list;
 	struct rtpp_node *pnode;
 
@@ -1396,60 +1451,16 @@ int connect_rtpproxies(void)
 		rtpp_list = rtpp_list->rset_next){
 
 		for (pnode=rtpp_list->rn_first; pnode!=0; pnode = pnode->rn_next){
-			char *hostname;
-
 			if (pnode->rn_umode == CM_UNIX) {
 				rtpp_socks[pnode->idx] = -1;
 				goto rptest;
 			}
 
-			/*
-			 * This is UDP, TCP or UDP6. Detect host and port; lookup host;
-			 * do connect() in order to specify peer address
-			 */
-			hostname = (char*)pkg_malloc(sizeof(char) * (strlen(pnode->rn_address) + 1));
-			if (hostname==NULL) {
-				LM_ERR("no more pkg memory\n");
+			rtpp_socks[pnode->idx] = connect_rtpp_node(pnode);
+			if (rtpp_socks[pnode->idx] == -1) {
+				LM_ERR("connect_rtpp_node() failed\n");
 				return -1;
 			}
-			strcpy(hostname, pnode->rn_address);
-
-			cp = strrchr(hostname, ':');
-			if (cp != NULL) {
-				*cp = '\0';
-				cp++;
-			}
-			if (cp == NULL || *cp == '\0')
-				cp = CPORT;
-
-			memset(&hints, 0, sizeof(hints));
-			hints.ai_flags = 0;
-			hints.ai_family = (pnode->rn_umode == CM_UDP6 || pnode->rn_umode == CM_TCP6) ? AF_INET6 : AF_INET;
-			hints.ai_socktype = (pnode->rn_umode == CM_TCP || pnode->rn_umode == CM_TCP6) ? SOCK_STREAM : SOCK_DGRAM;
-			if ((n = getaddrinfo(hostname, cp, &hints, &res)) != 0) {
-				LM_ERR("%s\n", gai_strerror(n));
-				pkg_free(hostname);
-				return -1;
-			}
-			pkg_free(hostname);
-
-			rtpp_socks[pnode->idx] = socket(hints.ai_family,
-			    hints.ai_socktype, 0);
-			if ( rtpp_socks[pnode->idx] == -1) {
-				LM_ERR("can't create socket\n");
-				freeaddrinfo(res);
-				return -1;
-			}
-
-			if (connect( rtpp_socks[pnode->idx], res->ai_addr, res->ai_addrlen) == -1) {
-				LM_ERR("can't connect to a RTP proxy\n");
-				close( rtpp_socks[pnode->idx] );
-				rtpp_socks[pnode->idx] = -1;
-				freeaddrinfo(res);
-				return -1;
-			}
-			freeaddrinfo(res);
-			LM_DBG("connected %s\n", pnode->rn_address);
 rptest:
 			pnode->rn_disabled = rtpp_test(pnode, 0, 1);
 		}
