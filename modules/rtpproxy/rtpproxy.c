@@ -182,6 +182,7 @@
 #include "nhelpr_funcs.h"
 #include "rtpproxy_stream.h"
 #include "rtpproxy_callbacks.h"
+#include "rtppm_try_connect.h"
 
 #define NH_TABLE_VERSION  0
 
@@ -1410,7 +1411,12 @@ connect_rtpp_node(const struct rtpp_node *pnode)
 		LM_ERR("can't create socket\n");
 		goto e2;
 	}
-	if (connect(s, res->ai_addr, res->ai_addrlen) == -1) {
+	if (CM_STREAM(pnode)) {
+		n = try_connect(s, res->ai_addr, res->ai_addrlen, rtpproxy_tout);
+	} else {
+		n = connect(s, res->ai_addr, res->ai_addrlen);
+	}
+	if (n == -1) {
 		LM_ERR("can't connect to a RTP proxy\n");
 		goto e3;
 	}
