@@ -2035,6 +2035,8 @@ error:
 #define RTPPROXY_BUF_SIZE 256
 #define OSIP_IOV_MAX 1024
 
+#include <assert.h>
+
 char *
 send_rtpp_command(struct rtpp_node *node, struct iovec *v, int vcnt)
 {
@@ -2146,6 +2148,8 @@ send_rtpp_command(struct rtpp_node *node, struct iovec *v, int vcnt)
 			v[vcnt - 1].iov_len = 1;
 		}
 		for (i = 0; i < rtry; i++) {
+			int buflen = sizeof(buf)-1;
+			assert(cp == buf);
 			do {
 				len = writev(rtpp_socks[node->idx], v, vcnt);
 			} while (len == -1 && (errno == EINTR || errno == ENOBUFS));
@@ -2159,7 +2163,7 @@ send_rtpp_command(struct rtpp_node *node, struct iovec *v, int vcnt)
 				int s_errno;
 
 				do {
-					len = recv(rtpp_socks[node->idx], buf, sizeof(buf)-1, 0);
+					len = recv(rtpp_socks[node->idx], cp, buflen, 0);
 				} while (len == -1 && errno == EINTR);
 				s_errno = (len < 0) ? errno : 0;
 				if (len <= 0) {
@@ -2167,9 +2171,24 @@ send_rtpp_command(struct rtpp_node *node, struct iovec *v, int vcnt)
 					    s_errno);
 					goto badproxy;
 				}
-				if (node->rn_umode == CM_TCP || node->rn_umode == CM_TCP6)
-					goto out;
-				if (len >= (v[0].iov_len - 1) &&
+				if (CM_STREAM(node)) {
+					char *eor = memchr(cp, '\n', len);
+					if (eor != NULL) {
+						if (eor != cp + len - 1) {
+							LM_ERR("can't parse reply from a RTP proxy: garbage after '\\n'\n");
+							goto badproxy;
+						}
+						len += cp - buf;
+						cp = buf;
+						goto out;
+					}
+					cp += len;
+					buflen -= len;
+					if (buflen == 0) {
+						LM_ERR("can't parse reply from a RTP proxy: missing '\\n'\n");
+						goto badproxy;
+					}
+				} else if (len >= (v[0].iov_len - 1) &&
 				    memcmp(buf, v[0].iov_base, (v[0].iov_len - 1)) == 0) {
 					len -= (v[0].iov_len - 1);
 					cp += (v[0].iov_len - 1);
