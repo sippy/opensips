@@ -627,7 +627,7 @@ static int add_rtpproxy_socks(struct rtpp_set * rtpp_list,
 		*rtpp_no = *rtpp_no + 1;
 		pnode->rn_recheck_ticks = 0;
 		pnode->rn_weight = weight;
-		pnode->rn_umode = 0;
+		pnode->rn_umode = CM_UNIX;
 		pnode->rn_disabled = 0;
 		memcpy(pnode->rn_url.s, p1, p2 - p1);
 		pnode->rn_url.s[p2 - p1] 	= 0;
@@ -643,13 +643,13 @@ static int add_rtpproxy_socks(struct rtpp_set * rtpp_list,
 		/* Leave only address in rn_address */
 		pnode->rn_address = pnode->rn_url.s;
 		if (strncasecmp(pnode->rn_address, "udp:", 4) == 0) {
-			pnode->rn_umode = 1;
+			pnode->rn_umode = CM_UDP;
 			pnode->rn_address += 4;
 		} else if (strncasecmp(pnode->rn_address, "udp6:", 5) == 0) {
-			pnode->rn_umode = 6;
+			pnode->rn_umode = CM_UDP6;
 			pnode->rn_address += 5;
 		} else if (strncasecmp(pnode->rn_address, "unix:", 5) == 0) {
-			pnode->rn_umode = 0;
+			pnode->rn_umode = CM_UNIX;
 			pnode->rn_address += 5;
 		}
 
@@ -1392,7 +1392,7 @@ int connect_rtpproxies(void)
 		for (pnode=rtpp_list->rn_first; pnode!=0; pnode = pnode->rn_next){
 			char *hostname;
 
-			if (pnode->rn_umode == 0) {
+			if (pnode->rn_umode == CM_UNIX) {
 				rtpp_socks[pnode->idx] = -1;
 				goto rptest;
 			}
@@ -1418,7 +1418,7 @@ int connect_rtpproxies(void)
 
 			memset(&hints, 0, sizeof(hints));
 			hints.ai_flags = 0;
-			hints.ai_family = (pnode->rn_umode == 6) ? AF_INET6 : AF_INET;
+			hints.ai_family = (pnode->rn_umode == CM_UDP6) ? AF_INET6 : AF_INET;
 			hints.ai_socktype = SOCK_DGRAM;
 			if ((n = getaddrinfo(hostname, cp, &hints, &res)) != 0) {
 				LM_ERR("%s\n", gai_strerror(n));
@@ -1427,7 +1427,7 @@ int connect_rtpproxies(void)
 			}
 			pkg_free(hostname);
 
-			rtpp_socks[pnode->idx] = socket((pnode->rn_umode == 6)
+			rtpp_socks[pnode->idx] = socket((pnode->rn_umode == CM_UDP6)
 			    ? AF_INET6 : AF_INET, SOCK_DGRAM, 0);
 			if ( rtpp_socks[pnode->idx] == -1) {
 				LM_ERR("can't create socket\n");
@@ -2061,7 +2061,7 @@ send_rtpp_command(struct rtpp_node *node, struct iovec *v, int vcnt)
 	len = 0;
 	cp = buf;
 
-	if (node->rn_umode == 0) {
+	if (node->rn_umode == CM_UNIX) {
 		int s_errno;
 
 		memset(&addr, 0, sizeof(addr));
