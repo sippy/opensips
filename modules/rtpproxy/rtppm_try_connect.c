@@ -33,18 +33,18 @@ int try_connect(int s, const struct sockaddr *name, socklen_t namelen, int timeo
 
 	oflags = fcntl(s, F_GETFL);
 	if (oflags < 0)
-		return (oflags);
+		return -1;
 	nflags = fcntl(s, F_SETFL, oflags | O_NONBLOCK);
 	if (nflags < 0)
-		return (nflags);
+		return -1;
 
 	cres = connect(s, name, namelen);
 	if (cres < 0 && errno != EINPROGRESS)
 		goto out;
 	if (cres == 0)
 		goto out;
-        pfd.fd = s;
-        pfd.events = POLLOUT;
+	pfd.fd = s;
+	pfd.events = POLLOUT;
 	pres = poll(&pfd, 1, timeout);
 	if (pres <= 0) {
 		cres = -1;
@@ -53,5 +53,5 @@ int try_connect(int s, const struct sockaddr *name, socklen_t namelen, int timeo
 	}
 out:
 	fcntl(s, F_SETFL, oflags);
-	return (cres);
+	return cres;
 }
