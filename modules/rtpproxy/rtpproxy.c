@@ -651,6 +651,9 @@ static int add_rtpproxy_socks(struct rtpp_set * rtpp_list,
 		} else if (strncasecmp(pnode->rn_address, "tcp:", 4) == 0) {
 			pnode->rn_umode = CM_TCP;
 			pnode->rn_address += 4;
+		} else if (strncasecmp(pnode->rn_address, "tcp6:", 6) == 0) {
+			pnode->rn_umode = CM_TCP6;
+			pnode->rn_address += 5;
 		} else if (strncasecmp(pnode->rn_address, "unix:", 5) == 0) {
 			pnode->rn_umode = CM_UNIX;
 			pnode->rn_address += 5;
@@ -1421,8 +1424,8 @@ int connect_rtpproxies(void)
 
 			memset(&hints, 0, sizeof(hints));
 			hints.ai_flags = 0;
-			hints.ai_family = (pnode->rn_umode == CM_UDP6) ? AF_INET6 : AF_INET;
-			hints.ai_socktype = (pnode->rn_umode == CM_TCP) ? SOCK_STREAM : SOCK_DGRAM;
+			hints.ai_family = (pnode->rn_umode == CM_UDP6 || pnode->rn_umode == CM_TCP6) ? AF_INET6 : AF_INET;
+			hints.ai_socktype = (pnode->rn_umode == CM_TCP || pnode->rn_umode == CM_TCP6) ? SOCK_STREAM : SOCK_DGRAM;
 			if ((n = getaddrinfo(hostname, cp, &hints, &res)) != 0) {
 				LM_ERR("%s\n", gai_strerror(n));
 				pkg_free(hostname);
@@ -2122,7 +2125,7 @@ send_rtpp_command(struct rtpp_node *node, struct iovec *v, int vcnt)
 				break;
 			}
 		}
-		if (node->rn_umode != CM_TCP) {
+		if (node->rn_umode != CM_TCP && node->rn_umode != CM_TCP6) {
 			v[0].iov_base = gencookie();
 			v[0].iov_len = strlen(v[0].iov_base);
 		} else {
@@ -2152,7 +2155,7 @@ send_rtpp_command(struct rtpp_node *node, struct iovec *v, int vcnt)
 					    s_errno);
 					goto badproxy;
 				}
-				if (node->rn_umode == CM_TCP)
+				if (node->rn_umode == CM_TCP || node->rn_umode == CM_TCP6)
 					goto out;
 				if (len >= (v[0].iov_len - 1) &&
 				    memcmp(buf, v[0].iov_base, (v[0].iov_len - 1)) == 0) {
