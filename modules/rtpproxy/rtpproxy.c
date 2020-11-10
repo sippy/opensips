@@ -2277,8 +2277,12 @@ select_rtpp_node(struct sip_msg * msg,
 	/* Most popular case: 1 proxy, nothing to calculate */
 	if (set->rtpp_node_count == 1) {
 		node = set->rn_first;
-		if (node->rn_disabled && node->rn_recheck_ticks <= get_ticks())
+		if (node->rn_disabled && node->rn_recheck_ticks <= get_ticks()) {
 			node->rn_disabled = rtpp_test(node, 1, 0);
+			if (node->rn_disabled)
+				node->rn_recheck_ticks = get_ticks() +
+				    rtpproxy_disable_tout;
+		}
 		if (node->rn_disabled)
 			return NULL;
 
@@ -2300,6 +2304,9 @@ retry:
 		if (node->rn_disabled && node->rn_recheck_ticks <= get_ticks()){
 			/* Try to enable if it's time to try. */
 			node->rn_disabled = rtpp_test(node, 1, 0);
+			if (node->rn_disabled)
+				node->rn_recheck_ticks = get_ticks() +
+				    rtpproxy_disable_tout;
 		}
 		constant_weight_sum += node->rn_weight;
 		if (!node->rn_disabled) {
