@@ -651,7 +651,7 @@ static int add_rtpproxy_socks(struct rtpp_set * rtpp_list,
 		} else if (strncasecmp(pnode->rn_address, "tcp:", 4) == 0) {
 			pnode->rn_umode = CM_TCP;
 			pnode->rn_address += 4;
-		} else if (strncasecmp(pnode->rn_address, "tcp6:", 6) == 0) {
+		} else if (strncasecmp(pnode->rn_address, "tcp6:", 5) == 0) {
 			pnode->rn_umode = CM_TCP6;
 			pnode->rn_address += 5;
 		} else if (strncasecmp(pnode->rn_address, "unix:", 5) == 0) {
@@ -1405,7 +1405,7 @@ connect_rtpp_node(const struct rtpp_node *pnode)
 		goto e1;
 	}
 
-	s = socket(hints.ai_family, hints.ai_socktype, 0);
+	s = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 	if (s == -1) {
 		LM_ERR("can't create socket\n");
 		goto e2;
