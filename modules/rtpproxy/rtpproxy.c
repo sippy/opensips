@@ -2123,8 +2123,14 @@ send_rtpp_command(struct rtpp_node *node, struct iovec *v, int vcnt)
 				break;
 			}
 		}
-		v[0].iov_base = gencookie();
-		v[0].iov_len = strlen(v[0].iov_base);
+		if (node->rn_umode != CM_TCP) {
+			v[0].iov_base = gencookie();
+			v[0].iov_len = strlen(v[0].iov_base);
+		} else {
+			memmove(v, v + 1, (vcnt - 1) * sizeof(v));
+			v[vcnt - 1].iov_base = "\n";
+			v[vcnt - 1].iov_len = 1;
+		}
 		for (i = 0; i < rtpproxy_retr; i++) {
 			do {
 				len = writev(rtpp_socks[node->idx], v, vcnt);
@@ -2147,7 +2153,7 @@ send_rtpp_command(struct rtpp_node *node, struct iovec *v, int vcnt)
 					    s_errno);
 					goto badproxy;
 				}
-				if (len >= (v[0].iov_len - 1) &&
+				if (node->rn_umode != CM_TCP && len >= (v[0].iov_len - 1) &&
 				    memcmp(buf, v[0].iov_base, (v[0].iov_len - 1)) == 0) {
 					len -= (v[0].iov_len - 1);
 					cp += (v[0].iov_len - 1);
