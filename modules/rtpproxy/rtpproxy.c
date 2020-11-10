@@ -1453,15 +1453,13 @@ int connect_rtpproxies(void)
 		for (pnode=rtpp_list->rn_first; pnode!=0; pnode = pnode->rn_next){
 			if (pnode->rn_umode == CM_UNIX) {
 				rtpp_socks[pnode->idx] = -1;
-				goto rptest;
+			} else {
+				rtpp_socks[pnode->idx] = connect_rtpp_node(pnode);
+				if (rtpp_socks[pnode->idx] == -1) {
+					LM_ERR("connect_rtpp_node() failed\n");
+					return -1;
+				}
 			}
-
-			rtpp_socks[pnode->idx] = connect_rtpp_node(pnode);
-			if (rtpp_socks[pnode->idx] == -1) {
-				LM_ERR("connect_rtpp_node() failed\n");
-				return -1;
-			}
-rptest:
 			pnode->rn_disabled = rtpp_test(pnode, 0, 1);
 		}
 	}
@@ -2052,6 +2050,13 @@ send_rtpp_command(struct rtpp_node *node, struct iovec *v, int vcnt)
 		max_vcnt = IOV_MAX;
 #endif
 
+	if (rtpp_socks[node->idx] == -1 && node->rn_umode != CM_UNIX) {
+		rtpp_socks[node->idx] = connect_rtpp_node(node);
+		if (rtpp_socks[node->idx] == -1) {
+			LM_ERR("connect_rtpp_node() failed\n");
+			return (NULL);
+		}
+	}
 	/* normalize vcntl to max_vcnt, as on some systems this limit is very low (16 on Solaris) */
 	if (vcnt > max_vcnt) {
 		int i, vec_len = 0;
@@ -2212,6 +2217,10 @@ out:
 	return cp;
 badproxy:
 	LM_ERR("proxy <%s> does not respond, disable it\n", node->rn_url.s);
+	if (CM_STREAM(node)) {
+		close(rtpp_socks[node->idx]);
+		rtpp_socks[node->idx] = -1;
+	}
 	node->rn_disabled = 1;
 	node->rn_recheck_ticks = get_ticks() + rtpproxy_disable_tout;
 	raise_rtpproxy_event(node, 0);
