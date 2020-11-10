@@ -41,9 +41,9 @@ struct rtpp_node {
 	unsigned int		idx;			/* overall index */
 	str			rn_url;			/* unparsed, deletable */
 	enum comm_modes		rn_umode;
-	char			*rn_address;	/* substring of rn_url */
-	char			*adv_address;	/* advertised address of rtpproxy */
-	int			rn_disabled;	/* found unaccessible? */
+	char			*rn_address;		/* substring of rn_url */
+	char			*adv_address;		/* advertised address of rtpproxy */
+	int			rn_disabled;		/* found unaccessible? */
 	unsigned		rn_weight;		/* for load balancing */
 	unsigned int		rn_recheck_ticks;
 	unsigned int		capabilities;
