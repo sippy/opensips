@@ -1399,7 +1399,7 @@ connect_rtpp_node(const struct rtpp_node *pnode)
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_flags = 0;
 	hints.ai_family = (pnode->rn_umode == CM_UDP6 || pnode->rn_umode == CM_TCP6) ? AF_INET6 : AF_INET;
-	hints.ai_socktype = (pnode->rn_umode == CM_TCP || pnode->rn_umode == CM_TCP6) ? SOCK_STREAM : SOCK_DGRAM;
+	hints.ai_socktype = CM_STREAM(pnode) ? SOCK_STREAM : SOCK_DGRAM;
 	if ((n = getaddrinfo(hostname, cp, &hints, &res)) != 0) {
 		LM_ERR("%s\n", gai_strerror(n));
 		goto e1;
@@ -2119,6 +2119,7 @@ send_rtpp_command(struct rtpp_node *node, struct iovec *v, int vcnt)
 			goto badproxy;
 		}
 	} else {
+		int rtry = CM_STREAM(node) ? 1 : rtpproxy_retr;
 		fds[0].fd = rtpp_socks[node->idx];
 		fds[0].events = POLLIN;
 		fds[0].revents = 0;
@@ -2144,7 +2145,7 @@ send_rtpp_command(struct rtpp_node *node, struct iovec *v, int vcnt)
 			v[vcnt - 1].iov_base = "\n";
 			v[vcnt - 1].iov_len = 1;
 		}
-		for (i = 0; i < rtpproxy_retr; i++) {
+		for (i = 0; i < rtry; i++) {
 			do {
 				len = writev(rtpp_socks[node->idx], v, vcnt);
 			} while (len == -1 && (errno == EINTR || errno == ENOBUFS));
@@ -2181,7 +2182,7 @@ send_rtpp_command(struct rtpp_node *node, struct iovec *v, int vcnt)
 				fds[0].revents = 0;
 			}
 		}
-		if (i == rtpproxy_retr) {
+		if (i == rtry) {
 			LM_ERR("timeout waiting reply from a RTP proxy\n");
 			goto badproxy;
 		}
