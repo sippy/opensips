@@ -35,7 +35,7 @@
 #define STR2IOVEC(sx, ix)       do {(ix).iov_base = (sx).s; (ix).iov_len = (sx).len;} while(0)
 #define SZ2IOVEC(sx, ix)        do {(ix).iov_base = (sx); (ix).iov_len = strlen(sx);} while(0)
 
-enum comm_modes {CM_UNIX = 0, CM_UDP, CM_UDP6};
+enum comm_modes {CM_UNIX = 0, CM_UDP, CM_TCP, CM_UDP6};
 
 struct rtpp_node {
 	unsigned int		idx;			/* overall index */

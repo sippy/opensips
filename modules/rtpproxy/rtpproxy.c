@@ -648,6 +648,9 @@ static int add_rtpproxy_socks(struct rtpp_set * rtpp_list,
 		} else if (strncasecmp(pnode->rn_address, "udp6:", 5) == 0) {
 			pnode->rn_umode = CM_UDP6;
 			pnode->rn_address += 5;
+		} else if (strncasecmp(pnode->rn_address, "tcp:", 4) == 0) {
+			pnode->rn_umode = CM_TCP;
+			pnode->rn_address += 4;
 		} else if (strncasecmp(pnode->rn_address, "unix:", 5) == 0) {
 			pnode->rn_umode = CM_UNIX;
 			pnode->rn_address += 5;
@@ -1419,7 +1422,7 @@ int connect_rtpproxies(void)
 			memset(&hints, 0, sizeof(hints));
 			hints.ai_flags = 0;
 			hints.ai_family = (pnode->rn_umode == CM_UDP6) ? AF_INET6 : AF_INET;
-			hints.ai_socktype = SOCK_DGRAM;
+			hints.ai_socktype = (pnode->rn_umode == CM_TCP) ? SOCK_STREAM : SOCK_DGRAM;
 			if ((n = getaddrinfo(hostname, cp, &hints, &res)) != 0) {
 				LM_ERR("%s\n", gai_strerror(n));
 				pkg_free(hostname);
@@ -1427,8 +1430,8 @@ int connect_rtpproxies(void)
 			}
 			pkg_free(hostname);
 
-			rtpp_socks[pnode->idx] = socket((pnode->rn_umode == CM_UDP6)
-			    ? AF_INET6 : AF_INET, SOCK_DGRAM, 0);
+			rtpp_socks[pnode->idx] = socket(hints.ai_family,
+			    hints.ai_socktype, 0);
 			if ( rtpp_socks[pnode->idx] == -1) {
 				LM_ERR("can't create socket\n");
 				freeaddrinfo(res);
