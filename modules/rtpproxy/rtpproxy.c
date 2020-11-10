@@ -2153,7 +2153,9 @@ send_rtpp_command(struct rtpp_node *node, struct iovec *v, int vcnt)
 					    s_errno);
 					goto badproxy;
 				}
-				if (node->rn_umode != CM_TCP && len >= (v[0].iov_len - 1) &&
+				if (node->rn_umode == CM_TCP)
+					goto out;
+				if (len >= (v[0].iov_len - 1) &&
 				    memcmp(buf, v[0].iov_base, (v[0].iov_len - 1)) == 0) {
 					len -= (v[0].iov_len - 1);
 					cp += (v[0].iov_len - 1);
