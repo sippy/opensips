@@ -50,6 +50,8 @@ struct rtpp_node {
 	struct rtpp_node	*rn_next;
 };
 
+#define CM_STREAM(ndp) ((ndp)->rn_umode == CM_TCP || (ndp)->rn_umode == CM_TCP6)
+
 /* Supported version of the RTP proxy command protocol */
 #define	SUP_CPROTOVER	20040107
 /* Required additional version of the RTP proxy command protocol */
