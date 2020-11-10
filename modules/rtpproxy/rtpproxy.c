@@ -1401,7 +1401,7 @@ int connect_rtpproxies(void)
 			}
 
 			/*
-			 * This is UDP or UDP6. Detect host and port; lookup host;
+			 * This is UDP, TCP or UDP6. Detect host and port; lookup host;
 			 * do connect() in order to specify peer address
 			 */
 			hostname = (char*)pkg_malloc(sizeof(char) * (strlen(pnode->rn_address) + 1));
@@ -2031,7 +2031,6 @@ send_rtpp_command(struct rtpp_node *node, struct iovec *v, int vcnt)
 	static char buf[RTPPROXY_BUF_SIZE];
 	struct pollfd fds[1];
 
-
 #ifdef IOV_MAX
 	if (IOV_MAX < OSIP_IOV_MAX)
 		max_vcnt = IOV_MAX;
@@ -2127,7 +2126,7 @@ send_rtpp_command(struct rtpp_node *node, struct iovec *v, int vcnt)
 			v[0].iov_base = gencookie();
 			v[0].iov_len = strlen(v[0].iov_base);
 		} else {
-			memmove(v, v + 1, (vcnt - 1) * sizeof(v));
+			memmove(v, v + 1, (vcnt - 1) * sizeof(*v));
 			v[vcnt - 1].iov_base = "\n";
 			v[vcnt - 1].iov_len = 1;
 		}
