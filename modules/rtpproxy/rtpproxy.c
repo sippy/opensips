@@ -2039,8 +2039,6 @@ error:
 #define RTPPROXY_BUF_SIZE 256
 #define OSIP_IOV_MAX 1024
 
-#include <assert.h>
-
 char *
 send_rtpp_command(struct rtpp_node *node, struct iovec *v, int vcnt)
 {
@@ -2160,7 +2158,6 @@ send_rtpp_command(struct rtpp_node *node, struct iovec *v, int vcnt)
 		}
 		for (i = 0; i < rtry; i++) {
 			int buflen = sizeof(buf)-1;
-			assert(cp == buf);
 			do {
 				len = writev(rtpp_socks[node->idx], v, vcnt);
 			} while (len == -1 && (errno == EINTR || errno == ENOBUFS));
