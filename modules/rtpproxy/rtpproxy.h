@@ -40,7 +40,7 @@ enum comm_modes {CM_UNIX = 0, CM_UDP, CM_TCP, CM_UDP6, CM_TCP6};
 struct rtpp_node {
 	unsigned int		idx;			/* overall index */
 	str			rn_url;			/* unparsed, deletable */
-	enum comm_modes		rn_umode;
+	enum comm_modes		rn_umode;		/* communication mode */
 	char			*rn_address;		/* substring of rn_url */
 	char			*adv_address;		/* advertised address of rtpproxy */
 	int			rn_disabled;		/* found unaccessible? */
