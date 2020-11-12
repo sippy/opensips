@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2003-2008 Sippy Software, Inc., http://www.sippysoft.com
+ * Copyright (C) 2020 Sippy Software, Inc., http://www.sippysoft.com
  *
  * This file is part of opensips, a free SIP server.
  *
