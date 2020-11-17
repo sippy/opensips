@@ -1918,8 +1918,8 @@ rtpp_checkcap(struct rtpp_node *node, char *cap, int caplen)
 
 	RTPP_VCMD_INIT(vvf, 3, {"VF", 2}, {" ", 1}, {NULL, 0});
 
-	vvf.v[3].iov_base = cap;
-	vvf.v[3].iov_len = caplen;
+	vvf.vu[2].iov_base = cap;
+	vvf.vu[2].iov_len = caplen;
 
 	cp = send_rtpp_command(node, &vvf, vvf.useritems);
 	if (cp == NULL)
@@ -2072,7 +2072,7 @@ send_rtpp_command(struct rtpp_node *node, struct rtpproxy_vcmd *vcmd, int vcnt)
 		int i, vec_len = 0;
 		/* use buf if possible :) */
 		for (i = max_vcnt - 1; i < vcnt; i++)
-			vec_len += vcmd->v[i].iov_len;
+			vec_len += vcmd->vs[i].iov_len;
 		/* use buf, error otherwise */
 		if (vec_len > RTPPROXY_BUF_SIZE) {
 			LM_ERR("Command too big %d - max %d\n", vec_len, RTPPROXY_BUF_SIZE);
@@ -2080,12 +2080,12 @@ send_rtpp_command(struct rtpp_node *node, struct rtpproxy_vcmd *vcmd, int vcnt)
 		}
 		cp = buf;
 		for (i = max_vcnt - 1; i < vcnt; i++) {
-			memcpy(cp, vcmd->v[i].iov_base, vcmd->v[i].iov_len);
-			cp += vcmd->v[i].iov_len;
+			memcpy(cp, vcmd->vs[i].iov_base, vcmd->vs[i].iov_len);
+			cp += vcmd->vs[i].iov_len;
 		}
 		i = max_vcnt - 1;
-		vcmd->v[i].iov_len = vec_len;
-		vcmd->v[i].iov_base = buf;
+		vcmd->vs[i].iov_len = vec_len;
+		vcmd->vs[i].iov_base = buf;
 		/* finally solve the problem */
 		vcnt = max_vcnt;
 
@@ -2117,7 +2117,7 @@ send_rtpp_command(struct rtpp_node *node, struct rtpproxy_vcmd *vcmd, int vcnt)
 		}
 
 		do {
-			len = writev(fd, vcmd->v + 1, vcnt - 1);
+			len = writev(fd, vcmd->vs + 1, vcnt - 1);
 		} while (len == -1 && errno == EINTR);
 		if (len <= 0) {
 			close(fd);
@@ -2155,17 +2155,17 @@ send_rtpp_command(struct rtpp_node *node, struct rtpproxy_vcmd *vcmd, int vcnt)
 			}
 		}
 		if (!CM_STREAM(node)) {
-			vcmd->v[0].iov_base = gencookie();
-			vcmd->v[0].iov_len = strlen(vcmd->v[0].iov_base);
+			vcmd->vs[0].iov_base = gencookie();
+			vcmd->vs[0].iov_len = strlen(vcmd->vs[0].iov_base);
 		} else {
-			memmove(vcmd->v, vcmd->v + 1, (vcnt - 1) * sizeof(*vcmd->v));
-			vcmd->v[vcnt - 1].iov_base = "\n";
-			vcmd->v[vcnt - 1].iov_len = 1;
+			memmove(vcmd->vs, vcmd->vs + 1, (vcnt - 1) * sizeof(*vcmd->vs));
+			vcmd->vs[vcnt - 1].iov_base = "\n";
+			vcmd->vs[vcnt - 1].iov_len = 1;
 		}
 		for (i = 0; i < rtry; i++) {
 			int buflen = sizeof(buf)-1;
 			do {
-				len = writev(rtpp_socks[node->idx], vcmd->v, vcnt);
+				len = writev(rtpp_socks[node->idx], vcmd->vs, vcnt);
 			} while (len == -1 && (errno == EINTR || errno == ENOBUFS));
 			if (len <= 0) {
 				LM_ERR("can't send (#%d iovec buffers) command to a RTP proxy (%d:%s)\n",
@@ -2202,10 +2202,10 @@ send_rtpp_command(struct rtpp_node *node, struct rtpproxy_vcmd *vcmd, int vcnt)
 						LM_ERR("can't parse reply from a RTP proxy: missing '\\n'\n");
 						goto badproxy;
 					}
-				} else if (len >= (vcmd->v[0].iov_len - 1) &&
-				    memcmp(buf, vcmd->v[0].iov_base, (vcmd->v[0].iov_len - 1)) == 0) {
-					len -= (vcmd->v[0].iov_len - 1);
-					cp += (vcmd->v[0].iov_len - 1);
+				} else if (len >= (vcmd->vs[0].iov_len - 1) &&
+				    memcmp(buf, vcmd->vs[0].iov_base, (vcmd->vs[0].iov_len - 1)) == 0) {
+					len -= (vcmd->vs[0].iov_len - 1);
+					cp += (vcmd->vs[0].iov_len - 1);
 					if (len != 0) {
 						len--;
 						cp++;
@@ -2429,9 +2429,9 @@ static int unforce_rtpproxy(struct sip_msg* msg, str callid,
 	    {NULL, 0}, {" ", 1}, {NULL, 0});
 	    /* 5 */    /* 6 */   /* 7 */
 
-	STR2IOVEC(callid, vdel.v[3]);
-	STR2IOVEC(from_tag, vdel.v[5]);
-	STR2IOVEC(to_tag, vdel.v[7]);
+	STR2IOVEC(callid, vdel.vu[2]);
+	STR2IOVEC(from_tag, vdel.vu[4]);
+	STR2IOVEC(to_tag, vdel.vu[6]);
 
 	if (nh_lock) {
 		lock_start_read( nh_lock );
@@ -3567,9 +3567,9 @@ int force_rtp_proxy_body(struct sip_msg* msg, struct force_rtpp_args *args,
 	medianum = 0;
 
 	opts.s.s[0] = (create == 0) ? 'L' : 'U';
-	STR2IOVEC(args->callid, vup.v[6]);
-	STR2IOVEC(from_tag, vup.v[12]);
-	STR2IOVEC(to_tag, vup.v[16]);
+	STR2IOVEC(args->callid, vup.vu[5]);
+	STR2IOVEC(from_tag, vup.vu[11]);
+	STR2IOVEC(to_tag, vup.vu[15]);
 
 	if (notification_socket.s == 0 || notification_socket.len == 0) {
 		if (enable_notification)
@@ -3723,18 +3723,18 @@ int force_rtp_proxy_body(struct sip_msg* msg, struct force_rtpp_args *args,
 					goto error;
 				}
 			}
-			STR2IOVEC(newip, vup.v[8]);
-			STR2IOVEC(oldport, vup.v[10]);
+			STR2IOVEC(newip, vup.vu[7]);
+			STR2IOVEC(oldport, vup.vu[9]);
 			if (1 || media_multi) /* XXX netch: can't choose now*/
 			{
 				snprintf(medianum_buf, sizeof medianum_buf, "%d", medianum);
 				medianum_str.s = medianum_buf;
 				medianum_str.len = strlen(medianum_buf);
-				STR2IOVEC(medianum_str, vup.v[14]);
-				STR2IOVEC(medianum_str, vup.v[18]);
+				STR2IOVEC(medianum_str, vup.vu[13]);
+				STR2IOVEC(medianum_str, vup.vu[17]);
 			} else {
-				vup.v[13].iov_len = vup.v[14].iov_len = 0;
-				vup.v[17].iov_len = vup.v[18].iov_len = 0;
+				vup.vu[12].iov_len = vup.vu[13].iov_len = 0;
+				vup.vu[16].iov_len = vup.vu[17].iov_len = 0;
 			}
 			if (!args->node && nh_lock) {
 				locked = 1;
@@ -3757,10 +3757,10 @@ int force_rtp_proxy_body(struct sip_msg* msg, struct force_rtpp_args *args,
 					if (!HAS_CAP(args->node, REPACK)) {
 						LM_WARN("re-packetization is requested but is not "
 						    "supported by the selected RTP proxy node\n");
-						vup.v[2].iov_len = 0;
+						vup.vu[1].iov_len = 0;
 					} else {
-						vup.v[2].iov_base = rep_opts.s.s;
-						vup.v[2].iov_len = rep_opts.oidx;
+						vup.vu[1].iov_base = rep_opts.s.s;
+						vup.vu[1].iov_len = rep_opts.oidx;
 					}
 				}
 				if (payload_types.len > 0 && HAS_CAP(args->node, CODECS)) {
@@ -3795,50 +3795,50 @@ int force_rtp_proxy_body(struct sip_msg* msg, struct force_rtpp_args *args,
 						}
 						cp--;
 					}
-					vup.v[3].iov_base = pt_opts.s.s;
-					vup.v[3].iov_len = pt_opts.oidx;
+					vup.vu[2].iov_base = pt_opts.s.s;
+					vup.vu[2].iov_len = pt_opts.oidx;
 				} else {
-					vup.v[3].iov_len = 0;
+					vup.vu[2].iov_len = 0;
 				}
 				if (HAS_CAP(args->node, TTL_CHANGE)) {
-					vup.v[4].iov_base = t_opts.s.s;
-					vup.v[4].iov_len = t_opts.oidx;
+					vup.vu[3].iov_base = t_opts.s.s;
+					vup.vu[3].iov_len = t_opts.oidx;
 				} else {
-					vup.v[4].iov_len = 0;
+					vup.vu[3].iov_len = 0;
 				}
 				if (to_tag.len == 0) {
 					vcnt = 14;
-					vup.v[17].iov_base = " "; /* replace ';' with ' ' */
+					vup.vu[16].iov_base = " "; /* replace ';' with ' ' */
 				} else
 					vcnt = 18;
 				node_has_dtmf_catch = enable_dtmf_catch && HAS_CAP(args->node, SUBCOMMAND);
 				node_has_notification = enable_notification && HAS_CAP(args->node, NOTIFY);
 				if (node_has_dtmf_catch || node_has_notification) {
 					if (opts.s.s[0] == 'U') {
-						STR2IOVEC(notification_socket, vup.v[vcnt + 2]);
+						STR2IOVEC(notification_socket, vup.vu[vcnt + 1]);
 						if (!HAS_CAP(args->node, NOTIFY_WILD) && !rtpp_notify_socket_un &&
 								notification_socket.s == rtpp_notify_socket.s) {
-							vup.v[vcnt + 2].iov_base += 4;
-							vup.v[vcnt + 2].iov_len -= 4;
+							vup.vu[vcnt + 1].iov_base += 4;
+							vup.vu[vcnt + 1].iov_len -= 4;
 						}
 						vcnt += 2;
-						STR2IOVEC(timeout_tag, vup.v[vcnt + 2]);
+						STR2IOVEC(timeout_tag, vup.vu[vcnt + 1]);
 						vcnt += 2;
 					}
 
 					if (node_has_dtmf_catch) {
 						if (HAS_CAP(args->node, SUBCOMMAND)) {
 							/* separator */
-							vup.v[vcnt + 1].iov_base = " && M3:1 D";
-							vup.v[vcnt + 1].iov_len = 10;
+							vup.vu[vcnt].iov_base = " && M3:1 D";
+							vup.vu[vcnt].iov_len = 10;
 							vcnt++;
 							/* DTMF tag */
-							STR2IOVEC(dtmf_tag, vup.v[vcnt + 1]);
+							STR2IOVEC(dtmf_tag, vup.vu[vcnt]);
 							vcnt++;
 
 							if (mod_opts.oidx > 0) {
-								vup.v[vcnt + 1].iov_base = mod_opts.s.s;
-								vup.v[vcnt + 1].iov_len = mod_opts.oidx;
+								vup.vu[vcnt].iov_base = mod_opts.s.s;
+								vup.vu[vcnt].iov_len = mod_opts.oidx;
 								vcnt++;
 							}
 						} else
@@ -3846,8 +3846,8 @@ int force_rtp_proxy_body(struct sip_msg* msg, struct force_rtpp_args *args,
 					}
 				}
 
-				vup.v[1].iov_base = m_opts.s.s;
-				vup.v[1].iov_len = m_opts.oidx;
+				vup.vu[0].iov_base = m_opts.s.s;
+				vup.vu[0].iov_len = m_opts.oidx;
 				cp = send_rtpp_command(args->node, &vup, vcnt);
 				if (!cp && !create) {
 					LM_ERR("cannot lookup a session on a different RTPProxy\n");
@@ -4176,16 +4176,16 @@ static inline int rtpp_build_stats(struct sip_msg *msg, struct rtpproxy_vcmd **v
 		return -1;
 	}
 
-	STR2IOVEC(*callid, vstat.v[3]);
-	STR2IOVEC(from_tag, vstat.v[5]);
-	STR2IOVEC(to_tag, vstat.v[7]);
+	STR2IOVEC(*callid, vstat.vu[2]);
+	STR2IOVEC(from_tag, vstat.vu[4]);
+	STR2IOVEC(to_tag, vstat.vu[6]);
 
 	if (msg->first_line.type == SIP_REPLY) {
-		STR2IOVEC(to_tag, vstat.v[5]);
-		STR2IOVEC(from_tag, vstat.v[7]);
+		STR2IOVEC(to_tag, vstat.vu[4]);
+		STR2IOVEC(from_tag, vstat.vu[6]);
 	} else {
-		STR2IOVEC(from_tag, vstat.v[5]);
-		STR2IOVEC(to_tag, vstat.v[7]);
+		STR2IOVEC(from_tag, vstat.vu[4]);
+		STR2IOVEC(to_tag, vstat.vu[6]);
 	}
 
 	*vret = &vstat;
@@ -4332,7 +4332,7 @@ static inline int rtpproxy_all_stats_f(struct sip_msg *msg, pv_spec_t *pavp,
 
 	ret = -2;
 	for (chunk = 0; chunk < rtpp_stats_chunks_no; chunk++) {
-		vstat->v[nitems + 1] = rtpp_stats_chunks[chunk];
+		vstat->vu[nitems] = rtpp_stats_chunks[chunk];
 		result = send_rtpp_command(node, vstat, nitems + 1);
 
 		error = rtpp_get_error(result);
@@ -4411,7 +4411,7 @@ static int w_rtpproxy_recording(struct sip_msg *msg, str *callid,
 	if (destination) {
 		/* if name is specified, we need to change the command */
 		cmd = 'C';
-		STR2IOVEC(*destination, vrec.v[6]);
+		STR2IOVEC(*destination, vrec.vu[5]);
 		nitems = vrec.useritems;
 		if (medianum > 0)
 			media_start = media_stop = medianum;
@@ -4436,18 +4436,18 @@ static int w_rtpproxy_recording(struct sip_msg *msg, str *callid,
 		}
 	} else {
 		cmd = 'R';
-		vrec.v[7].iov_len = 0; /* remove the separator */
-		vrec.v[9].iov_len = vrec.v[10].iov_len = 0; /* remove medianum for caller */
+		vrec.vu[6].iov_len = 0; /* remove the separator */
+		vrec.vu[8].iov_len = vrec.vu[9].iov_len = 0; /* remove medianum for caller */
 		nitems = vrec.useritems - 2;;
 	}
 
 	if (flags)
-		STR2IOVEC(*flags, vrec.v[2]);
+		STR2IOVEC(*flags, vrec.vu[1]);
 
-	STR2IOVEC(*callid, vrec.v[4]);
-	STR2IOVEC(*from_tag, vrec.v[8]);
+	STR2IOVEC(*callid, vrec.vu[3]);
+	STR2IOVEC(*from_tag, vrec.vu[7]);
 	if (to_tag)
-		STR2IOVEC(*to_tag, vrec.v[12]);
+		STR2IOVEC(*to_tag, vrec.vu[11]);
 
 	if (!to_tag || to_tag->len <= 0) {
 		if (cmd == 'C')
@@ -4460,8 +4460,8 @@ static int w_rtpproxy_recording(struct sip_msg *msg, str *callid,
 		send_rtpp_command(node, &vrec, nitems);
 	else
 		while (media_start <= media_stop) {
-			vrec.v[10].iov_base = int2str(media_start, (int *)&vrec.v[10].iov_len);
-			vrec.v[14] = vrec.v[10];
+			vrec.vu[9].iov_base = int2str(media_start, (int *)&vrec.vu[9].iov_len);
+			vrec.vu[13] = vrec.vu[9];
 			send_rtpp_command(node, &vrec, nitems);
 			media_start++;
 		}
@@ -4496,13 +4496,13 @@ static int w_rtpproxy_stop_recording(struct sip_msg *msg, str *callid,
 		goto error;
 	}
 
-	STR2IOVEC(*callid, vstrec.v[2]);
-	STR2IOVEC(*from_tag, vstrec.v[4]);
+	STR2IOVEC(*callid, vstrec.vu[1]);
+	STR2IOVEC(*from_tag, vstrec.vu[3]);
 	if (to_tag)
-		STR2IOVEC(*to_tag, vstrec.v[8]);
+		STR2IOVEC(*to_tag, vstrec.vu[7]);
 
-	vstrec.v[6].iov_base = int2str(medianum, (int *)&vstrec.v[6].iov_len);
-	vstrec.v[10] = vstrec.v[6];
+	vstrec.vu[5].iov_base = int2str(medianum, (int *)&vstrec.vu[5].iov_len);
+	vstrec.vu[9] = vstrec.vu[5];
 	send_rtpp_command(node, &vstrec, vstrec.useritems);
 
 	return 1;

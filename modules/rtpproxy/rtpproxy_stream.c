@@ -73,19 +73,19 @@ rtpproxy_stream(struct sip_msg* msg, str *pname, int count,
         LM_ERR("can't get From tag\n");
         return -1;
     }
-    vstream.v[1].iov_len = sprintf(cbuf, "P%d", count);
-    STR2IOVEC(callid, vstream.v[3]);
-    STR2IOVEC(*pname, vstream.v[5]);
+    vstream.vu[0].iov_len = sprintf(cbuf, "P%d", count);
+    STR2IOVEC(callid, vstream.vu[2]);
+    STR2IOVEC(*pname, vstream.vu[4]);
 
     nitems = vstream.useritems;
     if (stream2uac == 0) {
         if (to_tag.len == 0)
             return -1;
-        STR2IOVEC(to_tag, vstream.v[7]);
-        STR2IOVEC(from_tag, vstream.v[9]);
+        STR2IOVEC(to_tag, vstream.vu[6]);
+        STR2IOVEC(from_tag, vstream.vu[8]);
     } else {
-        STR2IOVEC(from_tag, vstream.v[7]);
-        STR2IOVEC(to_tag, vstream.v[9]);
+        STR2IOVEC(from_tag, vstream.vu[6]);
+        STR2IOVEC(to_tag, vstream.vu[8]);
         if (to_tag.len <= 0)
             nitems -= 2;
     }
@@ -178,16 +178,16 @@ rtpproxy_stop_stream(struct sip_msg* msg, nh_set_param_t *setid, pv_spec_t *var,
         LM_ERR("can't get From tag\n");
         return -1;
     }
-    STR2IOVEC(callid, vststrm.v[3]);
+    STR2IOVEC(callid, vststrm.vu[2]);
     nitems = vststrm.useritems;
     if (stream2uac == 0) {
         if (to_tag.len == 0)
             return -1;
-        STR2IOVEC(to_tag, vststrm.v[5]);
-        STR2IOVEC(from_tag, vststrm.v[7]);
+        STR2IOVEC(to_tag, vststrm.vu[4]);
+        STR2IOVEC(from_tag, vststrm.vu[6]);
     } else {
-        STR2IOVEC(from_tag, vststrm.v[5]);
-        STR2IOVEC(to_tag, vststrm.v[7]);
+        STR2IOVEC(from_tag, vststrm.vu[4]);
+        STR2IOVEC(to_tag, vststrm.vu[6]);
         if (to_tag.len <= 0)
             nitems -= 2;
     }
