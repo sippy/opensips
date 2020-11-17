@@ -31,6 +31,8 @@
 #include "../dialog/dlg_load.h"
 #include "../../rw_locking.h"
 
+struct rtpproxy_vcmd;
+
 /* Handy macros */
 #define STR2IOVEC(sx, ix)       do {(ix).iov_base = (sx).s; (ix).iov_len = (sx).len;} while(0)
 #define SZ2IOVEC(sx, ix)        do {(ix).iov_base = (sx); (ix).iov_len = strlen(sx);} while(0)
@@ -163,7 +165,7 @@ void notification_listener_process(int rank);
 /* Functions from nathelper */
 struct rtpp_set *get_rtpp_set(nh_set_param_t *);
 struct rtpp_node *select_rtpp_node(struct sip_msg *, str, struct rtpp_set *, pv_spec_p, int);
-char *send_rtpp_command(struct rtpp_node *, struct iovec *, int);
+char *send_rtpp_command(struct rtpp_node *, struct rtpproxy_vcmd *, int);
 int force_rtp_proxy_body(struct sip_msg* msg, struct force_rtpp_args *args,
                pv_spec_p var, pv_spec_p ipvar);
 
