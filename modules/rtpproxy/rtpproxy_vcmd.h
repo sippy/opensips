@@ -22,22 +22,20 @@
 #define _rtpproxy_vcmd_h
 
 struct rtpproxy_vcmd {
-	struct iovec *lastvec;
 	struct iovec *vs;
 	struct iovec *vu;
 	int useritems;
 };
 
 #define RTPP_CMD_IOVEC(nitems, ...) \
-	(struct iovec[nitems + 2]){{NULL, 0}, __VA_ARGS__, {"\n", 1}}
+	(struct iovec[nitems + 2]){{NULL, 0}, __VA_ARGS__, {}}
 #define RTPP_CMD_IOVEC_STATIC(var, nitems, ...) \
 	static struct iovec var[nitems + 2] = \
-	    {{NULL, 0}, __VA_ARGS__, {"\n", 1}};
+	    {{NULL, 0}, __VA_ARGS__, {}};
 
 #define RTPP_VCMD_INIT(vcmd, nitems, ...) { \
 	(vcmd).vs = RTPP_CMD_IOVEC(nitems, __VA_ARGS__); \
 	(vcmd).vu = (vcmd).vs + 1; \
-	(vcmd).lastvec = &(vcmd.vs[nitems + 1]); \
 	(vcmd).useritems = nitems; \
 }
 
@@ -45,7 +43,6 @@ struct rtpproxy_vcmd {
 	RTPP_CMD_IOVEC_STATIC(_var, nitems, __VA_ARGS__); \
 	(vcmd).vs = _var; \
 	(vcmd).vu = (vcmd).vs + 1; \
-        (vcmd).lastvec = &(_var[nitems + 1]); \
 	(vcmd).useritems = nitems; \
 }
 
