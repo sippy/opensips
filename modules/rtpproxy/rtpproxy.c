@@ -259,7 +259,7 @@ evi_params_p rtpproxy_dtmf_params;
 
 static int extract_mediainfo(str *, str *, str *);
 static int alter_mediaip(struct sip_msg *, str *, str *, int, str *, int, int);
-static char *gencookie();
+static void gencookie(struct iovec *);
 static int rtpp_test(struct rtpp_node*, int, int);
 static int unforce_rtp_proxy_f(struct sip_msg* msg, nh_set_param_t *pset,
 				pv_spec_t *var);
@@ -1901,13 +1901,13 @@ alter_mediaport(struct sip_msg *msg, str *body, str *oldport, str *newport,
 	return 0;
 }
 
-static char * gencookie(void)
+static void gencookie(struct iovec *cv)
 {
 	static char cook[34];
 
-	sprintf(cook, "%d_%u ", (int)mypid, myseqn);
+	cv->iov_len = sprintf(cook, "%d_%u ", (int)mypid, myseqn);
+	cv->iov_base = cook;
 	myseqn++;
-	return cook;
 }
 
 static int
@@ -2039,7 +2039,7 @@ error:
 	return 1;
 }
 
-
+#include <assert.h>
 
 #define RTPPROXY_BUF_SIZE 256
 #define OSIP_IOV_MAX 1024
@@ -2054,7 +2054,8 @@ send_rtpp_command(struct rtpp_node *node, struct rtpproxy_vcmd *vcmd, int vcnt)
 	static char buf[RTPPROXY_BUF_SIZE];
 	struct pollfd fds[1];
 
-	vcnt += 1;
+	assert(vcnt <= vcmd->useritems);
+
 #ifdef IOV_MAX
 	if (IOV_MAX < OSIP_IOV_MAX)
 		max_vcnt = IOV_MAX;
@@ -2068,10 +2069,10 @@ send_rtpp_command(struct rtpp_node *node, struct rtpproxy_vcmd *vcmd, int vcnt)
 		}
 	}
 	/* normalize vcntl to max_vcnt, as on some systems this limit is very low (16 on Solaris) */
-	if (vcnt > max_vcnt) {
+	if (vcnt + 1 > max_vcnt) {
 		int i, vec_len = 0;
 		/* use buf if possible :) */
-		for (i = max_vcnt - 1; i < vcnt; i++)
+		for (i = max_vcnt - 1; i < (vcnt + 1); i++)
 			vec_len += vcmd->vs[i].iov_len;
 		/* use buf, error otherwise */
 		if (vec_len > RTPPROXY_BUF_SIZE) {
@@ -2079,7 +2080,7 @@ send_rtpp_command(struct rtpp_node *node, struct rtpproxy_vcmd *vcmd, int vcnt)
 			return NULL;
 		}
 		cp = buf;
-		for (i = max_vcnt - 1; i < vcnt; i++) {
+		for (i = max_vcnt - 1; i < (vcnt + 1); i++) {
 			memcpy(cp, vcmd->vs[i].iov_base, vcmd->vs[i].iov_len);
 			cp += vcmd->vs[i].iov_len;
 		}
@@ -2117,12 +2118,12 @@ send_rtpp_command(struct rtpp_node *node, struct rtpproxy_vcmd *vcmd, int vcnt)
 		}
 
 		do {
-			len = writev(fd, vcmd->vs + 1, vcnt - 1);
+			len = writev(fd, vcmd->vs + 1, vcnt);
 		} while (len == -1 && errno == EINTR);
 		if (len <= 0) {
 			close(fd);
 			LM_ERR("can't send (#%d iovec buffers) command to a RTP proxy (%d:%s)\n",
-					vcnt - 1, errno, strerror(errno));
+					vcnt, errno, strerror(errno));
 			goto badproxy;
 		}
 		do {
@@ -2154,22 +2155,21 @@ send_rtpp_command(struct rtpp_node *node, struct rtpproxy_vcmd *vcmd, int vcnt)
 				break;
 			}
 		}
+		struct iovec *cv = CM_STREAM(node) ? &(vcmd->vs[1]) : &(vcmd->vs[0]);
 		if (!CM_STREAM(node)) {
-			vcmd->vs[0].iov_base = gencookie();
-			vcmd->vs[0].iov_len = strlen(vcmd->vs[0].iov_base);
+			gencookie(&(cv[0]));
 		} else {
-			memmove(vcmd->vs, vcmd->vs + 1, (vcnt - 1) * sizeof(*vcmd->vs));
-			vcmd->vs[vcnt - 1].iov_base = "\n";
-			vcmd->vs[vcnt - 1].iov_len = 1;
+			cv[vcnt].iov_base = "\n";
+			cv[vcnt].iov_len = 1;
 		}
 		for (i = 0; i < rtry; i++) {
 			int buflen = sizeof(buf)-1;
 			do {
-				len = writev(rtpp_socks[node->idx], vcmd->vs, vcnt);
+				len = writev(rtpp_socks[node->idx], cv, vcnt + 1);
 			} while (len == -1 && (errno == EINTR || errno == ENOBUFS));
 			if (len <= 0) {
 				LM_ERR("can't send (#%d iovec buffers) command to a RTP proxy (%d:%s)\n",
-						vcnt, errno, strerror(errno));
+						vcnt + 1, errno, strerror(errno));
 				goto badproxy;
 			}
 			while ((poll(fds, 1, rtpproxy_tout) == 1) &&
