@@ -1379,11 +1379,11 @@ connect_rtpp_node(const struct rtpp_node *pnode)
 	struct addrinfo hints, *res;
 
 	/*
-	 * This is UDP, TCP or UDP6. Detect host and port; lookup host;
+	 * This is UDP, TCP, UDP6 or TCP6. Detect host and port; lookup host;
 	 * do connect() in order to specify peer address
 	 */
 	hostname = (char*)pkg_malloc(sizeof(char) * (strlen(pnode->rn_address) + 1));
-	if (hostname==NULL) {
+	if (hostname == NULL) {
 		LM_ERR("no more pkg memory\n");
 		goto e0;
 	}
@@ -2148,7 +2148,7 @@ send_rtpp_command(struct rtpp_node *node, struct iovec *v, int vcnt)
 				break;
 			}
 		}
-		if (node->rn_umode != CM_TCP && node->rn_umode != CM_TCP6) {
+		if (!CM_STREAM(node)) {
 			v[0].iov_base = gencookie();
 			v[0].iov_len = strlen(v[0].iov_base);
 		} else {
