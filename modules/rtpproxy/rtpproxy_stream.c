@@ -49,15 +49,15 @@ rtpproxy_stream(struct sip_msg* msg, str *pname, int count,
     struct rtpproxy_vcmd vstream;
 
     RTPP_VCMD_INIT(vstream, 10,
-        {cbuf,        0}, /* 1 P<count> */
+        {cbuf,        0}, /*.vu[0] P<count> */
         {" ",         1},
-        {NULL,        0}, /* 3 callid */
+        {NULL,        0}, /*.vu[2] callid */
         {" ",         1},
-        {NULL,        0}, /* 5 pname */
+        {NULL,        0}, /*.vu[4] pname */
         {" session ", 9},
-        {NULL,        0}, /* 7 from tag */
+        {NULL,        0}, /*.vu[6] from tag */
         {";1 ",       3},
-        {NULL,        0}, /* 9 to tag */
+        {NULL,        0}, /*.vu[8] to tag */
         {";1",        2}
     );
 
@@ -156,13 +156,13 @@ rtpproxy_stop_stream(struct sip_msg* msg, nh_set_param_t *setid, pv_spec_t *var,
     struct rtpproxy_vcmd vststrm;
 
     RTPP_VCMD_INIT(vststrm, 8,
-        {"S",         1}, /* 1 */
+        {"S",         1}, /*.vu[0] */
         {" ",         1},
-        {NULL,        0}, /* 3 callid */
+        {NULL,        0}, /*.vu[2] callid */
         {" ",         1},
-        {NULL,        0}, /* 5 from tag */
+        {NULL,        0}, /*.vu[4] from tag */
         {";1 ",       3},
-        {NULL,        0}, /* 7 to tag */
+        {NULL,        0}, /*.vu[6] to tag */
         {";1",        2}
     );
 

@@ -2425,9 +2425,9 @@ static int unforce_rtpproxy(struct sip_msg* msg, str callid,
 	struct rtpproxy_vcmd vdel;
 
 	RTPP_VCMD_INIT(vdel, 4 + 3, {"D", 1}, {" ", 1}, {NULL, 0}, {" ", 1},
-			            /* 1 */   /* 2 */   /* 3 */    /* 4 */
+			            /*.vu[0]*//*.vu[1]*//*.vu[2]*//*.vu[3]*/
 	    {NULL, 0}, {" ", 1}, {NULL, 0});
-	    /* 5 */    /* 6 */   /* 7 */
+	    /*.vu[4]*//*.vu[5]*//*.vu[6] */
 
 	STR2IOVEC(callid, vdel.vu[2]);
 	STR2IOVEC(from_tag, vdel.vu[4]);
@@ -4384,20 +4384,20 @@ static int w_rtpproxy_recording(struct sip_msg *msg, str *callid,
 	struct rtpproxy_vcmd vrec;
 
 	RTPP_VCMD_INIT(vrec, 14,
-		{&cmd, 1},	/* [1] command R or C */
-		{NULL, 0},	/* [2] flags, if they exist */
-		{" ", 1},	/* [3] separator */
-		{NULL, 0},	/* [4] callid */
-		{" ", 1},	/* [5] separator */
-		{" ", 0},	/* [6] recording destination, if specified */
-		{" ", 1},	/* [7] separator */
-		{NULL, 0},	/* [8] from_tag */
-		{";", 1},	/* [9] medianum separator */
-		{NULL, 0},	/* [10] medianum */
-		{" ", 1},	/* [11] separator */
-		{NULL, 0},	/* [12] to_tag */
-		{";", 1},	/* [13] medianum separator */
-		{NULL, 0}	/* [14] medianum */
+		{&cmd, 1},	/*.vu[0] command R or C */
+		{NULL, 0},	/*.vu[1] flags, if they exist */
+		{" ", 1},	/*.vu[2] separator */
+		{NULL, 0},	/*.vu[3] callid */
+		{" ", 1},	/*.vu[4] separator */
+		{" ", 0},	/*.vu[5] recording destination, if specified */
+		{" ", 1},	/*.vu[6] separator */
+		{NULL, 0},	/*.vu[7] from_tag */
+		{";", 1},	/*.vu[8] medianum separator */
+		{NULL, 0},	/*.vu[9] medianum */
+		{" ", 1},	/*.vu[10] separator */
+		{NULL, 0},	/*.vu[11] to_tag */
+		{";", 1},	/*.vu[12] medianum separator */
+		{NULL, 0}	/*.vu[13] medianum */
 	);
 
 	/* check if we support recording */
@@ -4478,16 +4478,16 @@ static int w_rtpproxy_stop_recording(struct sip_msg *msg, str *callid,
 {
 	struct rtpproxy_vcmd vstrec;
 	RTPP_VCMD_INIT(vstrec, 10,
-		{"N ", 2},	/* [1] command R or C */
-		{NULL, 0},	/* [2] callid */
-		{" ", 1},	/* [3] separator */
-		{NULL, 0},	/* [4] from_tag */
-		{";", 1},	/* [5] medianum separator */
-		{NULL, 0},	/* [6] medianum */
-		{" ", 1},	/* [7] separator */
-		{NULL, 0},	/* [8] to_tag */
-		{";", 1},	/* [9] medianum separator */
-		{NULL, 0}	/* [10] medianum */
+		{"N ", 2},	/*.vu[0] command R or C */
+		{NULL, 0},	/*.vu[1] callid */
+		{" ", 1},	/*.vu[2] separator */
+		{NULL, 0},	/*.vu[3] from_tag */
+		{";", 1},	/*.vu[4] medianum separator */
+		{NULL, 0},	/*.vu[5] medianum */
+		{" ", 1},	/*.vu[6] separator */
+		{NULL, 0},	/*.vu[7] to_tag */
+		{";", 1},	/*.vu[8] medianum separator */
+		{NULL, 0}	/*.vu[9] medianum */
 	);
 
 	/* check if we support recording */
