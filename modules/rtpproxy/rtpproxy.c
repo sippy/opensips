@@ -174,6 +174,7 @@
 #include "../../parser/parse_body.h"
 #include "../../msg_callbacks.h"
 #include "../../evi/evi_modules.h"
+#include "../../lib/dassert.h"
 
 #include "../dialog/dlg_load.h"
 #include "../tm/tm_load.h"
@@ -1974,8 +1975,6 @@ error:
 	return 1;
 }
 
-#include <assert.h>
-
 #define RTPPROXY_BUF_SIZE 256
 #define OSIP_IOV_MAX 1024
 
@@ -1989,7 +1988,8 @@ send_rtpp_command(struct rtpp_node *node, struct rtpproxy_vcmd *vcmd, int vcnt)
 	static char buf[RTPPROXY_BUF_SIZE];
 	struct pollfd fds[1];
 
-	assert(vcnt <= vcmd->useritems);
+	DASSERT(vcnt <= vcmd->useritems);
+	DASSERT(vcmd->vu == vcmd->vs + 1);
 
 #ifdef IOV_MAX
 	if (IOV_MAX < OSIP_IOV_MAX)
