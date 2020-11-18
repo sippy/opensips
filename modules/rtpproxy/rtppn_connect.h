@@ -18,8 +18,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-#ifndef _rtppm_try_connect_h
-#define _rtppm_try_connect_h
+#ifndef _rtppn_try_connect_h
+#define _rtppn_try_connect_h
 
 int try_connect(int s, const struct sockaddr *name, socklen_t namelen,
     int timeout);

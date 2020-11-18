@@ -24,7 +24,7 @@
 #include <fcntl.h>
 #include <poll.h>
 
-#include "rtppm_try_connect.h"
+#include "rtppn_connect.h"
 
 int try_connect(int s, const struct sockaddr *name, socklen_t namelen, int timeout)
 {

@@ -182,7 +182,7 @@
 #include "nhelpr_funcs.h"
 #include "rtpproxy_stream.h"
 #include "rtpproxy_callbacks.h"
-#include "rtppm_try_connect.h"
+#include "rtppn_connect.h"
 #include "rtpproxy_vcmd.h"
 
 #define NH_TABLE_VERSION  0
