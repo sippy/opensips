@@ -80,6 +80,8 @@ struct rtpp_node {
 #define	SUBCOMMAND_CAP			(1<<9)
 #define	SUBCOMMAND_CPROTOVER	"20191015"
 
+#define DEFAULT_CPORT 	"22222"
+
 #define RTP_CAP(_c) _c ## _CPROTOVER, sizeof(_c ## _CPROTOVER) - 1
 #define SET_CAP(_n, _c) (_n)->capabilities |= (_c ## _CAP)
 #define HAS_CAP(_n, _c) ((_n)->capabilities & _c ## _CAP)
@@ -157,6 +159,7 @@ extern str rtpp_notify_socket;
 extern int rtpp_notify_socket_un;
 extern struct dlg_binds dlg_api;
 extern int detect_rtp_idle;
+extern int rtpproxy_tout;
 extern struct rtpp_set_head ** rtpp_set_list;
 extern struct rtpp_notify_head * rtpp_notify_h;
 int init_rtpp_notify_list();

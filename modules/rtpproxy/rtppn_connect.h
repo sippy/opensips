@@ -21,7 +21,8 @@
 #ifndef _rtppn_try_connect_h
 #define _rtppn_try_connect_h
 
-int try_connect(int s, const struct sockaddr *name, socklen_t namelen,
-    int timeout);
+struct rtpp_node;
+
+int connect_rtpp_node(const struct rtpp_node *pnode);
 
 #endif

@@ -182,8 +182,8 @@
 #include "nhelpr_funcs.h"
 #include "rtpproxy_stream.h"
 #include "rtpproxy_callbacks.h"
-#include "rtppn_connect.h"
 #include "rtpproxy_vcmd.h"
+#include "rtppn_connect.h"
 
 #define NH_TABLE_VERSION  0
 
@@ -219,8 +219,6 @@
 #define MI_WEIGHT_LEN				(sizeof(MI_WEIGHT)-1)
 #define MI_RECHECK_TICKS			"recheck_ticks"
 #define MI_RECHECK_T_LEN			(sizeof(MI_RECHECK_TICKS)-1)
-
-#define	CPORT		"22222"
 
 /* param names to be stored in the dialog */
 static str param1_name = str_init("rtpproxy_1");
@@ -346,7 +344,7 @@ static struct {
 
 static int rtpproxy_disable_tout = 60;
 static int rtpproxy_retr = 5;
-static int rtpproxy_tout = -1;
+int rtpproxy_tout = -1;
 static char *rtpproxy_timeout = 0;
 static int rtpproxy_autobridge = 0;
 static pid_t mypid;
@@ -1370,69 +1368,6 @@ child_init(int rank)
 	mypid = getpid();
 
 	return connect_rtpproxies();
-}
-
-static int
-connect_rtpp_node(const struct rtpp_node *pnode)
-{
-	int n, s;
-	char *cp, *hostname;
-	struct addrinfo hints, *res;
-
-	/*
-	 * This is UDP, TCP, UDP6 or TCP6. Detect host and port; lookup host;
-	 * do connect() in order to specify peer address
-	 */
-	hostname = (char*)pkg_malloc(sizeof(char) * (strlen(pnode->rn_address) + 1));
-	if (hostname == NULL) {
-		LM_ERR("no more pkg memory\n");
-		goto e0;
-	}
-	strcpy(hostname, pnode->rn_address);
-
-	cp = strrchr(hostname, ':');
-	if (cp != NULL) {
-		*cp = '\0';
-		cp++;
-	}
-	if (cp == NULL || *cp == '\0')
-		cp = CPORT;
-
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_flags = 0;
-	hints.ai_family = (pnode->rn_umode == CM_UDP6 || pnode->rn_umode == CM_TCP6) ? AF_INET6 : AF_INET;
-	hints.ai_socktype = CM_STREAM(pnode) ? SOCK_STREAM : SOCK_DGRAM;
-	if ((n = getaddrinfo(hostname, cp, &hints, &res)) != 0) {
-		LM_ERR("%s\n", gai_strerror(n));
-		goto e1;
-	}
-
-	s = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-	if (s == -1) {
-		LM_ERR("can't create socket\n");
-		goto e2;
-	}
-	if (CM_STREAM(pnode)) {
-		n = try_connect(s, res->ai_addr, res->ai_addrlen, rtpproxy_tout);
-	} else {
-		n = connect(s, res->ai_addr, res->ai_addrlen);
-	}
-	if (n == -1) {
-		LM_ERR("can't connect to a RTP proxy\n");
-		goto e3;
-	}
-	pkg_free(hostname);
-	freeaddrinfo(res);
-	LM_DBG("connected %s\n", pnode->rn_address);
-	return s;
-e3:
-	close(s);
-e2:
-	freeaddrinfo(res);
-e1:
-	pkg_free(hostname);
-e0:
-	return -1;
 }
 
 int connect_rtpproxies(void)
