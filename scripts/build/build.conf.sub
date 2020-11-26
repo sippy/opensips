@@ -1,4 +1,4 @@
-enable_ubuntu-toolchain-test() {
+enable_ubuntu_toolchain_test() {
   sudo apt install software-properties-common
   sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
 }
@@ -50,7 +50,7 @@ gcc-9)
 	export AR="gcc-ar-9"
 	export RANLIB="gcc-ranlib-9"
 	export GCOV_CMD="gcov-9"
-	PRE_INSTALL_CMD="enable_ubuntu-toolchain-test"
+	PRE_INSTALL_CMD="enable_ubuntu_toolchain_test"
 	PKGS="${PKGS} gcc-9 g++-9"
 	;;
 gcc-10)
@@ -58,7 +58,7 @@ gcc-10)
 	export AR="gcc-ar-10"
 	export RANLIB="gcc-ranlib-10"
 	export GCOV_CMD="gcov-10"
-	PRE_INSTALL_CMD="enable_ubuntu-toolchain-test"
+	PRE_INSTALL_CMD="enable_ubuntu_toolchain_test"
 	PKGS="${PKGS} gcc-9 g++-9"
 	;;
 clang-9)
