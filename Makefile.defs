@@ -157,7 +157,7 @@ CC_LONGVER=$(shell if  $(CC) -v 2>/dev/null; then \
 					fi )
 
 CC_M_INL_STROPS=$(shell $(CC) -minline-all-stringops -E /usr/include/stdio.h 2>/dev/null && \
-				printf "-minline-all-stringops")
+				echo "-minline-all-stringops")
 
 #test123:
 #	echo ${CC_M_INL_STROPS}
