@@ -48,6 +48,7 @@ clang-10)
         ;;
 esac
 
+sudo apt-get update -y
 for pkg in ${PKGS}
 do
   sudo apt-get -y install ${pkg}
