@@ -156,6 +156,12 @@ CC_LONGVER=$(shell if  $(CC) -v 2>/dev/null; then \
 						$(CC) -V 2>&1 ; \
 					fi )
 
+CC_M_INL_STROPS=$(shell $(CC) -minline-all-stringops -E /usr/include/stdio.h 2>/dev/null && \
+				printf "-minline-all-stringops")
+
+#test123:
+#	echo ${CC_M_INL_STROPS}
+
 #find-out the compiler's name
 
 # clang contains path to gcc
@@ -840,7 +846,7 @@ ifeq 				($(ARCH_VER), i386)
 else
 						CPU_TYPE ?= prescott
 endif
-					CFLAGS+=-minline-all-stringops \
+					CFLAGS+=$(CC_M_INL_STROPS) \
 							-falign-loops \
 							-ftree-vectorize \
 							-fno-common \
@@ -851,7 +857,7 @@ else
 			#if gcc 3.0+
 ifeq			($(CC_CLASS), 3.x)
 					CPU_TYPE ?= pentium4
-					CFLAGS+=-minline-all-stringops \
+					CFLAGS+=$(CC_M_INL_STROPS) \
 							-falign-loops
 ifeq				(X,$(shell echo "$(CC_SHORTVER)" | sed -e 's/3\.[0-3]/X/'))
 					CFLAGS+=-mcpu=$(CPU_TYPE)
@@ -914,7 +920,7 @@ ifeq		($(CC_NAME), gcc)
 			#if gcc 4.0+
 ifeq			($(CC_CLASS), 4.x)
 					CPU_TYPE ?= nocona
-					CFLAGS+=-minline-all-stringops \
+					CFLAGS+=$(CC_M_INL_STROPS) \
 							-falign-loops \
 							-ftree-vectorize \
 							-fno-common \
@@ -924,7 +930,7 @@ else
 			#if gcc 3.0+
 ifeq			($(CC_CLASS), 3.x)
 					CPU_TYPE ?= nocona
-					CFLAGS+=-minline-all-stringops \
+					CFLAGS+=$(CC_M_INL_STROPS) \
 							-falign-loops \
 							-mtune=$(CPU_TYPE)
 else
@@ -1153,7 +1159,7 @@ ifeq		($(CC_NAME), gcc)
 					-Wall
 			#if gcc 4.0+
 ifeq			($(CC_CLASS), 4.x)
-					CFLAGS+=-mcpu=r3000 -minline-all-stringops \
+					CFLAGS+=-mcpu=r3000 $(CC_M_INL_STROPS) \
 							-ftree-vectorize
 else
 			#if gcc 3.0+
@@ -1190,7 +1196,7 @@ ifeq		($(CC_NAME), gcc)
 					-Wall
 			#if gcc 4.0+
 ifeq			($(CC_CLASS), 4.x)
-					CFLAGS+=-minline-all-stringops -ftree-vectorize
+					CFLAGS+=$(CC_M_INL_STROPS) -ftree-vectorize
 else
 			#if gcc 3.0+
 ifeq			($(CC_CLASS), 3.x)
@@ -1223,7 +1229,7 @@ ifeq		($(CC_NAME), gcc)
 				CFLAGS+=$(CC_OPTIMIZE_FLAG) -funroll-loops $(PROFILE)  -Wall
 			#if gcc 4.0+
 ifeq			($(CC_CLASS), 4.x)
-					CFLAGS+=-minline-all-stringops
+					CFLAGS+=$(CC_M_INL_STROPS)
 else
 			#if gcc 3.0+
 ifeq			($(CC_CLASS), 3.x)
