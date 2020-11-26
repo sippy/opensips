@@ -45,3 +45,6 @@ jobs:
 
       - name: before_install
         run: sh -x scripts/build/install_depends.sh
+
+      - name: script
+        run: sh -x scripts/build/do_build.sh
