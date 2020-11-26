@@ -67,16 +67,13 @@ clang-10)
 	PKGS="${PKGS} clang-10 llvm-10-dev libc++-10-dev libc++abi-10-dev"
 	;;
 *)
-	printf 'CC="%s" is unknown / unsupported\n' "${CC}" 1>&2
+	printf 'COMPILER="%s" is unknown / unsupported\n' "${COMPILER}" 1>&2
 	exit 1
         ;;
 esac
 
 sudo apt-get update -y
-for pkg in ${PKGS}
-do
-  sudo apt-get -y install ${pkg}
-done
+sudo apt-get -y install ${PKGS}
 
 case "${COMPILER}" in
 gcc-mips64-cross)
@@ -86,4 +83,3 @@ gcc-mips64-cross)
         sudo ln -sf "/usr/mips64-linux-gnuabi64" "/etc/qemu-binfmt/mips64"
         ;;
 esac
-
