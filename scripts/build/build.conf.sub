@@ -24,6 +24,7 @@ gcc-mips64-cross)
 	;;
 gcc-arm32-cross)
 	MAKE_TGT="opensips"
+	CC_EXTRA_OPTS="-Werror -Wno-error=cast-align"
         export CC="arm-linux-gnueabihf-gcc"
         export AR="arm-linux-gnueabihf-ar"
         export RANLIB="arm-linux-gnueabihf-ranlib"
