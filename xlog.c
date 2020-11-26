@@ -256,7 +256,7 @@ static inline int trace_xlog(struct sip_msg* msg, char* buf, int len)
 	return 0;
 }
 
-int xl_print_log(struct sip_msg* msg, pv_elem_p list, int *len)
+int xl_print_log(struct sip_msg* msg, const pv_elem_t *list, int *len)
 {
 	if (pv_printf(msg, list, log_buf, len) < 0)
 		return -1;
@@ -436,7 +436,7 @@ error:
         } while(0)
 
 
-int pv_get_color(struct sip_msg *msg, pv_param_t *param,
+int pv_get_color(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	static char color[COL_BUF];

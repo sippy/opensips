@@ -75,7 +75,7 @@ void run_error_route(struct sip_msg* msg, int force_reset);
 void __script_trace(char *class, char *action, struct sip_msg *msg,
 		char *file, int line);
 
-typedef int (*param_getf_t)(struct sip_msg*, pv_param_t*, pv_value_t*, void *, void *);
+typedef int (*param_getf_t)(struct sip_msg*, const pv_param_t*, pv_value_t*, void *, void *);
 
 /**
  * Increase the recursion level of route parameters and/or the route call stack
@@ -89,6 +89,6 @@ typedef int (*param_getf_t)(struct sip_msg*, pv_param_t*, pv_value_t*, void *, v
  */
 void route_params_push_level(char *rt_name, void *params, void *extra, param_getf_t getf);
 void route_params_pop_level(void);
-int route_params_run(struct sip_msg *msg,  pv_param_t *ip, pv_value_t *res);
+int route_params_run(struct sip_msg *msg, const pv_param_t *ip, pv_value_t *res);
 
 #endif

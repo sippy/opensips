@@ -140,14 +140,14 @@ int init_pvar_support(void)
 }
 
 /* route param variable */
-static int pv_get_param(struct sip_msg *msg,  pv_param_t *ip, pv_value_t *res);
+static int pv_get_param(struct sip_msg *msg, const pv_param_t *ip, pv_value_t *res);
 static int pv_parse_param_name(pv_spec_p sp, str *in);
 
 /********** helper functions ********/
 /**
  * convert unsigned int to pv_value_t
  */
-int pv_get_uintval(struct sip_msg *msg, pv_param_t *param,
+int pv_get_uintval(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res, unsigned int uival)
 {
 	int l = 0;
@@ -168,7 +168,7 @@ int pv_get_uintval(struct sip_msg *msg, pv_param_t *param,
 /**
  * convert signed int to pv_value_t
  */
-int pv_get_sintval(struct sip_msg *msg, pv_param_t *param,
+int pv_get_sintval(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res, int sival)
 {
 	int l = 0;
@@ -189,8 +189,8 @@ int pv_get_sintval(struct sip_msg *msg, pv_param_t *param,
 /**
  * convert str to pv_value_t
  */
-int pv_get_strval(struct sip_msg *msg, pv_param_t *param,
-		pv_value_t *res, str *sval)
+int pv_get_strval(struct sip_msg *msg, const pv_param_t *param,
+		pv_value_t *res, const str *sval)
 {
 	if(res==NULL)
 		return -1;
@@ -203,7 +203,7 @@ int pv_get_strval(struct sip_msg *msg, pv_param_t *param,
 /**
  * convert str-int to pv_value_t (type is str)
  */
-int pv_get_strintval(struct sip_msg *msg, pv_param_t *param,
+int pv_get_strintval(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res, str *sval, int ival)
 {
 	if(res==NULL)
@@ -218,7 +218,7 @@ int pv_get_strintval(struct sip_msg *msg, pv_param_t *param,
 /**
  * convert int-str to pv_value_t (type is int)
  */
-int pv_get_intstrval(struct sip_msg *msg, pv_param_t *param,
+int pv_get_intstrval(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res, int ival, str *sval)
 {
 	if(res==NULL)
@@ -231,13 +231,13 @@ int pv_get_intstrval(struct sip_msg *msg, pv_param_t *param,
 }
 
 /************************************************************/
-static int pv_get_marker(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_marker(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	return pv_get_strintval(msg, param, res, &str_marker, (int)str_marker.s[0]);
 }
 
-int pv_get_null(struct sip_msg *msg, pv_param_t *param, pv_value_t *res)
+int pv_get_null(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res)
 {
 	if(res==NULL)
 		return -1;
@@ -249,7 +249,7 @@ int pv_get_null(struct sip_msg *msg, pv_param_t *param, pv_value_t *res)
 }
 
 /************************************************************/
-static int pv_get_pid(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_pid(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	if(_pv_pid == 0)
@@ -259,13 +259,13 @@ static int pv_get_pid(struct sip_msg *msg, pv_param_t *param,
 
 
 extern int return_code;
-static int pv_get_return_code(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_return_code(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	return pv_get_sintval(msg, param, res, return_code);
 }
 
-static int pv_get_route_name(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_route_name(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	static str rn_buf;
@@ -386,7 +386,7 @@ out_ok:
 	return pv_get_strval(msg, param, res, &s);
 }
 
-static int pv_get_times(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_times(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	if(msg==NULL)
@@ -395,7 +395,7 @@ static int pv_get_times(struct sip_msg *msg, pv_param_t *param,
 	return pv_get_uintval(msg, param, res, (unsigned int)time(NULL));
 }
 
-static int pv_get_timem(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_timem(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	struct timeval TP;
@@ -407,7 +407,7 @@ static int pv_get_timem(struct sip_msg *msg, pv_param_t *param,
 	return pv_get_uintval(msg, param, res, (unsigned int)TP.tv_usec);
 }
 
-static int pv_get_start_times(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_start_times(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	if(msg==NULL)
@@ -431,7 +431,7 @@ static int pv_parse_time_name(pv_spec_p sp, str *in)
 	return 0;
 }
 
-static int pv_get_formated_time(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_formated_time(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	static char buf[128];
@@ -456,7 +456,7 @@ static int pv_get_formated_time(struct sip_msg *msg, pv_param_t *param,
 #define CTIME_BUFFER_NO 5
 #define CTIME_BUFFER_SIZE 26
 
-static int pv_get_timef(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_timef(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	static char ctime_bufs[CTIME_BUFFER_NO][CTIME_BUFFER_SIZE];
@@ -476,7 +476,7 @@ static int pv_get_timef(struct sip_msg *msg, pv_param_t *param,
 	return pv_get_strintval(msg, param, res, &s, (int)t);
 }
 
-static int pv_get_msgid(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_msgid(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	if(msg==NULL)
@@ -484,7 +484,7 @@ static int pv_get_msgid(struct sip_msg *msg, pv_param_t *param,
 	return pv_get_uintval(msg, param, res, msg->id);
 }
 
-static int pv_get_method(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_method(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	if(msg==NULL)
@@ -509,7 +509,7 @@ static int pv_get_method(struct sip_msg *msg, pv_param_t *param,
 			get_cseq(msg)->method_id);
 }
 
-static int pv_get_status(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_status(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	if(msg==NULL)
@@ -523,7 +523,7 @@ static int pv_get_status(struct sip_msg *msg, pv_param_t *param,
 			&msg->first_line.u.reply.status);
 }
 
-static int pv_get_reason(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_reason(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	if(msg==NULL)
@@ -535,7 +535,7 @@ static int pv_get_reason(struct sip_msg *msg, pv_param_t *param,
 	return pv_get_strval(msg, param, res, &msg->first_line.u.reply.reason);
 }
 
-static int pv_get_ruri(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_ruri(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	if(msg==NULL || res==NULL)
@@ -555,7 +555,7 @@ static int pv_get_ruri(struct sip_msg *msg, pv_param_t *param,
 	return pv_get_strval(msg, param, res, &msg->first_line.u.request.uri);
 }
 
-static int pv_get_ru_q(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_ru_q(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	if(msg==NULL || res==NULL)
@@ -567,7 +567,7 @@ static int pv_get_ru_q(struct sip_msg *msg, pv_param_t *param,
 	return pv_get_sintval(msg, param, res, get_ruri_q(msg));
 }
 
-static int pv_get_ouri(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_ouri(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	if(msg==NULL || res==NULL)
@@ -586,7 +586,7 @@ static int pv_get_ouri(struct sip_msg *msg, pv_param_t *param,
 }
 
 static int pv_get_xuri_attr(struct sip_msg *msg, struct sip_uri *parsed_uri,
-		pv_param_t *param, pv_value_t *res)
+		const pv_param_t *param, pv_value_t *res)
 {
 	unsigned short proto;
 	str proto_s;
@@ -620,7 +620,7 @@ static int pv_get_xuri_attr(struct sip_msg *msg, struct sip_uri *parsed_uri,
 	return pv_get_null(msg, param, res);
 }
 
-static int pv_get_ruri_attr(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_ruri_attr(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	if(msg==NULL)
@@ -637,7 +637,7 @@ static int pv_get_ruri_attr(struct sip_msg *msg, pv_param_t *param,
 	return pv_get_xuri_attr(msg, &(msg->parsed_uri), param, res);
 }
 
-static int pv_get_ouri_attr(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_ouri_attr(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	if(msg==NULL)
@@ -655,7 +655,7 @@ static int pv_get_ouri_attr(struct sip_msg *msg, pv_param_t *param,
 	return pv_get_xuri_attr(msg, &(msg->parsed_orig_ruri), param, res);
 }
 
-static int pv_get_path(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_path(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	if(msg==NULL)
@@ -738,7 +738,7 @@ int pv_parse_ct_name(pv_spec_p sp, str *in)
 
 
 static inline int get_contact_body_field(pv_value_t *res,struct hdr_field *cth,
-										contact_t *ct, pv_name_t *pvn)
+    contact_t *ct, const pv_name_t *pvn)
 {
 	param_t *p;
 
@@ -802,7 +802,7 @@ static inline int get_contact_body_field(pv_value_t *res,struct hdr_field *cth,
 }
 
 
-static int pv_get_contact_body(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_contact_body(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	struct hdr_field *ct_h;
@@ -939,7 +939,7 @@ static int pv_get_contact_body(struct sip_msg *msg, pv_param_t *param,
 }
 
 extern err_info_t _oser_err_info;
-static int pv_get_errinfo_attr(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_errinfo_attr(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	if(msg==NULL)
@@ -965,7 +965,7 @@ static int pv_get_errinfo_attr(struct sip_msg *msg, pv_param_t *param,
 	}
 }
 
-static int pv_get_xto_attr(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_xto_attr(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res, struct to_body *xto, int type)
 {
 	struct sip_uri *uri;
@@ -1031,7 +1031,7 @@ static int pv_get_xto_attr(struct sip_msg *msg, pv_param_t *param,
 	return pv_get_null(msg, param, res);
 }
 
-static int pv_get_to_attr(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_to_attr(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	if(msg==NULL)
@@ -1049,7 +1049,7 @@ static int pv_get_to_attr(struct sip_msg *msg, pv_param_t *param,
 	return pv_get_xto_attr(msg, param, res, get_to(msg), 0);
 }
 
-static int pv_get_from_attr(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_from_attr(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	if(msg==NULL)
@@ -1068,7 +1068,7 @@ static int pv_get_from_attr(struct sip_msg *msg, pv_param_t *param,
 	return pv_get_xto_attr(msg, param, res, get_from(msg), 1);
 }
 
-static int pv_get_cseq(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_cseq(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	if(msg==NULL)
@@ -1083,7 +1083,7 @@ static int pv_get_cseq(struct sip_msg *msg, pv_param_t *param,
 	return pv_get_strval(msg, param, res, &(get_cseq(msg)->number));
 }
 
-static int pv_get_msg_buf(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_msg_buf(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	str s;
@@ -1095,7 +1095,7 @@ static int pv_get_msg_buf(struct sip_msg *msg, pv_param_t *param,
 	return pv_get_strval(msg, param, res, &s);
 }
 
-static int pv_get_msg_len(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_msg_len(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	if(msg==NULL)
@@ -1104,7 +1104,7 @@ static int pv_get_msg_len(struct sip_msg *msg, pv_param_t *param,
 	return pv_get_uintval(msg, param, res, msg->len);
 }
 
-static int pv_get_flags(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_flags(struct sip_msg *msg, const pv_param_t *param,
                          pv_value_t *res)
 {
 	str buf;
@@ -1117,7 +1117,7 @@ static int pv_get_flags(struct sip_msg *msg, pv_param_t *param,
 	return pv_get_strval(msg, param, res, &buf);
 }
 
-static int pv_get_bflags(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_bflags(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	str buf;
@@ -1130,7 +1130,7 @@ static int pv_get_bflags(struct sip_msg *msg, pv_param_t *param,
 	return pv_get_strval(msg, param, res, &buf);
 }
 
-static int pv_get_callid(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_callid(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	if(msg==NULL)
@@ -1146,7 +1146,7 @@ static int pv_get_callid(struct sip_msg *msg, pv_param_t *param,
 	return pv_get_strval(msg, param, res, &msg->callid->body);
 }
 
-static int pv_get_srcip(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_srcip(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	str s;
@@ -1159,7 +1159,7 @@ static int pv_get_srcip(struct sip_msg *msg, pv_param_t *param,
 	return pv_get_strval(msg, param, res, &s);
 }
 
-static int pv_get_srcport(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_srcport(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	if(msg==NULL)
@@ -1167,7 +1167,7 @@ static int pv_get_srcport(struct sip_msg *msg, pv_param_t *param,
 	return pv_get_uintval(msg, param, res, msg->rcv.src_port);
 }
 
-static int pv_get_rcvip(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_rcvip(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	if(msg==NULL)
@@ -1180,7 +1180,7 @@ static int pv_get_rcvip(struct sip_msg *msg, pv_param_t *param,
 	return pv_get_strval(msg, param, res, &msg->rcv.bind_address->address_str);
 }
 
-static int pv_get_rcvport(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_rcvport(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	if(msg==NULL)
@@ -1195,7 +1195,7 @@ static int pv_get_rcvport(struct sip_msg *msg, pv_param_t *param,
 			&msg->rcv.bind_address->port_no_str);
 }
 
-static int pv_get_force_sock(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_force_sock(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	if(msg==NULL)
@@ -1207,7 +1207,7 @@ static int pv_get_force_sock(struct sip_msg *msg, pv_param_t *param,
 	return pv_get_strval(msg, param, res, &msg->force_send_socket->sock_str);
 }
 
-static int pv_get_useragent(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_useragent(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	if(msg==NULL)
@@ -1222,7 +1222,7 @@ static int pv_get_useragent(struct sip_msg *msg, pv_param_t *param,
 	return pv_get_strval(msg, param, res, &msg->user_agent->body);
 }
 
-static int pv_get_refer_to(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_refer_to(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	if(msg==NULL)
@@ -1240,7 +1240,7 @@ static int pv_get_refer_to(struct sip_msg *msg, pv_param_t *param,
 	return pv_get_strval(msg, param, res, &(get_refer_to(msg)->uri));
 }
 
-static int pv_get_diversion(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_diversion(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	str *val;
@@ -1291,7 +1291,7 @@ static int pv_get_diversion(struct sip_msg *msg, pv_param_t *param,
 	return pv_get_null(msg, param, res);
 }
 
-static int pv_get_rpid(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_rpid(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	if(msg==NULL)
@@ -1309,7 +1309,7 @@ static int pv_get_rpid(struct sip_msg *msg, pv_param_t *param,
 	return pv_get_strval(msg, param, res, &(get_rpid(msg)->uri));
 }
 
-static int pv_get_ppi_attr(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_ppi_attr(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
     struct sip_uri *uri;
@@ -1363,7 +1363,7 @@ static int pv_get_ppi_attr(struct sip_msg *msg, pv_param_t *param,
 	return pv_get_null(msg, param, res);
 }
 
-static int pv_get_pai(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_pai(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
     if(msg==NULL)
@@ -1384,7 +1384,7 @@ static int pv_get_pai(struct sip_msg *msg, pv_param_t *param,
 }
 
 /* proto of received message: $pr or $proto*/
-static int pv_get_proto(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_proto(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	str s;
@@ -1403,7 +1403,7 @@ static int pv_get_proto(struct sip_msg *msg, pv_param_t *param,
 }
 
 
-static int pv_get_dset(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_dset(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	str s;
@@ -1420,7 +1420,7 @@ static int pv_get_dset(struct sip_msg *msg, pv_param_t *param,
 }
 
 
-static int pv_get_dsturi(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_dsturi(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	if(msg==NULL)
@@ -1434,7 +1434,7 @@ static int pv_get_dsturi(struct sip_msg *msg, pv_param_t *param,
 	return pv_get_strval(msg, param, res, &msg->dst_uri);
 }
 
-static int pv_get_dsturi_attr(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_dsturi_attr(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	struct sip_uri uri;
@@ -1479,7 +1479,7 @@ static int pv_get_dsturi_attr(struct sip_msg *msg, pv_param_t *param,
 	return pv_get_null(msg, param, res);
 }
 
-static int pv_get_content_type(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_content_type(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 #define BUFLEN 1024
@@ -1591,7 +1591,7 @@ static int pv_get_content_type(struct sip_msg *msg, pv_param_t *param,
 #undef BUFLEN
 }
 
-static int pv_get_content_length(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_content_length(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	if(msg==NULL)
@@ -1627,7 +1627,7 @@ int pv_parse_rb_name(pv_spec_p sp, str *in)
 }
 
 
-static int pv_get_msg_body(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_msg_body(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	str s;
@@ -1722,7 +1722,7 @@ end:
 	return pv_get_strval(msg, param, res, &s);
 }
 
-static int pv_get_authattr(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_authattr(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	struct hdr_field *hdr;
@@ -1827,7 +1827,7 @@ static inline str *cred_realm(struct sip_msg *rq)
 	return realm;
 }
 
-static int pv_get_acc_username(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_acc_username(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	static char buf[MAX_URI_SIZE];
@@ -1942,7 +1942,7 @@ int pv_parse_branch_name(pv_spec_p sp, str *in)
 	return 0;
 }
 
-static inline int get_branch_field( int idx, pv_name_t *pvn, pv_value_t *res)
+static inline int get_branch_field( int idx, const pv_name_t *pvn, pv_value_t *res)
 {
 	str uri;
 	qvalue_t q;
@@ -1996,7 +1996,7 @@ static inline int get_branch_field( int idx, pv_name_t *pvn, pv_value_t *res)
 }
 
 
-static int pv_get_branch_fields(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_branch_fields(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	str uri;
@@ -2140,7 +2140,7 @@ int pv_parse_socket_name(pv_spec_p sp, str *in)
 
 
 static inline int get_socket_field( struct socket_info *si,
-											pv_name_t *pvn, pv_value_t *res)
+    const pv_name_t *pvn, pv_value_t *res)
 {
 	if (si==NULL)
 		return pv_get_null( NULL, NULL, res);
@@ -2221,7 +2221,7 @@ static inline int get_socket_field( struct socket_info *si,
 }
 
 
-static int pv_get_socket_in_fields(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_socket_in_fields(struct sip_msg *msg, const pv_param_t *param,
 															pv_value_t *res)
 {
 
@@ -2232,7 +2232,7 @@ static int pv_get_socket_in_fields(struct sip_msg *msg, pv_param_t *param,
 }
 
 
-static int pv_get_socket_out_fields(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_socket_out_fields(struct sip_msg *msg, const pv_param_t *param,
 															pv_value_t *res)
 {
 	struct socket_info *si;
@@ -2254,7 +2254,7 @@ static int pv_get_socket_out_fields(struct sip_msg *msg, pv_param_t *param,
 /**
  *
  */
-static int pv_get_avp(struct sip_msg *msg,  pv_param_t *param, pv_value_t *res)
+static int pv_get_avp(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res)
 {
 	unsigned short name_type;
 	int avp_name;
@@ -2443,7 +2443,7 @@ static int pv_resolve_hdr_name(str *in, pv_value_t *tv)
 	return 0;
 }
 
-static int pv_get_hdr_prolog(struct sip_msg *msg,  pv_param_t *param, pv_value_t *res, pv_value_t* tv)
+static int pv_get_hdr_prolog(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res, pv_value_t* tv)
 {
 	if(msg==NULL || res==NULL || param==NULL)
 		return -1;
@@ -2477,7 +2477,7 @@ static int pv_get_hdr_prolog(struct sip_msg *msg,  pv_param_t *param, pv_value_t
 	return 1;
 }
 
-static int pv_get_hdrcnt(struct sip_msg *msg,  pv_param_t *param, pv_value_t *res)
+static int pv_get_hdrcnt(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res)
 {
 	pv_value_t tv;
 	struct hdr_field *hf;
@@ -2505,7 +2505,7 @@ static int pv_get_hdrcnt(struct sip_msg *msg,  pv_param_t *param, pv_value_t *re
 	return pv_get_uintval(msg, param, res, n);
 }
 
-static int pv_get_hdr(struct sip_msg *msg,  pv_param_t *param, pv_value_t *res)
+static int pv_get_hdr(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res)
 {
 	int idx;
 	int idxf;
@@ -2664,7 +2664,7 @@ static int pv_get_hdr(struct sip_msg *msg,  pv_param_t *param, pv_value_t *res)
 
 }
 
-static int pv_get_hdr_name(struct sip_msg *msg,  pv_param_t *param, pv_value_t *res)
+static int pv_get_hdr_name(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res)
 {
 	int idx, idx_f;
 	struct hdr_field *hf;
@@ -2743,7 +2743,7 @@ static int pv_get_hdr_name(struct sip_msg *msg,  pv_param_t *param, pv_value_t *
 	return 0;
 }
 
-static int pv_get_scriptvar(struct sip_msg *msg,  pv_param_t *param,
+static int pv_get_scriptvar(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	int ival = 0;
@@ -2777,7 +2777,7 @@ static int pv_get_scriptvar(struct sip_msg *msg,  pv_param_t *param,
 	return 0;
 }
 
-static int pv_get_af(struct sip_msg *msg,  pv_param_t *param,
+static int pv_get_af(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	if(msg==NULL)
@@ -3504,7 +3504,7 @@ int pv_init_iname(pv_spec_p sp, int param)
 	return 0;
 }
 
-int pv_get_line_number(struct sip_msg *msg,  pv_param_t *param, pv_value_t *res){
+static int pv_get_line_number(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res){
 	int l;
 	char *ch;
 
@@ -3528,7 +3528,7 @@ int pv_get_line_number(struct sip_msg *msg,  pv_param_t *param, pv_value_t *res)
 	return 0;
 }
 
-int pv_get_cfg_file_name(struct sip_msg *msg,  pv_param_t *param, pv_value_t *res){
+static int pv_get_cfg_file_name(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res){
 
 	if (param==NULL) {
 		LM_CRIT("BUG - bad parameters\n");
@@ -3571,7 +3571,7 @@ int pv_set_log_level(struct sip_msg* msg, pv_param_t *param, int op,
 	return 0;
 }
 
-int pv_get_log_level(struct sip_msg *msg,  pv_param_t *param, pv_value_t *res)
+static int pv_get_log_level(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res)
 {
 	int l;
 
@@ -3616,7 +3616,7 @@ int pv_set_xlog_level(struct sip_msg* msg, pv_param_t *param, int op,
 	return 0;
 }
 
-int pv_get_xlog_level(struct sip_msg *msg,  pv_param_t *param, pv_value_t *res)
+static int pv_get_xlog_level(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res)
 {
 	int l;
 
@@ -3684,7 +3684,7 @@ int msg_flag_set(struct sip_msg* msg, pv_param_t *param, int op,
 }
 
 
-int msg_flag_get(struct sip_msg *msg,  pv_param_t *param, pv_value_t *res)
+static int msg_flag_get(struct sip_msg *msg,  const pv_param_t *param, pv_value_t *res)
 {
 	if (param==NULL||res==NULL) {
 		LM_CRIT("BUG - bad parameters\n");
@@ -3709,7 +3709,7 @@ int msg_flag_get(struct sip_msg *msg,  pv_param_t *param, pv_value_t *res)
 
 /************** MSG TYPE function *****************/
 
-int msg_is_request_get(struct sip_msg *msg, pv_param_t *param, pv_value_t *res)
+static int msg_is_request_get(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res)
 {
 	if (param==NULL||res==NULL) {
 		LM_CRIT("BUG - bad parameters\n");
@@ -3732,7 +3732,7 @@ int msg_is_request_get(struct sip_msg *msg, pv_param_t *param, pv_value_t *res)
 }
 
 
-int msg_type_get(struct sip_msg *msg, pv_param_t *param, pv_value_t *res)
+static int msg_type_get(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res)
 {
 	if (param==NULL||res==NULL) {
 		LM_CRIT("BUG - bad parameters\n");
@@ -3823,7 +3823,7 @@ int branch_flag_set(struct sip_msg* msg, pv_param_t *param, int op,
 }
 
 
-int branch_flag_get(struct sip_msg *msg,  pv_param_t *param, pv_value_t *res)
+static int branch_flag_get(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res)
 {
 	int idx;
 	int idxf;
@@ -4730,7 +4730,7 @@ error:
 	return -1;
 }
 
-int pv_get_spec_name(struct sip_msg* msg, pv_param_p ip, pv_value_t *name)
+int pv_get_spec_name(struct sip_msg* msg, const pv_param_t *ip, pv_value_t *name)
 {
 	if(msg==NULL || ip==NULL || name==NULL)
 		return -1;
@@ -4762,7 +4762,7 @@ int pv_get_spec_name(struct sip_msg* msg, pv_param_p ip, pv_value_t *name)
 	return 0;
 }
 
-int pv_get_avp_name(struct sip_msg* msg, pv_param_p ip, int *avp_name,
+int pv_get_avp_name(struct sip_msg* msg, const pv_param_t *ip, int *avp_name,
 		unsigned short *name_type)
 {
 	pv_value_t tv;
@@ -4803,7 +4803,7 @@ int pv_get_avp_name(struct sip_msg* msg, pv_param_p ip, int *avp_name,
 }
 
 
-int pv_get_spec_index(struct sip_msg* msg, pv_param_p ip, int *idx, int *flags)
+int pv_get_spec_index(struct sip_msg* msg, const pv_param_t *ip, int *idx, int *flags)
 {
 	pv_value_t tv;
 	if(ip==NULL || idx==NULL || flags==NULL)
@@ -4867,7 +4867,7 @@ int pv_set_value(struct sip_msg* msg, pv_spec_p sp,
 	return (*sp->setf)(pv_msg, &(sp->pvp), op, value);
 }
 
-int pv_get_spec_value(struct sip_msg* msg, pv_spec_p sp, pv_value_t *value)
+int pv_get_spec_value(struct sip_msg* msg, const pv_spec_t *sp, pv_value_t *value)
 {
 	struct sip_msg* pv_msg;
 
@@ -4932,12 +4932,12 @@ overflow:
 }
 
 
-int pv_printf(struct sip_msg* msg, pv_elem_p list, char *buf, int *len)
+int pv_printf(struct sip_msg* msg, const pv_elem_t *list, char *buf, int *len)
 {
 	int n;
 	pv_value_t tok;
 	str print;
-	pv_elem_p it;
+	const pv_elem_t *it;
 	char *cur;
 
 	if(msg==NULL || list==NULL || buf==NULL || len==NULL)
@@ -5557,7 +5557,7 @@ int pv_parse_argv_name(pv_spec_p sp, str *in)
 	return 0;
 }
 
-int pv_get_argv(struct sip_msg *msg,  pv_param_t *param, pv_value_t *res)
+int pv_get_argv(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res)
 {
 	if (!param) {
 		LM_ERR("null parameter received\n");
@@ -5613,7 +5613,7 @@ static int pv_parse_param_name(pv_spec_p sp, str *in)
 
 }
 
-static int pv_get_param(struct sip_msg *msg,  pv_param_t *ip, pv_value_t *res)
+static int pv_get_param(struct sip_msg *msg, const pv_param_t *ip, pv_value_t *res)
 {
 	if (!ip)
 	{

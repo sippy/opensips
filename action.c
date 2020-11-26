@@ -96,7 +96,7 @@ int curr_action_line;
 char *curr_action_file;
 
 static int for_each_handler(struct sip_msg *msg, struct action *a);
-static int route_param_get(struct sip_msg *msg,  pv_param_t *ip,
+static int route_param_get(struct sip_msg *msg, const pv_param_t *ip,
 		pv_value_t *res, void *params, void *extra);
 
 
@@ -414,7 +414,7 @@ error2:
 
 
 /* function used to get parameter from a route scope */
-static int route_param_get(struct sip_msg *msg,  pv_param_t *ip,
+static int route_param_get(struct sip_msg *msg, const pv_param_t *ip,
 		pv_value_t *res, void *params, void *extra)
 {
 	int index;
@@ -1178,7 +1178,7 @@ void route_params_pop_level(void)
 	route_stack_size--;
 }
 
-int route_params_run(struct sip_msg *msg,  pv_param_t *ip, pv_value_t *res)
+int route_params_run(struct sip_msg *msg, const pv_param_t *ip, pv_value_t *res)
 {
 	if (route_rec_level == -1)
 	{
