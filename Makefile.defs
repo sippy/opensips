@@ -156,11 +156,8 @@ CC_LONGVER=$(shell if  $(CC) -v 2>/dev/null; then \
 						$(CC) -V 2>&1 ; \
 					fi )
 
-CC_M_INL_STROPS=$(shell $(CC) -minline-all-stringops -E /usr/include/stdio.h 2>/dev/null && \
+CC_M_INL_STROPS=$(shell $(CC) -minline-all-stringops -E /usr/include/stdio.h >/dev/null 2>/dev/null && \
 				echo "-minline-all-stringops")
-
-#test123:
-#	echo ${CC_M_INL_STROPS}
 
 #find-out the compiler's name
 
