@@ -21,6 +21,18 @@ gcc-mips64-cross)
 	export RANLIB="mips64-linux-gnuabi64-ranlib"
 	PKGS="${PKGS} gcc-mips64-linux-gnuabi64 libc-dev-mips64-cross qemu-user-static"
 	;;
+gcc-arm32-cross)
+        export CC="arm-linux-gnueabihf-gcc"
+        export AR="arm-linux-gnueabihf-ar"
+        export RANLIB="arm-linux-gnueabihf-ranlib"
+        PKGS="${PKGS} gcc-arm-linux-gnueabihf libc-dev-armhf-cross qemu-user-static"
+        ;;
+gcc-arm64-cross)
+        export CC="aarch64-linux-gnu-gcc"
+        export AR="aarch64-linux-gnu-ar"
+        export RANLIB="aarch64-linux-gnu-ranlib"
+        PKGS="${PKGS} gcc-aarch64-linux-gnu libc-dev-arm64-cross qemu-user-static"
+        ;;
 clang)
 	export CC="${COMPILER}"
 	export AR="llvm-ar"
@@ -81,5 +93,17 @@ gcc-mips64-cross)
         sudo touch "/usr/mips64-linux-gnuabi64/etc/ld.so.cache"
         sudo mkdir "/etc/qemu-binfmt"
         sudo ln -sf "/usr/mips64-linux-gnuabi64" "/etc/qemu-binfmt/mips64"
+        ;;
+gcc-arm32-cross)
+        sudo mkdir "/usr/arm-linux-gnueabihf/etc"
+        sudo touch "/usr/arm-linux-gnueabihf/etc/ld.so.cache"
+        sudo mkdir "/etc/qemu-binfmt"
+        sudo ln -sf "/usr/arm-linux-gnueabihf" "/etc/qemu-binfmt/arm"
+	;;
+gcc-arm64-cross)
+        sudo mkdir "/usr/aarch64-linux-gnu/etc"
+        sudo touch "/usr/aarch64-linux-gnu/etc/ld.so.cache"
+        sudo mkdir "/etc/qemu-binfmt"
+        sudo ln -sf "/usr/aarch64-linux-gnu" "/etc/qemu-binfmt/aarch64"
         ;;
 esac
