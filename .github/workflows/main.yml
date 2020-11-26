@@ -26,6 +26,13 @@ jobs:
       matrix:
         os: [ubuntu-20.04, ubuntu-18.04]
         compiler: ['gcc', 'clang', 'gcc-9', 'gcc-10', 'clang-9', 'clang-10']
+        include:
+          - compiler: 'gcc-i386-cross'
+            os: ubuntu-18.04
+          - compiler: 'clang-i386-cross'
+            os: ubuntu-18.04
+          - compiler: 'gcc-mips64-cross'
+            os: ubuntu-18.04
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:

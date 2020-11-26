@@ -8,11 +8,31 @@ case ${CC} in
 gcc)
 	PKGS="${PKGS} gcc g++"
 	;;
+gcc-i386-cross)
+	export CC="gcc"
+	export CC_EXTRA_OPTS="-Werror -m32"
+	PKGS="${PKGS} gcc g++ libc6-dev:i386 libstdc++6:i386 lib32gcc-7-dev"
+	;;
+gcc-mips64-cross)
+	export CC="mips64-linux-gnuabi64-gcc"
+	export AR="mips64-linux-gnuabi64-ar"
+	export RANLIB="mips64-linux-gnuabi64-ranlib"
+	sudo mkdir "/usr/mips64-linux-gnuabi64/etc"
+	sudo touch "/usr/mips64-linux-gnuabi64/etc/ld.so.cache"
+	sudo mkdir "/etc/qemu-binfmt"
+	sudo ln -sf "/usr/mips64-linux-gnuabi64" "/etc/qemu-binfmt/mips64"
+	PKGS="${PKGS} gcc-mips64-linux-gnuabi64 libc-dev-mips64-cross qemu-user-static"
+	;;
 clang)
 	export AR="llvm-ar"
 	export RANLIB="llvm-ranlib"
 	export GCOV_CMD="llvm-cov gcov"
 	PKGS="${PKGS} clang llvm-dev"
+	;;
+clang-i386-cross)
+	export CC="clang"
+	export CC_EXTRA_OPTS="-Werror -m32"
+	PKGS="${PKGS} clang llvm-dev libc6-dev:i386 libstdc++6:i386 lib32gcc-7-dev"
 	;;
 gcc-9)
 	export AR="gcc-ar-9"
