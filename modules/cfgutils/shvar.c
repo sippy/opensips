@@ -287,6 +287,11 @@ static inline int get_shvar_from_pv_name(struct sip_msg *msg,
 	return 0;
 }
 
+static void destroy_pvv(void *p)
+{
+	shm_free(p);
+}
+
 int pv_get_shvar(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
@@ -299,19 +304,23 @@ int pv_get_shvar(struct sip_msg *msg, const pv_param_t *param,
 
 	lock_shvar(shv);
 	if (shv->v.flags & VAR_VAL_STR) {
-		if (shm_str_extend(&param->pvv, shv->v.value.s.len + 1) != 0) {
+		char *shp;
+
+		shp = shm_malloc(shv->v.value.s.len + 1);
+		if (shp == NULL) {
 			LM_ERR("oom\n");
 			unlock_shvar(shv);
 			return pv_get_null(msg, param, res);
 		}
 
-		memcpy(param->pvv.s, shv->v.value.s.s, shv->v.value.s.len);
-		param->pvv.len = shv->v.value.s.len;
-		param->pvv.s[param->pvv.len] = '\0';
-
+		memcpy(shp, shv->v.value.s.s, shv->v.value.s.len);
 		unlock_shvar(shv);
 
-		res->rs = param->pvv;
+		res->rs.len = shv->v.value.s.len;
+		res->rs.s = shp;
+		shp[res->rs.len] = '\0';
+		res->pvv = shp;
+		res->pvv_free = destroy_pvv;
 		res->flags = PV_VAL_STR;
 		if (res->rs.len == 0)
 			res->flags |= PV_VAL_EMPTY;

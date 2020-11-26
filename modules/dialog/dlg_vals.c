@@ -248,11 +248,15 @@ int pv_parse_name(pv_spec_p sp, str *in)
 	return 0;
 }
 
-
+static inline void destroy_pvv(void *p)
+{
+	pkg_free(p);
+}
 
 int pv_get_dlg_val(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res)
 {
 	struct dlg_cell *dlg;
+	str ares = STR_NULL;
 
 	if (param==NULL || param->pvn.type!=PV_NAME_INTSTR ||
 	param->pvn.u.isname.type!=AVP_NAME_STR ||
@@ -264,11 +268,13 @@ int pv_get_dlg_val(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res
 	if ( (dlg=get_current_dialog())==NULL )
 		return pv_get_null(msg, param, res);
 
-	if (fetch_dlg_value( dlg, &param->pvn.u.isname.name.s, &param->pvv, 1)!=0)
+	if (fetch_dlg_value( dlg, &param->pvn.u.isname.name.s, &ares, 1)!=0)
 		return pv_get_null(msg, param, res);
 
 	res->flags = PV_VAL_STR;
-	res->rs = param->pvv;
+	res->rs = ares;
+	res->pvv = ares.s;
+	res->pvv_free = destroy_pvv;
 	return 0;
 }
 

@@ -1693,13 +1693,11 @@ int fetch_ctx_value(struct b2b_ctx_val *vals, const str *name, str *out_val)
 
 	for (v = vals; v; v = v->next)
 		if (id == v->id && name->len == v->name.len &&
-			memcmp(name->s, v->name.s, name->len) == 0) {
-			if (v->val.len > out_val->len) {
-				out_val->s = pkg_realloc(out_val->s, v->val.len);
-				if (!out_val->s) {
-					LM_ERR("oom\n");
-					return -1;
-				}
+		    memcmp(name->s, v->name.s, name->len) == 0) {
+			out_val->s = pkg_malloc(v->val.len);
+			if (out_val->s == NULL) {
+				LM_ERR("oom\n");
+				return -1;
 			}
 
 			memcpy(out_val->s, v->val.s, v->val.len);
@@ -1821,10 +1819,16 @@ int get_ctx_vals(struct b2b_ctx_val ***vals, b2bl_tuple_t **tuple)
 	return 0;
 }
 
+static inline void pvv_destroy(void *p)
+{
+	pkg_free(p);
+}
+
 int pv_get_ctx(struct sip_msg *msg,  const pv_param_t *param, pv_value_t *res)
 {
 	struct b2b_ctx_val **vals;
 	b2bl_tuple_t *tuple = NULL;
+	str ares;
 
 	if (!param || !param->pvn.u.isname.name.s.s) {
 		LM_ERR("Bad parameters!\n");
@@ -1839,7 +1843,7 @@ int pv_get_ctx(struct sip_msg *msg,  const pv_param_t *param, pv_value_t *res)
 	if (tuple && b2bl_htable[tuple->hash_index].locked_by != process_no)
 		lock_get(&b2bl_htable[tuple->hash_index].lock);
 
-	if (fetch_ctx_value(*vals, &param->pvn.u.isname.name.s, &param->pvv) != 0) {
+	if (fetch_ctx_value(*vals, &param->pvn.u.isname.name.s, &ares) != 0) {
 		if (tuple && b2bl_htable[tuple->hash_index].locked_by != process_no)
 			lock_release(&b2bl_htable[tuple->hash_index].lock);
 		return pv_get_null(msg, param, res);
@@ -1849,7 +1853,9 @@ int pv_get_ctx(struct sip_msg *msg,  const pv_param_t *param, pv_value_t *res)
 		lock_release(&b2bl_htable[tuple->hash_index].lock);
 
 	res->flags = PV_VAL_STR;
-	res->rs = param->pvv;
+	res->rs = ares;
+	res->pvv = ares.s;
+	res->pvv_free = pvv_destroy;
 	return 0;
 }
 

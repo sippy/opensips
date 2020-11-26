@@ -455,8 +455,12 @@ int pv_parse_name(pv_spec_p sp, str *in)
 	return 0;
 }
 
+union _pv_name2 {
+	const pv_name_t *ro;
+	pv_name_t *rw;
+};
 
-static inline int get_stat_name(struct sip_msg* msg, const pv_name_t *name,
+static inline int get_stat_name(struct sip_msg* msg, union _pv_name2 name,
 												int create, stat_var **stat)
 {
 	pv_value_t pv_val;
@@ -464,20 +468,20 @@ static inline int get_stat_name(struct sip_msg* msg, const pv_name_t *name,
 	int grp_idx __attribute__((unused));
 
 	/* is the statistic found ? */
-	if (name->type==PV_NAME_INTSTR) {
-		LM_DBG("stat with name %p still not found\n", name);
+	if (name.ro->type==PV_NAME_INTSTR) {
+		LM_DBG("stat with name %p still not found\n", name.ro);
 		/* not yet :( */
 		/* do we have at least the name ?? */
-		if (name->u.isname.type==0) {
+		if (name.ro->u.isname.type==0) {
 			/* name is FMT */
-			if (pv_printf_s( msg, (pv_elem_t *)name->u.isname.name.s.s,
+			if (pv_printf_s( msg, (pv_elem_t *)name.ro->u.isname.name.s.s,
 			&(pv_val.rs) )!=0) {
 				LM_ERR("failed to get format string value\n");
 				return -1;
 			}
 		} else {
 			/* name is string */
-			pv_val.rs = name->u.isname.name.s;
+			pv_val.rs = name.ro->u.isname.name.s;
 		}
 
 		if (resolve_stat(&pv_val.rs, &group, &sname, &grp_idx) != 0) {
@@ -487,10 +491,10 @@ static inline int get_stat_name(struct sip_msg* msg, const pv_name_t *name,
 		/* lookup for the statistic */
 		*stat = __get_stat(&sname, grp_idx);
 		LM_DBG("stat name %p (%.*s) after lookup is %p\n",
-		       name, pv_val.rs.len, pv_val.rs.s, *stat);
+		       name.ro, pv_val.rs.len, pv_val.rs.s, *stat);
+		if (!create)
+			return 0;
 		if (*stat==NULL) {
-			if (!create)
-				return 0;
 			LM_DBG("creating statistic <%.*s>\n", pv_val.rs.len, pv_val.rs.s);
 			if (grp_idx > 0) {
 				if (__register_dynamic_stat(&group, &sname, stat) != 0) {
@@ -508,26 +512,22 @@ static inline int get_stat_name(struct sip_msg* msg, const pv_name_t *name,
 		}
 		/* if name is static string, better link the stat directly
 		 * and discard name */
-		if (name->u.isname.type==AVP_NAME_STR) {
-#if 0
-			LM_DBG("name %p freeing %p\n",name,name->u.isname.name.s.s);
+		if (name.ro->u.isname.type==AVP_NAME_STR) {
+			LM_DBG("name %p freeing %p\n",name.ro,name.ro->u.isname.name.s.s);
 			/* it is totally unsafe to free this shm block here, as it is
 			 * referred by the spec from all the processess. Even if we create
 			 * here a small leak (one time only), we do not have a better fix
 			 * until a final review of the specs in pkg and shm mem - bogdan */
-			//shm_free(name->u.isname.name.s.s);
-			name->u.isname.name.s.s = NULL;
-			name->u.isname.name.s.len = 0;
-			name->type = PV_NAME_PVAR;
-			name->u.dname = (void*)*stat;
-#else
-# warning "FIX ME!!!"
-#endif
+			//shm_free(name.rw->u.isname.name.s.s);
+			name.rw->u.isname.name.s.s = NULL;
+			name.rw->u.isname.name.s.len = 0;
+			name.rw->type = PV_NAME_PVAR;
+			name.rw->u.dname = (void*)*stat;
 		}
 	} else {
 		/* stat already found ! */
-		*stat = (stat_var*)name->u.dname;
-		LM_DBG("found stat name %p\n",name);
+		*stat = (stat_var*)name.ro->u.dname;
+		LM_DBG("found stat name %p\n",name.ro);
 	}
 
 	return 0;
@@ -583,8 +583,9 @@ int pv_set_stat(struct sip_msg* msg, pv_param_t *param, int op,
 													pv_value_t *val)
 {
 	stat_var *stat;
+	union _pv_name2 pvn = {.rw = &(param->pvn)};
 
-	if (get_stat_name( msg, &(param->pvn), 1, &stat)!=0) {
+	if (get_stat_name( msg, pvn, 1, &stat)!=0) {
 		LM_ERR("failed to generate/get statistic name\n");
 		return -1;
 	}
@@ -601,11 +602,12 @@ int pv_set_stat(struct sip_msg* msg, pv_param_t *param, int op,
 int pv_get_stat(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res)
 {
 	stat_var *stat;
+	union _pv_name2 pvn = {.ro = &(param->pvn)};
 
 	if(msg==NULL || res==NULL)
 		return -1;
 
-	if (get_stat_name( msg, &(param->pvn), 0, &stat)!=0) {
+	if (get_stat_name( msg, pvn, 0, &stat)!=0) {
 		LM_ERR("failed to generate/get statistic name\n");
 		return -1;
 	}
