@@ -102,7 +102,7 @@ err:
 }
 
 
-int tlsops_cipher(struct sip_msg *msg, pv_param_t *param,
+int tlsops_cipher(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	str cipher;
@@ -138,7 +138,7 @@ err:
 }
 
 
-int tlsops_bits(struct sip_msg *msg, pv_param_t *param,
+int tlsops_bits(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	str bits;
@@ -176,7 +176,7 @@ err:
 }
 
 
-int tlsops_version(struct sip_msg *msg, pv_param_t *param,
+int tlsops_version(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	str version;
@@ -214,7 +214,7 @@ err:
 }
 
 
-int tlsops_desc(struct sip_msg *msg, pv_param_t *param,
+int tlsops_desc(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	static char buf[128];
@@ -245,7 +245,7 @@ err:
 }
 
 
-int tlsops_cert_version(struct sip_msg *msg, pv_param_t *param,
+int tlsops_cert_version(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	static char buf[INT2STR_MAX_LEN];
@@ -278,7 +278,7 @@ int tlsops_cert_version(struct sip_msg *msg, pv_param_t *param,
  * Check whether peer certificate exists and verify the result
  * of certificate verification
  */
-int tlsops_check_cert(struct sip_msg *msg, pv_param_t *param,
+int tlsops_check_cert(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	static str succ = str_init("1");
@@ -328,7 +328,7 @@ error:
 }
 
 
-int tlsops_validity(struct sip_msg *msg, pv_param_t *param,
+int tlsops_validity(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	static char buf[1024];
@@ -383,7 +383,7 @@ err:
 }
 
 
-int tlsops_sn(struct sip_msg *msg, pv_param_t *param,
+int tlsops_sn(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	static char buf[INT2STR_MAX_LEN];
@@ -416,7 +416,7 @@ int tlsops_sn(struct sip_msg *msg, pv_param_t *param,
 	return 0;
 }
 
-int tlsops_comp(struct sip_msg *msg, pv_param_t *param,
+int tlsops_comp(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	static char buf[1024];
@@ -525,7 +525,7 @@ int tlsops_comp(struct sip_msg *msg, pv_param_t *param,
 	return pv_get_null(msg, param, res);
 }
 
-int tlsops_alt(struct sip_msg *msg, pv_param_t *param,
+int tlsops_alt(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	static char buf[1024];

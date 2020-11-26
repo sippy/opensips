@@ -112,7 +112,7 @@ int profile_repl_cluster = 0;
 str dlg_repl_cap = str_init("dialog-dlg-repl");
 str prof_repl_cap = str_init("dialog-prof-repl");
 
-static int pv_get_dlg_count( struct sip_msg *msg, pv_param_t *param,
+static int pv_get_dlg_count( struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res);
 
 /* commands wrappers and fixups */
@@ -159,20 +159,20 @@ static int dlg_send_sequential(struct sip_msg* msg, str *method, int leg,
 
 
 /* item/pseudo-variables functions */
-int pv_get_dlg_lifetime(struct sip_msg *msg,pv_param_t *param,pv_value_t *res);
-int pv_get_dlg_status(struct sip_msg *msg, pv_param_t *param, pv_value_t *res);
-int pv_get_dlg_flags(struct sip_msg *msg, pv_param_t *param, pv_value_t *res);
-int pv_get_dlg_timeout(struct sip_msg *msg, pv_param_t *param, pv_value_t *res);
-int pv_get_dlg_dir(struct sip_msg *msg, pv_param_t *param, pv_value_t *res);
-int pv_get_dlg_did(struct sip_msg *msg, pv_param_t *param, pv_value_t *res);
-int pv_get_dlg_end_reason(struct sip_msg *msg, pv_param_t *param, pv_value_t *res);
+int pv_get_dlg_lifetime(struct sip_msg *msg, const pv_param_t *param,pv_value_t *res);
+int pv_get_dlg_status(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res);
+int pv_get_dlg_flags(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res);
+int pv_get_dlg_timeout(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res);
+int pv_get_dlg_dir(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res);
+int pv_get_dlg_did(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res);
+int pv_get_dlg_end_reason(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res);
 int pv_set_dlg_flags(struct sip_msg *msg, pv_param_t *param, int op,
 		pv_value_t *val);
 int pv_set_dlg_timeout(struct sip_msg *msg, pv_param_t *param, int op,
 		pv_value_t *val);
-int pv_get_dlg_json(struct sip_msg *msg, pv_param_t *param,
+int pv_get_dlg_json(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res);
-int pv_get_dlg_ctx_json(struct sip_msg *msg, pv_param_t *param,
+int pv_get_dlg_ctx_json(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res);
 
 static cmd_export_t cmds[]={
@@ -650,7 +650,7 @@ int load_dlg( struct dlg_binds *dlgb )
 }
 
 
-static int pv_get_dlg_count(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_dlg_count(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	int n;
@@ -1498,7 +1498,7 @@ static int w_set_dlg_shtag(struct sip_msg *msg, str *shtag)
 
 
 /* item/pseudo-variables functions */
-int pv_get_dlg_lifetime(struct sip_msg *msg, pv_param_t *param,
+int pv_get_dlg_lifetime(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	int l = 0;
@@ -1523,7 +1523,7 @@ int pv_get_dlg_lifetime(struct sip_msg *msg, pv_param_t *param,
 }
 
 
-int pv_get_dlg_status(struct sip_msg *msg, pv_param_t *param,
+int pv_get_dlg_status(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	int l = 0;
@@ -1548,7 +1548,7 @@ int pv_get_dlg_status(struct sip_msg *msg, pv_param_t *param,
 }
 
 
-int pv_get_dlg_flags(struct sip_msg *msg, pv_param_t *param,
+int pv_get_dlg_flags(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	int l = 0;
@@ -1573,7 +1573,7 @@ int pv_get_dlg_flags(struct sip_msg *msg, pv_param_t *param,
 }
 
 
-int pv_get_dlg_timeout(struct sip_msg *msg, pv_param_t *param,
+int pv_get_dlg_timeout(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	int l = 0;
@@ -1612,7 +1612,7 @@ int pv_get_dlg_timeout(struct sip_msg *msg, pv_param_t *param,
 	return 0;
 }
 
-int pv_get_dlg_dir(struct sip_msg *msg, pv_param_t *param,
+int pv_get_dlg_dir(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	int dir;
@@ -1642,7 +1642,7 @@ int pv_get_dlg_dir(struct sip_msg *msg, pv_param_t *param,
 	return 0;
 }
 
-int pv_get_dlg_did(struct sip_msg *msg, pv_param_t *param,
+int pv_get_dlg_did(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	struct dlg_cell *dlg;
@@ -1663,7 +1663,7 @@ int pv_get_dlg_did(struct sip_msg *msg, pv_param_t *param,
 	return 0;
 }
 
-int pv_get_dlg_end_reason(struct sip_msg *msg, pv_param_t *param, pv_value_t *res)
+int pv_get_dlg_end_reason(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res)
 {
 	struct dlg_cell *dlg;
 
@@ -1996,7 +1996,7 @@ next_val:
 	return dlg_info;	
 }
 
-int pv_get_dlg_json(struct sip_msg *msg, pv_param_t *param,
+int pv_get_dlg_json(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	struct dlg_cell *dlg;
@@ -2026,7 +2026,7 @@ int pv_get_dlg_json(struct sip_msg *msg, pv_param_t *param,
 	return 0;
 }
 
-int pv_get_dlg_ctx_json(struct sip_msg *msg, pv_param_t *param,
+int pv_get_dlg_ctx_json(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	struct dlg_cell *dlg;

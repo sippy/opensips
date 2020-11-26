@@ -103,7 +103,7 @@ mi_response_t *mi_get_hash(const mi_params_t *params,
 mi_response_t *mi_check_hash(const mi_params_t *params,
 								struct mi_handler *async_hdl);
 
-static int pv_get_random_val(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_random_val(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res);
 
 static int ts_usec_delta(struct sip_msg *msg, int *t1s,
@@ -459,7 +459,7 @@ static int rand_event(struct sip_msg *bar, int *prob_param)
 	}
 }
 
-static int pv_get_random_val(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_random_val(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	int n;

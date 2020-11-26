@@ -67,17 +67,17 @@ static int w_pv_set_cgr(struct sip_msg *msg, pv_param_t *param,
 		int op, pv_value_t *val);
 static int w_pv_set_cgr_opt(struct sip_msg *msg, pv_param_t *param,
 		int op, pv_value_t *val);
-static int pv_get_cgr(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_cgr(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *val, int reqopt);
-static int w_pv_get_cgr(struct sip_msg *msg, pv_param_t *param,
+static int w_pv_get_cgr(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *val);
-static int w_pv_get_cgr_opt(struct sip_msg *msg, pv_param_t *param,
+static int w_pv_get_cgr_opt(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *val);
 static int pv_parse_cgr(pv_spec_p sp, str *in);
 static int w_pv_parse_cgr(pv_spec_p sp, str *in);
 static int w_pv_parse_cgr_warn(pv_spec_p sp, str *in);
 static int pv_parse_idx_cgr(pv_spec_p sp, str *in);
-static int pv_get_cgr_reply(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_cgr_reply(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *val);
 
 OSIPS_LIST_HEAD(cgrates_engines);
@@ -352,7 +352,7 @@ static int cgrates_set_engine(modparam_t type, void * val)
 	return 0;
 }
 
-static inline str *pv_get_idx_value(struct sip_msg *msg, pv_param_t *param)
+static inline str *pv_get_idx_value(struct sip_msg *msg, const pv_param_t *param)
 {
 	static pv_value_t idx_val;
 
@@ -478,7 +478,7 @@ static int w_pv_set_cgr_opt(struct sip_msg *msg, pv_param_t *param,
 	return pv_set_cgr(msg, param, op, val, cgre_compat_mode? 0: 1);
 }
 
-static int pv_get_cgr(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_cgr(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *val, int reqopt)
 {
 	pv_value_t name_val;
@@ -534,19 +534,19 @@ static int pv_get_cgr(struct sip_msg *msg, pv_param_t *param,
 	return 0;
 }
 
-static int w_pv_get_cgr(struct sip_msg *msg, pv_param_t *param,
+static int w_pv_get_cgr(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *val)
 {
 	return pv_get_cgr(msg, param, val, 0);
 }
 
-static int w_pv_get_cgr_opt(struct sip_msg *msg, pv_param_t *param,
+static int w_pv_get_cgr_opt(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *val)
 {
 	return pv_get_cgr(msg, param, val, cgre_compat_mode? 0: 1);
 }
 
-static int pv_get_cgr_reply(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_cgr_reply(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *val)
 {
 	str tmp;

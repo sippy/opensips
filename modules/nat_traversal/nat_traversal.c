@@ -186,9 +186,9 @@ static int  preprocess_request(struct sip_msg *msg, void *param);
 static int  reply_filter(struct sip_msg *reply);
 
 static int pv_parse_nat_contact_name(pv_spec_p sp, str *in);
-static int pv_get_keepalive_socket(struct sip_msg *msg, pv_param_t *param, pv_value_t *res);
-static int pv_get_source_uri(struct sip_msg *msg, pv_param_t *param, pv_value_t *res);
-static int pv_get_track_dialog(struct sip_msg *msg, pv_param_t *param, pv_value_t *res);
+static int pv_get_keepalive_socket(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res);
+static int pv_get_source_uri(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res);
+static int pv_get_track_dialog(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res);
 static int pv_set_track_dialog(struct sip_msg *msg, pv_param_t *param, int op, pv_value_t *val);
 
 
@@ -2009,7 +2009,7 @@ pv_parse_nat_contact_name(pv_spec_p sp, str *in)
 
 
 static int
-pv_get_keepalive_socket(struct sip_msg *msg, pv_param_t *param, pv_value_t *res)
+pv_get_keepalive_socket(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res)
 {
     static char uri[128];
     NAT_Contact *contact;
@@ -2051,7 +2051,7 @@ pv_get_keepalive_socket(struct sip_msg *msg, pv_param_t *param, pv_value_t *res)
 
 
 static int
-pv_get_source_uri(struct sip_msg *msg, pv_param_t *param, pv_value_t *res)
+pv_get_source_uri(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res)
 {
     static char uri[128];
 
@@ -2084,7 +2084,7 @@ pv_get_source_uri(struct sip_msg *msg, pv_param_t *param, pv_value_t *res)
 
 
 static int
-pv_get_track_dialog(struct sip_msg *msg, pv_param_t *param, pv_value_t *res)
+pv_get_track_dialog(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res)
 {
     if (msg==NULL || res==NULL)
         return -1;

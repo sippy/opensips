@@ -86,7 +86,7 @@ static int w_add_rr_param(struct sip_msg *,str *);
 static int w_check_route_param(struct sip_msg *,regex_t *);
 static int w_is_direction(struct sip_msg *,void *);
 
-static int pv_get_rr_params(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_rr_params(struct sip_msg *msg, const pv_param_t *param,
 	pv_value_t *res);
 
 
@@ -225,7 +225,7 @@ static int direction_fixup(void** param)
 }
 
 
-static int pv_get_rr_params(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_rr_params(struct sip_msg *msg, const pv_param_t *param,
 															pv_value_t *res)
 {
 	str val;

@@ -45,7 +45,7 @@ end:
 }
 
 
-int pv_get_env(struct sip_msg *msg,  pv_param_t *param, pv_value_t *res)
+int pv_get_env(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res)
 {
 	env_var_p env_v = NULL;
 	char *env_val;

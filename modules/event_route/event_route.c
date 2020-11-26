@@ -246,7 +246,7 @@ static str scriptroute_print(evi_reply_sock *sock)
 evi_params_t *parameters = NULL;
 str *event_name = NULL; // mostly used for debugging
 
-int event_route_param_get(struct sip_msg *msg, pv_param_t *ip,
+int event_route_param_get(struct sip_msg *msg, const pv_param_t *ip,
 		pv_value_t *res, void *params, void *extra)
 {
 	static str event_name_error = str_init("E_ERROR");

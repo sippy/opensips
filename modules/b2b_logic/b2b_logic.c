@@ -92,13 +92,13 @@ int b2b_scenario_bridge(struct sip_msg *msg, str *br_ent1, str *br_ent2,
 	str *provmedia_uri, int *lifetime);
 int  b2b_bridge_request(struct sip_msg* msg, str *key, int *entity_no);
 
-int pv_get_b2bl_key(struct sip_msg *msg, pv_param_t *param, pv_value_t *res);
-int pv_get_scenario(struct sip_msg *msg, pv_param_t *param, pv_value_t *res);
+int pv_get_b2bl_key(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res);
+int pv_get_scenario(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res);
 int pv_parse_entity_name(pv_spec_p sp, str *in);
 int pv_parse_entity_index(pv_spec_p sp, str* in);
-int pv_get_entity(struct sip_msg *msg, pv_param_t *param, pv_value_t *res);
+int pv_get_entity(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res);
 int pv_parse_ctx_name(pv_spec_p sp, str *in);
-int pv_get_ctx(struct sip_msg *msg,  pv_param_t *param, pv_value_t *res);
+int pv_get_ctx(struct sip_msg *msg,  const pv_param_t *param, pv_value_t *res);
 int pv_set_ctx(struct sip_msg* msg, pv_param_t *param, int op, pv_value_t *val);
 
 void b2b_mark_todel( b2bl_tuple_t* tuple);
@@ -1461,7 +1461,7 @@ b2bl_tuple_t *get_ctx_tuple(void)
 	return tuple;
 }
 
-int pv_get_b2bl_key(struct sip_msg *msg, pv_param_t *param, pv_value_t *res)
+int pv_get_b2bl_key(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res)
 {
 	b2bl_tuple_t *tuple;
 
@@ -1477,7 +1477,7 @@ int pv_get_b2bl_key(struct sip_msg *msg, pv_param_t *param, pv_value_t *res)
 	return 0;
 }
 
-int pv_get_scenario(struct sip_msg *msg, pv_param_t *param, pv_value_t *res)
+int pv_get_scenario(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res)
 {
 	b2bl_tuple_t *tuple;
 
@@ -1542,7 +1542,7 @@ int pv_parse_entity_index(pv_spec_p sp, str* in)
 	return 0;
 }
 
-int pv_get_entity(struct sip_msg *msg, pv_param_t *param, pv_value_t *res)
+int pv_get_entity(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res)
 {
 	b2bl_tuple_t *tuple;
 	b2bl_entity_id_t *entity;
@@ -1821,7 +1821,7 @@ int get_ctx_vals(struct b2b_ctx_val ***vals, b2bl_tuple_t **tuple)
 	return 0;
 }
 
-int pv_get_ctx(struct sip_msg *msg,  pv_param_t *param, pv_value_t *res)
+int pv_get_ctx(struct sip_msg *msg,  const pv_param_t *param, pv_value_t *res)
 {
 	struct b2b_ctx_val **vals;
 	b2bl_tuple_t *tuple = NULL;

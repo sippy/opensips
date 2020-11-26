@@ -41,7 +41,7 @@ static int child_init(int rank);
 
 int pv_parse_name(pv_spec_p sp, str *in);
 int pv_init_param(pv_spec_p sp, int param);
-int pv_get_sql_cached_value(struct sip_msg *msg,  pv_param_t *param, pv_value_t *res);
+int pv_get_sql_cached_value(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res);
 static int parse_cache_entry(unsigned int type, void *val);
 static void free_c_entry(cache_entry_t *c);
 
@@ -1697,7 +1697,7 @@ int pv_parse_name(pv_spec_p sp, str *in)
 }
 
 static str valbuff[PV_VAL_BUF_NO];
-int pv_get_sql_cached_value(struct sip_msg *msg,  pv_param_t *param, pv_value_t *res)
+int pv_get_sql_cached_value(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res)
 {
 	pv_name_fix_t *pv_name;
 	str name_s;

@@ -105,16 +105,16 @@ static int child_init(int );
 static void mod_destroy(void);
 static int fixup_json_bind(void**);
 static int pv_set_json (struct sip_msg*,  pv_param_t*, int , pv_value_t* );
-static int pv_get_json (struct sip_msg*,  pv_param_t*, pv_value_t* );
-static int pv_get_json_compact(struct sip_msg*,  pv_param_t*, pv_value_t* );
-static int pv_get_json_pretty(struct sip_msg*,  pv_param_t*, pv_value_t* );
-static int pv_get_json_ext(struct sip_msg*,  pv_param_t*, pv_value_t* , int flags);
+static int pv_get_json (struct sip_msg*, const pv_param_t*, pv_value_t* );
+static int pv_get_json_compact(struct sip_msg*, const pv_param_t*, pv_value_t* );
+static int pv_get_json_pretty(struct sip_msg*, const pv_param_t*, pv_value_t* );
+static int pv_get_json_ext(struct sip_msg*, const pv_param_t*, pv_value_t* , int flags);
 static int json_bind(struct sip_msg* , pv_spec_t* , pv_spec_t* );
 static void print_tag_list( json_tag *, json_tag *, int);
-static json_t *get_object(pv_json_t *, pv_param_t *, json_tag **, int, int);
+static json_t *get_object(pv_json_t *, const pv_param_t *, json_tag **, int, int);
 static int pv_parse_json_name (pv_spec_p , str *);
 static int pv_parse_json_index(pv_spec_p sp, str *in);
-static pv_json_t * get_pv_json (pv_param_t* );
+static pv_json_t * get_pv_json (const pv_param_t* );
 static int pv_add_json ( pv_param_t* , json_t * );
 static int expand_tag_list( struct sip_msg*, json_tag *);
 
@@ -235,7 +235,7 @@ struct json_object* json_parse(const char *str,int len,enum json_tokener_error *
 
 
 /* returns the variable designated by pvp */
-pv_json_t * get_pv_json (pv_param_t* pvp)
+static pv_json_t * get_pv_json (const pv_param_t* pvp)
 {
 	pv_json_t * cur;
 	json_name * id = (json_name *) pvp->pvn.u.dname;
@@ -257,7 +257,7 @@ pv_json_t * get_pv_json (pv_param_t* pvp)
 
 
 
-json_t *get_object(pv_json_t *var, pv_param_t *pvp, json_tag **tag,
+json_t *get_object(pv_json_t *var, const pv_param_t *pvp, json_tag **tag,
 				int get_prev_obj, int report_err)
 {
 	json_name * id = (json_name *) pvp->pvn.u.dname;
@@ -346,22 +346,22 @@ error:
 
 }
 
-int pv_get_json(struct sip_msg* msg,  pv_param_t* pvp, pv_value_t* val)
+static int pv_get_json(struct sip_msg* msg, const pv_param_t* pvp, pv_value_t* val)
 {
 	return pv_get_json_ext(msg, pvp, val, JSON_C_TO_STRING_SPACED);
 }
 
-int pv_get_json_compact(struct sip_msg* msg,  pv_param_t* pvp, pv_value_t* val)
+static int pv_get_json_compact(struct sip_msg* msg, const pv_param_t* pvp, pv_value_t* val)
 {
 	return pv_get_json_ext(msg, pvp, val, JSON_C_TO_STRING_PLAIN);
 }
 
-int pv_get_json_pretty(struct sip_msg* msg,  pv_param_t* pvp, pv_value_t* val)
+static int pv_get_json_pretty(struct sip_msg* msg, const pv_param_t* pvp, pv_value_t* val)
 {
 	return pv_get_json_ext(msg, pvp, val, JSON_C_TO_STRING_PRETTY);
 }
 
-int pv_json_iterate(json_t **obj, pv_param_t *pvp, json_name *id, pv_value_t *val)
+static int pv_json_iterate(json_t **obj, const pv_param_t *pvp, json_name *id, pv_value_t *val)
 {
 	json_iter_t iter_end;
 
@@ -408,7 +408,7 @@ int pv_json_iterate(json_t **obj, pv_param_t *pvp, json_name *id, pv_value_t *va
 	return 0;
 }
 
-int pv_get_json_ext(struct sip_msg* msg,  pv_param_t* pvp, pv_value_t* val, int flags)
+static int pv_get_json_ext(struct sip_msg* msg, const pv_param_t* pvp, pv_value_t* val, int flags)
 {
 
 	pv_json_t * var ;

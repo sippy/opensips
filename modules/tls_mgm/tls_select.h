@@ -69,38 +69,38 @@ enum {
 
 typedef int select_t;
 
-int tlsops_cipher(struct sip_msg *msg, pv_param_t *param,
+int tlsops_cipher(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res);
 
-int tlsops_bits(struct sip_msg *msg, pv_param_t *param,
+int tlsops_bits(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res);
 
-int tlsops_version(struct sip_msg *msg, pv_param_t *param,
+int tlsops_version(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res);
 
-int tlsops_desc(struct sip_msg *msg, pv_param_t *param,
+int tlsops_desc(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res);
 
-int tlsops_cert_version(struct sip_msg *msg, pv_param_t *param,
+int tlsops_cert_version(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res);
 
 /*
  * Check whether peer certificate exists and verify the result
  * of certificate verification
  */
-int tlsops_check_cert(struct sip_msg *msg, pv_param_t *param,
+int tlsops_check_cert(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res);
 
-int tlsops_validity(struct sip_msg *msg, pv_param_t *param,
+int tlsops_validity(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res);
 
-int tlsops_sn(struct sip_msg *msg, pv_param_t *param,
+int tlsops_sn(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res);
 
-int tlsops_comp(struct sip_msg *msg, pv_param_t *param,
+int tlsops_comp(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res);
 
-int tlsops_alt(struct sip_msg *msg, pv_param_t *param,
+int tlsops_alt(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res);
 
 int tls_is_peer_verified(struct sip_msg* msg);

@@ -51,7 +51,7 @@ int sig_send_reply_mod(struct sip_msg* msg, int code, const str* reason,
 static int fixup_sig_send_reply(void** param);
 static int mod_init(void);
 
-static int pv_get_local_totag(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_local_totag(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *val);
 
 
@@ -272,7 +272,7 @@ int load_sig( struct sig_binds *sigb)
 }
 
 
-static int pv_get_local_totag(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_local_totag(struct sip_msg *msg, const pv_param_t *param,
 															pv_value_t *val)
 {
 	str ttag;

@@ -58,7 +58,7 @@ int shtag_register_callback(str *tag_name, int c_id, void *param,
 		shtag_cb_f func);
 
 /* script vars related functions */
-int var_get_sh_tag(struct sip_msg *msg,  pv_param_t *param, pv_value_t *res);
+int var_get_sh_tag(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res);
 
 int var_set_sh_tag(struct sip_msg* msg, pv_param_t *param, int op,
 		pv_value_t *val);

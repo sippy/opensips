@@ -656,7 +656,7 @@ struct shtag_var_name {
 	int cluster_id;
 };
 
-int var_get_sh_tag(struct sip_msg *msg,  pv_param_t *param, pv_value_t *res)
+int var_get_sh_tag(struct sip_msg *msg,  const pv_param_t *param, pv_value_t *res)
 {
 	struct shtag_var_name *v_name;
 	int ret;

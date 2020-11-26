@@ -250,7 +250,7 @@ int pv_parse_name(pv_spec_p sp, str *in)
 
 
 
-int pv_get_dlg_val(struct sip_msg *msg,  pv_param_t *param, pv_value_t *res)
+int pv_get_dlg_val(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res)
 {
 	struct dlg_cell *dlg;
 

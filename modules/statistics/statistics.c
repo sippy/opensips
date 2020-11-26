@@ -70,7 +70,7 @@ static int fixup_check_stat_group(void **param);
 int pv_parse_name(pv_spec_p sp, str *in);
 int pv_set_stat(struct sip_msg* msg, pv_param_t *param, int op,
 													pv_value_t *val);
-int pv_get_stat(struct sip_msg *msg,  pv_param_t *param, pv_value_t *res);
+int pv_get_stat(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res);
 static int w_stat_iter_init(struct sip_msg *msg, str *group, struct stat_iter *iter);
 static int w_stat_iter_next(struct sip_msg *msg, pv_spec_t *key, pv_spec_t *val,
 						struct stat_iter *iter);
@@ -456,7 +456,7 @@ int pv_parse_name(pv_spec_p sp, str *in)
 }
 
 
-static inline int get_stat_name(struct sip_msg* msg, pv_name_t *name,
+static inline int get_stat_name(struct sip_msg* msg, const pv_name_t *name,
 												int create, stat_var **stat)
 {
 	pv_value_t pv_val;
@@ -509,6 +509,7 @@ static inline int get_stat_name(struct sip_msg* msg, pv_name_t *name,
 		/* if name is static string, better link the stat directly
 		 * and discard name */
 		if (name->u.isname.type==AVP_NAME_STR) {
+#if 0
 			LM_DBG("name %p freeing %p\n",name,name->u.isname.name.s.s);
 			/* it is totally unsafe to free this shm block here, as it is
 			 * referred by the spec from all the processess. Even if we create
@@ -519,6 +520,9 @@ static inline int get_stat_name(struct sip_msg* msg, pv_name_t *name,
 			name->u.isname.name.s.len = 0;
 			name->type = PV_NAME_PVAR;
 			name->u.dname = (void*)*stat;
+#else
+# warning "FIX ME!!!"
+#endif
 		}
 	} else {
 		/* stat already found ! */
@@ -594,7 +598,7 @@ int pv_set_stat(struct sip_msg* msg, pv_param_t *param, int op,
 }
 
 
-int pv_get_stat(struct sip_msg *msg,  pv_param_t *param, pv_value_t *res)
+int pv_get_stat(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res)
 {
 	stat_var *stat;
 

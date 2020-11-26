@@ -76,7 +76,7 @@ static void mod_destroy(void);
 
 /* PV functions */
 static int pv_set_xml(struct sip_msg*,  pv_param_t*, int, pv_value_t*);
-static int pv_get_xml(struct sip_msg*,  pv_param_t*, pv_value_t*);
+static int pv_get_xml(struct sip_msg*, const pv_param_t*, pv_value_t*);
 static int pv_parse_xml_name(pv_spec_p , str *);
 
 
@@ -470,7 +470,7 @@ static xmlAttr *get_node_attr(xmlNode *node, str attr_name)
 
 static str res_buf;
 
-int pv_get_xml(struct sip_msg* msg,  pv_param_t* pvp, pv_value_t* res)
+int pv_get_xml(struct sip_msg* msg, const pv_param_t* pvp, pv_value_t* res)
 {
 	xml_path_t *path = NULL;
 	xml_object_t *obj;

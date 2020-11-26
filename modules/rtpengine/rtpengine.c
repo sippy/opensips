@@ -302,8 +302,8 @@ static void mod_destroy(void);
 static int mi_child_init(void);
 
 /* Pseudo-Variables */
-static int pv_get_rtpstat_f(struct sip_msg *, pv_param_t *, pv_value_t *);
-static int pv_get_rtpquery_f(struct sip_msg *, pv_param_t *, pv_value_t *);
+static int pv_get_rtpstat_f(struct sip_msg *, const pv_param_t *, pv_value_t *);
+static int pv_get_rtpquery_f(struct sip_msg *, const pv_param_t *, pv_value_t *);
 
 /*mi commands*/
 static mi_response_t *mi_enable_rtp_proxy(const mi_params_t *params,
@@ -3087,7 +3087,7 @@ static inline void pv_handle_rtpstat(enum rtpe_stat s, str *index,
 }
 
 static inline int
-pv_get_rtpstat(struct sip_msg *msg, pv_param_t *param,
+pv_get_rtpstat(struct sip_msg *msg, const pv_param_t *param,
 		  pv_value_t *res, bencode_item_t *dict)
 {
 	str aux;
@@ -3124,7 +3124,7 @@ pv_get_rtpstat(struct sip_msg *msg, pv_param_t *param,
 }
 
 static int
-pv_get_rtpstat_f(struct sip_msg *msg, pv_param_t *param,
+pv_get_rtpstat_f(struct sip_msg *msg, const pv_param_t *param,
 		  pv_value_t *res)
 {
 	bencode_buffer_t bencbuf;
@@ -3200,7 +3200,7 @@ static cJSON *bson2json(bencode_item_t *i)
 }
 
 static int
-pv_get_rtpquery_f(struct sip_msg *msg, pv_param_t *param,
+pv_get_rtpquery_f(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	static char query_buf[512];

@@ -83,7 +83,7 @@ int pv_parse_acc_extra_name(pv_spec_p sp, str *in)
 /*
  * getter function for $acc_extra
  */
-int pv_get_acc_extra(struct sip_msg *msg, pv_param_t *param,
+int pv_get_acc_extra(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *val)
 {
 	int tag_idx;
@@ -267,7 +267,7 @@ void push_ctx_to_ctx(acc_ctx_t *src, acc_ctx_t *dst)
  * VARIABLE
  * ***********************/
 
-int pv_get_acc_current_leg(struct sip_msg *msg, pv_param_t *param,
+int pv_get_acc_current_leg(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *val)
 {
 	acc_ctx_t* ctx=try_fetch_ctx();
@@ -373,7 +373,7 @@ int pv_parse_acc_leg_name(pv_spec_p sp, str *in)
 }
 
 
-int pv_get_acc_leg(struct sip_msg *msg, pv_param_t *param,
+int pv_get_acc_leg(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *val)
 {
 	int tag_idx, leg_idx;

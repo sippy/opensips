@@ -112,7 +112,7 @@ mi_response_t *mi_set_pid(const mi_params_t *params,
 mi_response_t *mi_get_pid(const mi_params_t *params,
 								struct mi_handler *async_hdl);
 
-static int pv_get_rl_count(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_rl_count(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res);
 static int pv_parse_rl_count(pv_spec_p sp, str *in);
 
@@ -773,7 +773,7 @@ mi_response_t *mi_reset_pipe(const mi_params_t *params,
 }
 
 /* pseudo-variable functions */
-static int pv_get_rl_count(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_rl_count(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	int counter;

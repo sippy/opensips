@@ -42,7 +42,7 @@ static char uuid_str[UUID_STR_BUFSIZE];
 static int fixup_check_var(void** param);
 static int w_uuid(struct sip_msg *msg, pv_spec_t *out_var, int *vers_param);
 
-static int pv_get_uuid(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_uuid(struct sip_msg *msg, const pv_param_t *param,
 						pv_value_t *res);
 
 static pv_export_t mod_items[] = {
@@ -110,7 +110,7 @@ static int gen_uuid(enum uuid_gen_vers vers, pv_value_t *res)
 	return rc;
 }
 
-static int pv_get_uuid(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_uuid(struct sip_msg *msg, const pv_param_t *param,
 						pv_value_t *res)
 {
 	if (gen_uuid(UUID_VERS_0, res) == RET_UNSAFE)

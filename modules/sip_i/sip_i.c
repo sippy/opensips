@@ -43,12 +43,12 @@ static int child_init(int rank);
 static void mod_destroy(void);
 
 /* $isup_msg_type */
-int pv_get_isup_msg_type(struct sip_msg *msg, pv_param_t *param, pv_value_t *res);
+int pv_get_isup_msg_type(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res);
 /* $isup_param */
 int pv_parse_isup_param_name(pv_spec_p sp, str *in);
 int pv_parse_isup_param_index(pv_spec_p sp, str* in);
-int pv_get_isup_param(struct sip_msg *msg, pv_param_t *param, pv_value_t *res);
-int pv_get_isup_param_str(struct sip_msg *msg, pv_param_t *param, pv_value_t *res);
+int pv_get_isup_param(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res);
+int pv_get_isup_param_str(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res);
 int pv_set_isup_param(struct sip_msg* msg, pv_param_t *param, int op, pv_value_t *val);
 
 /* script functions */
@@ -659,7 +659,7 @@ struct param_parsed_struct *get_isup_param(struct isup_parsed_struct *parse_stru
 	return p;
 }
 
-int get_isup_param_msg(struct sip_msg *msg, pv_param_t *param, int *pv_idx,
+int get_isup_param_msg(struct sip_msg *msg, const pv_param_t *param, int *pv_idx,
 	struct isup_parse_fixup **fix, struct param_parsed_struct **p,
 	struct isup_parsed_struct **parse_struct, struct body_part **isup_part,
 	int *param_type)
@@ -864,7 +864,7 @@ int get_param_pval_str(int isup_params_idx, int subfield_idx,
 	return 0;
 }
 
-int pv_get_isup_param(struct sip_msg *msg, pv_param_t *param, pv_value_t *res)
+int pv_get_isup_param(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res)
 {
 	struct isup_parse_fixup *fix = NULL;
 	struct isup_parsed_struct *isup_struct;
@@ -890,7 +890,7 @@ int pv_get_isup_param(struct sip_msg *msg, pv_param_t *param, pv_value_t *res)
 	return 0;
 }
 
-int pv_get_isup_param_str(struct sip_msg *msg, pv_param_t *pv_param, pv_value_t *res)
+int pv_get_isup_param_str(struct sip_msg *msg, const pv_param_t *pv_param, pv_value_t *res)
 {
 	struct isup_parse_fixup *fix = NULL;
 	struct isup_parsed_struct *isup_struct;
@@ -1145,7 +1145,7 @@ int pv_set_isup_param(struct sip_msg* msg, pv_param_t *param, int op, pv_value_t
 	}
 }
 
-int pv_get_isup_msg_type(struct sip_msg *msg, pv_param_t *param, pv_value_t *res)
+int pv_get_isup_msg_type(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res)
 {
 	struct body_part *p;
 	int msg_idx = -1;

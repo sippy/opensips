@@ -162,7 +162,7 @@ static mi_export_t mi_cmds[] = {
 	{EMPTY_MI_EXPORT}
 };
 
-static int bm_get_time_diff(struct sip_msg *msg, pv_param_t *param,
+static int bm_get_time_diff(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res);
 
 static pv_export_t mod_items[] = {
@@ -685,7 +685,7 @@ error:
 }
 
 /* item functions */
-static int bm_get_time_diff(struct sip_msg *msg, pv_param_t *param,
+static int bm_get_time_diff(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	if(msg==NULL)

@@ -249,7 +249,7 @@ int pv_parse_shvar_name(pv_spec_p sp, str *in)
 }
 
 static inline int get_shvar_from_pv_name(struct sip_msg *msg,
-                              pv_name_t *pvn, sh_var_t **shv)
+                              const pv_name_t *pvn, sh_var_t **shv)
 {
 	pv_value_t val;
 	str s;
@@ -287,7 +287,7 @@ static inline int get_shvar_from_pv_name(struct sip_msg *msg,
 	return 0;
 }
 
-int pv_get_shvar(struct sip_msg *msg, pv_param_t *param,
+int pv_get_shvar(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	sh_var_t *shv;
@@ -678,7 +678,7 @@ error:
 }
 
 
-int pv_get_time(struct sip_msg *msg, pv_param_t *param,
+int pv_get_time(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	static struct tm stored_ts;

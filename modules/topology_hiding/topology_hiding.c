@@ -49,7 +49,7 @@ static void mod_destroy(void);
 static int fixup_mmode(void **param);
 int w_topology_hiding(struct sip_msg *req, str *flags_s);
 int w_topology_hiding_match(struct sip_msg *req, void *seq_match_mode_val);
-static int pv_topo_callee_callid(struct sip_msg *msg, pv_param_t *param, pv_value_t *res);
+static int pv_topo_callee_callid(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res);
 
 static cmd_export_t cmds[]={
 	{"topology_hiding",(cmd_function)w_topology_hiding, {
@@ -253,7 +253,7 @@ int w_topology_hiding_match(struct sip_msg *req, void *seq_match_mode_val)
 
 static char *callid_buf=NULL;
 static int callid_buf_len=0;
-static int pv_topo_callee_callid(struct sip_msg *msg, pv_param_t *param, pv_value_t *res)
+static int pv_topo_callee_callid(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res)
 {
 	struct dlg_cell *dlg;
 	int req_len = 0,i;

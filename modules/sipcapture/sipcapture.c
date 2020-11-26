@@ -297,9 +297,9 @@ static int parse_hep_route(char *val);
 /* remove chunk functions */
 static int w_del_hep(struct sip_msg* msg, void *id);
 
-static int pv_get_hep_net(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_hep_net(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res);
-static int pv_get_hep_version(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_hep_version(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res);
 
 static int
@@ -1394,7 +1394,7 @@ static int pv_parse_hep_net_name(pv_spec_p sp, str* in)
 }
 
 
-static int get_hepvar_name(struct sip_msg *msg, pv_param_t *param,
+static int get_hepvar_name(struct sip_msg *msg, const pv_param_t *param,
 		unsigned int *chunk)
 {
 	pv_spec_p sp;
@@ -1702,7 +1702,7 @@ static int del_hep_chunk(struct hepv3* h3, unsigned int chunk_id)
 
 
 
-static int pv_get_hep_net(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_hep_net(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	#define SET_PVAL_INT(__pval__, __ival__)    \
@@ -1849,7 +1849,7 @@ static int pv_get_hep_net(struct sip_msg *msg, pv_param_t *param,
 }
 
 
-static int pv_get_hep_version(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_hep_version(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	struct hep_context *ctx;

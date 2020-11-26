@@ -79,13 +79,13 @@
 
 
 /* item functions */
-static int pv_get_tm_branch_idx(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_tm_branch_idx(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res);
-static int pv_get_tm_reply_code(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_tm_reply_code(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res);
-static int pv_get_tm_ruri(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_tm_ruri(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res);
-static int pv_get_t_id(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_t_id(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res);
 
 /* fixup functions */
@@ -148,11 +148,11 @@ static char pv_local_buf[PV_LOCAL_BUF_SIZE+1];
 static str uac_ctx_avp = str_init("uac_ctx");
 static int uac_ctx_avp_id;
 
-int pv_get_tm_branch_avp(struct sip_msg*, pv_param_t*, pv_value_t*);
+int pv_get_tm_branch_avp(struct sip_msg*, const pv_param_t*, pv_value_t*);
 int pv_set_tm_branch_avp(struct sip_msg*, pv_param_t*, int, pv_value_t*);
-int pv_get_tm_fr_timeout(struct sip_msg*, pv_param_t *, pv_value_t*);
+int pv_get_tm_fr_timeout(struct sip_msg*, const pv_param_t *, pv_value_t*);
 int pv_set_tm_fr_timeout(struct sip_msg*, pv_param_t *, int, pv_value_t*);
-int pv_get_tm_fr_inv_timeout(struct sip_msg*, pv_param_t *, pv_value_t*);
+int pv_get_tm_fr_inv_timeout(struct sip_msg*, const pv_param_t *, pv_value_t*);
 int pv_set_tm_fr_inv_timeout(struct sip_msg*, pv_param_t *, int, pv_value_t*);
 struct usr_avp** get_bavp_list(void);
 
@@ -1577,7 +1577,7 @@ static int t_wait_for_new_branches(struct sip_msg* msg,
 
 /******************** pseudo-variable functions *************************/
 
-static int pv_get_tm_branch_idx(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_tm_branch_idx(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	int l = 0;
@@ -1602,7 +1602,7 @@ static int pv_get_tm_branch_idx(struct sip_msg *msg, pv_param_t *param,
 	return 0;
 }
 
-static int pv_get_tm_reply_code(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_tm_reply_code(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	struct cell *t;
@@ -1651,7 +1651,7 @@ static int pv_get_tm_reply_code(struct sip_msg *msg, pv_param_t *param,
 	return 0;
 }
 
-static int pv_get_tm_ruri(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_tm_ruri(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res)
 {
 	struct cell *t;
@@ -1718,7 +1718,7 @@ struct sip_msg* tm_pv_context_request(struct sip_msg* msg)
 }
 
 
-int pv_get_tm_branch_avp(struct sip_msg *msg, pv_param_t *param,
+int pv_get_tm_branch_avp(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *val)
 {
 	int avp_name;
@@ -1970,7 +1970,7 @@ struct usr_avp** get_bavp_list(void)
 	return &t->uac[_tm_branch_index].user_avps;
 }
 
-int pv_get_tm_fr_timeout(struct sip_msg *msg, pv_param_t *param,
+int pv_get_tm_fr_timeout(struct sip_msg *msg, const pv_param_t *param,
                          pv_value_t *ret)
 {
 	struct cell *t;
@@ -2019,7 +2019,7 @@ set_timeout:
 }
 
 int pv_get_tm_fr_inv_timeout(struct sip_msg *msg,
-                             pv_param_t *param, pv_value_t *ret)
+                             const pv_param_t *param, pv_value_t *ret)
 {
 	struct cell *t;
 
@@ -2066,7 +2066,7 @@ set_timeout:
 	return 0;
 }
 
-static int pv_get_t_id(struct sip_msg *msg, pv_param_t *param,
+static int pv_get_t_id(struct sip_msg *msg, const pv_param_t *param,
 															pv_value_t *res)
 {
 #define INTasHEXA_SIZE (sizeof(int)*2)

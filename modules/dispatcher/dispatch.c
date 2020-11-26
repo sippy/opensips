@@ -617,7 +617,7 @@ int ds_pvar_algo(struct sip_msg *msg, ds_set_p set, ds_dest_p **sorted_set,
 	return cnt;
 }
 
-int ds_route_param_get(struct sip_msg *msg, pv_param_t *ip,
+static int ds_route_param_get(struct sip_msg *msg, const pv_param_t *ip,
 		pv_value_t *res, void *params, void *extra)
 {
 	pv_value_t tv;
