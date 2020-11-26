@@ -135,12 +135,15 @@ enum _pv_type {
 typedef enum _pv_type pv_type_t;
 typedef int pv_flags_t;
 
+typedef void (*pvv_free_t)(void *);
 
 typedef struct _pv_value
 {
 	str rs;    /*!< string value */
 	int ri;    /*!< integer value */
 	int flags; /*!< flags about the type of value */
+	void *pvv; /*!< PV value buffer */
+	pvv_free_t pvv_free; /*!< Deallocator for the pvv */
 } pv_value_t, *pv_value_p;
 
 typedef struct _pv_name

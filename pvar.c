@@ -5105,6 +5105,7 @@ void pv_value_destroy(pv_value_t *val)
 	if(val==0) return;
 	if(val->flags&PV_VAL_PKG) pkg_free(val->rs.s);
 	if(val->flags&PV_VAL_SHM) shm_free(val->rs.s);
+	if(val->pvv != NULL) val->pvv_free(val->pvv);
 	memset(val, 0, sizeof(pv_value_t));
 }
 
