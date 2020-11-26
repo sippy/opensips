@@ -12,6 +12,7 @@ gcc)
 gcc-i386-cross)
 	export CC="gcc"
 	export CC_EXTRA_OPTS="-Werror -m32"
+	sudo dpkg --add-architecture i386
 	PKGS="${PKGS} gcc g++ libc6-dev:i386 libstdc++6:i386 lib32gcc-7-dev"
 	;;
 gcc-mips64-cross)
@@ -30,6 +31,7 @@ clang)
 clang-i386-cross)
 	export CC="clang"
 	export CC_EXTRA_OPTS="-Werror -m32"
+	sudo dpkg --add-architecture i386
 	PKGS="${PKGS} clang llvm-dev libc6-dev:i386 libstdc++6:i386 lib32gcc-7-dev"
 	;;
 gcc-9)
