@@ -127,11 +127,11 @@ int serialize_branches(struct sip_msg *msg, int clean_before, int keep_order)
 			msg->path_vec.len, msg->path_vec.s,
 			ruri_q, flags);
 
-	*((long*) p) = (long)msg->force_send_socket;
+	memcpy(p, &msg->force_send_socket, sizeof(long));
 	p += sizeof(long);
-	*((long*) p) = (long)flags;
+	memcpy(p, &flags, sizeof(long));
 	p += sizeof(long);
-	*((long*) p) = (long)ruri_q;
+	memcpy(p, &ruri_q, sizeof(long));
 	p += sizeof(long);
 
 	memcpy(p , ruri->s, ruri->len);
@@ -169,11 +169,11 @@ int serialize_branches(struct sip_msg *msg, int clean_before, int keep_order)
 				path.len, path.s,
 				q, flags);
 
-		*((long*) p) = (long)sock_info;
+		memcpy(p, &sock_info, sizeof(long));
 		p += sizeof(long);
-		*((long*) p) = (long)flags;
+		memcpy(p, &flags, sizeof(long));
 		p += sizeof(long);
-		*((long*) p) = (long)q;
+		memcpy(p, &q, sizeof(long));
 		p += sizeof(long);
 
 		memcpy(p , branch.s, branch.len);
@@ -293,11 +293,11 @@ int next_branches( struct sip_msg *msg)
 	/* *sock_info, flags, q, uri, 0, dst_uri, 0, path, 0,... */
 
 	p = val.s.s;
-	sock_info = (struct socket_info*) *((long*) p);
+	memcpy(&sock_info, p, sizeof(long));
 	p += sizeof(long);
-	flags = (unsigned int) *((long*) p);
+	memcpy(&flags, p, sizeof(long));
 	p += sizeof(long);
-	q = (unsigned int) *((long*) p);
+	memcpy(&q, p, sizeof(long));
 	p += sizeof(long);
 	uri.s = p;
 	uri.len = strlen(p);
@@ -361,11 +361,11 @@ int next_branches( struct sip_msg *msg)
 		}
 
 		p = val.s.s;
-		sock_info = (struct socket_info*) *((long*) p);
+		memcpy(&sock_info, p, sizeof(long));
 		p += sizeof(long);
-		flags = (unsigned int) *((long*) p);
+		memcpy(&flags, p, sizeof(long));
 		p += sizeof(long);
-		q = (unsigned int) *((long*) p);
+		memcpy(&q, p, sizeof(long));
 		p += sizeof(long);
 		uri.s = p;
 		uri.len = strlen(p);
