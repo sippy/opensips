@@ -6,10 +6,10 @@ enable_ubuntu_toolchain_test() {
 setup_qemu() {
 	ARCH1="${1}"
 	ARCH2="${2}"
-        sudo mkdir "/usr/${ARCH1}-linux-${ARCH2}/etc"
-        sudo touch "/usr/${ARCH1}-linux-${ARCH2}/etc/ld.so.cache"
-        sudo mkdir "/etc/qemu-binfmt"
-        sudo ln -sf "/usr/${ARCH1}-linux-${ARCH2}" "/etc/qemu-binfmt/${ARCH1}"
+	sudo mkdir "/usr/${ARCH1}-linux-${ARCH2}/etc"
+	sudo touch "/usr/${ARCH1}-linux-${ARCH2}/etc/ld.so.cache"
+	sudo mkdir "/etc/qemu-binfmt"
+	sudo ln -sf "/usr/${ARCH1}-linux-${ARCH2}" "/etc/qemu-binfmt/${ARCH1}"
 }
 
 case "${COMPILER}" in
@@ -34,20 +34,20 @@ gcc-mips64-cross)
 	;;
 gcc-arm32-cross)
 	MAKE_TGT="opensips"
-        export CC="arm-linux-gnueabihf-gcc"
-        export AR="arm-linux-gnueabihf-ar"
-        export RANLIB="arm-linux-gnueabihf-ranlib"
+	export CC="arm-linux-gnueabihf-gcc"
+	export AR="arm-linux-gnueabihf-ar"
+	export RANLIB="arm-linux-gnueabihf-ranlib"
 	POST_INSTALL_CMD="setup_qemu arm gnueabihf"
-        PKGS="${PKGS} gcc-arm-linux-gnueabihf libc-dev-armhf-cross qemu-user-static"
-        ;;
+	PKGS="${PKGS} gcc-arm-linux-gnueabihf libc-dev-armhf-cross qemu-user-static"
+	;;
 gcc-arm64-cross)
 	MAKE_TGT="opensips"
-        export CC="aarch64-linux-gnu-gcc"
-        export AR="aarch64-linux-gnu-ar"
-        export RANLIB="aarch64-linux-gnu-ranlib"
+	export CC="aarch64-linux-gnu-gcc"
+	export AR="aarch64-linux-gnu-ar"
+	export RANLIB="aarch64-linux-gnu-ranlib"
 	POST_INSTALL_CMD="setup_qemu aarch64 gnu"
-        PKGS="${PKGS} gcc-aarch64-linux-gnu libc-dev-arm64-cross qemu-user-static"
-        ;;
+	PKGS="${PKGS} gcc-aarch64-linux-gnu libc-dev-arm64-cross qemu-user-static"
+	;;
 clang)
 	export CC="${COMPILER}"
 	export AR="llvm-ar"
@@ -95,5 +95,5 @@ clang-10)
 *)
 	printf 'COMPILER="%s" is unknown / unsupported\n' "${COMPILER}" 1>&2
 	exit 1
-        ;;
+	;;
 esac
