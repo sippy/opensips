@@ -64,7 +64,7 @@ gcc-10)
 	export RANLIB="gcc-ranlib-10"
 	export GCOV_CMD="gcov-10"
 	PRE_INSTALL_CMD="enable_ubuntu_toolchain_test"
-	PKGS="${PKGS} gcc-9 g++-9"
+	PKGS="${PKGS} gcc-10 g++-10"
 	;;
 clang-9)
 	export CC="${COMPILER}"
