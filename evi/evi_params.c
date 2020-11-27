@@ -147,31 +147,38 @@ void evi_free_params(evi_params_p list)
 
 evi_params_p evi_dup_shm_params(evi_params_p pkg_params)
 {
-	int parambufs_size, strbufs_size;
-	evi_params_p shm_params;
+	int strbufs_size;
+	int nparams;
 	evi_param_p param, prev, sp;
 	char *p;
 
 	if(!pkg_params)
 		return NULL;
 
-	parambufs_size = sizeof(evi_params_t);
 	strbufs_size = 0;
+	nparams = 0;
 	for (param = pkg_params->first; param; param = param->next) {
-		parambufs_size += sizeof(evi_param_t);
+		nparams++;
 		strbufs_size += param->name.len;
 		if (param->flags & EVI_STR_VAL)
 			strbufs_size += param->val.s.len;
 	}
 
-	shm_params = shm_malloc(parambufs_size + strbufs_size);
+	struct {
+		evi_params_t pdescr;
+		evi_param_t params[nparams];
+		char strbuf[strbufs_size];
+	} *shm_params;
+
+
+	shm_params = shm_malloc(sizeof(*shm_params));
 	if (!shm_params) {
 		return NULL;
 	}
-	shm_params->flags = 0;
+	shm_params->pdescr.flags = 0;
 
-	sp = (evi_param_p)(shm_params + 1);
-	p = (char *)(shm_params) + parambufs_size;
+	sp = shm_params->params;
+	p = shm_params->strbuf;
 	for (param = pkg_params->first, prev = NULL; param;
 			prev = sp, param = param->next) {
 		sp->flags = param->flags;
@@ -191,12 +198,12 @@ evi_params_p evi_dup_shm_params(evi_params_p pkg_params)
 			sp->val.n = param->val.n;
 		if (prev) {
 			prev->next = sp;
-			shm_params->last = sp;
+			shm_params->pdescr.last = sp;
 		} else
-			shm_params->first = sp;
+			shm_params->pdescr.first = sp;
 		sp++;
 	}
-	return shm_params;
+	return &(shm_params->pdescr);
 }
 
 void evi_free_shm_params(evi_params_p shm_params)
