@@ -3,6 +3,15 @@ enable_ubuntu_toolchain_test() {
   sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
 }
 
+setup_qemu() {
+	ARCH1="${1}"
+	ARCH2="${2}"
+        sudo mkdir "/usr/${ARCH1}-linux-${ARCH2}/etc"
+        sudo touch "/usr/${ARCH1}-linux-${ARCH2}/etc/ld.so.cache"
+        sudo mkdir "/etc/qemu-binfmt"
+        sudo ln -sf "/usr/${ARCH1}-linux-${ARCH2}" "/etc/qemu-binfmt/${ARCH1}"
+}
+
 case "${COMPILER}" in
 gcc)
 	export CC="${COMPILER}"
@@ -20,6 +29,7 @@ gcc-mips64-cross)
 	export CC="mips64-linux-gnuabi64-gcc"
 	export AR="mips64-linux-gnuabi64-ar"
 	export RANLIB="mips64-linux-gnuabi64-ranlib"
+	POST_INSTALL_CMD="setup_qemu mips64 gnuabi64"
 	PKGS="${PKGS} gcc-mips64-linux-gnuabi64 libc-dev-mips64-cross qemu-user-static"
 	;;
 gcc-arm32-cross)
@@ -27,6 +37,7 @@ gcc-arm32-cross)
         export CC="arm-linux-gnueabihf-gcc"
         export AR="arm-linux-gnueabihf-ar"
         export RANLIB="arm-linux-gnueabihf-ranlib"
+	POST_INSTALL_CMD="setup_qemu arm gnueabihf"
         PKGS="${PKGS} gcc-arm-linux-gnueabihf libc-dev-armhf-cross qemu-user-static"
         ;;
 gcc-arm64-cross)
@@ -34,6 +45,7 @@ gcc-arm64-cross)
         export CC="aarch64-linux-gnu-gcc"
         export AR="aarch64-linux-gnu-ar"
         export RANLIB="aarch64-linux-gnu-ranlib"
+	POST_INSTALL_CMD="setup_qemu aarch64 gnu"
         PKGS="${PKGS} gcc-aarch64-linux-gnu libc-dev-arm64-cross qemu-user-static"
         ;;
 clang)
