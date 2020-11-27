@@ -75,7 +75,7 @@ int init_serialization(void)
 #define unseras(var, p, sertype) { \
         sertype _tval; \
         memcpy(&_tval, (p), sizeof(sertype)); \
-        memcpy(var, &_tval, sizeof(*(var)));}
+        *(var) = (typeof(*(var)))_tval;}
 
 /*! \brief
  * Loads contacts in destination set into "serial_avp" AVP in reverse
