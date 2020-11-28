@@ -8,7 +8,7 @@ PKGS=`grep -A 35 packages: .travis.yml  | grep -e '^ *[-]' | awk '{print $2}'`
 
 if [ ! -z "${PRE_INSTALL_CMD}" ]
 then
-  ${PRE_INSTALL_CMD}
+	${PRE_INSTALL_CMD}
 fi
 
 sudo apt-get update -y
@@ -16,5 +16,5 @@ sudo apt-get -y install ${PKGS}
 
 if [ ! -z "${PRE_INSTALL_CMD}" ]
 then
-  ${POST_INSTALL_CMD}
+	${POST_INSTALL_CMD}
 fi
