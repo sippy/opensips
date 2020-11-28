@@ -14,7 +14,7 @@ fi
 sudo apt-get update -y
 sudo apt-get -y install ${PKGS}
 
-if [ ! -z "${PRE_INSTALL_CMD}" ]
+if [ ! -z "${POST_INSTALL_CMD}" ]
 then
 	${POST_INSTALL_CMD}
 fi
