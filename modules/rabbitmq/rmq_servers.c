@@ -33,6 +33,7 @@
 
 #include "rmq_servers.h"
 #include <amqp_framing.h>
+#include <amqp_ssl_socket.h>
 
 #if defined AMQP_VERSION && AMQP_VERSION >= 0x00040000
 #define rmq_parse amqp_parse_url
