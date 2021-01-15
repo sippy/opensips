@@ -40,7 +40,7 @@ before_script:
   - sh scripts/build/setup_tap.sh
 script:
   - sh -x scripts/build/do_build.sh
-  - set -e; if [ -e opensips_test ]; then ./opensips_test 2>opensips_test.elog; fi
+  - sh -x scripts/build/do_test.sh
 notifications:
   irc:
     channels:
