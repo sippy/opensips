@@ -20,12 +20,12 @@ gcc)
 gcc-i386-cross)
 	export CC="gcc"
 	CC_EXTRA_OPTS="-Werror -m32"
-	MAKE_TGT="opensips opensips_test"
+	MAKE_TGT="opensips"
 	PRE_INSTALL_CMD="sudo dpkg --add-architecture i386"
 	PKGS="${PKGS} gcc g++ libc6-dev:i386 libstdc++6:i386 lib32gcc-7-dev"
 	;;
 gcc-mips64-cross)
-	MAKE_TGT="opensips opensips_test"
+	MAKE_TGT="opensips"
 	export CC="mips64-linux-gnuabi64-gcc"
 	export AR="mips64-linux-gnuabi64-ar"
 	export RANLIB="mips64-linux-gnuabi64-ranlib"
@@ -33,7 +33,7 @@ gcc-mips64-cross)
 	PKGS="${PKGS} gcc-mips64-linux-gnuabi64 libc-dev-mips64-cross qemu-user-static"
 	;;
 gcc-arm32-cross)
-	MAKE_TGT="opensips opensips_test"
+	MAKE_TGT="opensips"
 	export CC="arm-linux-gnueabihf-gcc"
 	export AR="arm-linux-gnueabihf-ar"
 	export RANLIB="arm-linux-gnueabihf-ranlib"
@@ -41,7 +41,7 @@ gcc-arm32-cross)
 	PKGS="${PKGS} gcc-arm-linux-gnueabihf libc-dev-armhf-cross qemu-user-static"
 	;;
 gcc-arm64-cross)
-	MAKE_TGT="opensips opensips_test"
+	MAKE_TGT="opensips"
 	export CC="aarch64-linux-gnu-gcc"
 	export AR="aarch64-linux-gnu-ar"
 	export RANLIB="aarch64-linux-gnu-ranlib"
@@ -58,7 +58,7 @@ clang)
 clang-i386-cross)
 	export CC="clang"
 	CC_EXTRA_OPTS="-Werror -m32"
-	MAKE_TGT="opensips opensips_test"
+	MAKE_TGT="opensips"
 	PRE_INSTALL_CMD="sudo dpkg --add-architecture i386"
 	PKGS="${PKGS} clang llvm-dev libc6-dev:i386 libstdc++6:i386 lib32gcc-7-dev"
 	;;
