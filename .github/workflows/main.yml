@@ -48,8 +48,14 @@ jobs:
       - name: before_install
         run: sh -x scripts/build/install_depends.sh
 
+      - name: before-script
+        run: sh -x scripts/build/setup_tap.sh
+
       - name: script
         run: sh -x scripts/build/do_build.sh
+
+      - name: do-test
+        run: sh -x scripts/build/do_test.sh
 
       - name: Notify slack fail
         if: failure() && github.repository == 'OpenSIPS/opensips'
