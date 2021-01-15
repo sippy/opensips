@@ -2,7 +2,7 @@
 
 set -e
 
-PKGS=`grep -A 35 packages: .travis.yml  | grep -e '^ *[-]' | awk '{print $2}'`
+PKGS=`grep -A 30 packages: .travis.yml  | grep -e '^ *[-]' | awk '{print $2}'`
 
 . $(dirname $0)/build.conf.sub
 
