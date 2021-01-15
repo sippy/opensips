@@ -244,124 +244,6 @@ error:
 	return -1;
 }
 
-
-/*! \brief blocking connect on a non-blocking fd; it will timeout after
- * tcp_connect_timeout
- * if BLOCKING_USE_SELECT and HAVE_SELECT are defined it will internally
- * use select() instead of poll (bad if fd > FD_SET_SIZE, poll is preferred)
- */
-int tcp_connect_blocking_timeout(int fd, const struct sockaddr *servaddr,
-											socklen_t addrlen, int timeout)
-{
-	int n;
-#if defined(HAVE_SELECT) && defined(BLOCKING_USE_SELECT)
-	fd_set sel_set;
-	fd_set orig_set;
-	struct timeval timeout;
-#else
-	struct pollfd pf;
-#endif
-	int elapsed;
-	int to;
-	int err;
-	struct timeval begin;
-	unsigned int err_len;
-	int poll_err;
-	char *ip;
-	unsigned short port;
-
-	poll_err=0;
-	to = timeout*1000;
-
-	if (gettimeofday(&(begin), NULL)) {
-		LM_ERR("Failed to get TCP connect start time\n");
-		goto error;
-	}
-
-again:
-	n=connect(fd, servaddr, addrlen);
-	if (n==-1){
-		if (errno==EINTR){
-			elapsed=get_time_diff(&begin);
-			if (elapsed<to) goto again;
-			else goto error_timeout;
-		}
-		if (errno!=EINPROGRESS && errno!=EALREADY){
-			get_su_info( servaddr, ip, port);
-			LM_ERR("[server=%s:%d] (%d) %s\n",ip, port, errno, strerror(errno));
-			goto error;
-		}
-	}else goto end;
-
-	/* poll/select loop */
-#if defined(HAVE_SELECT) && defined(BLOCKING_USE_SELECT)
-		FD_ZERO(&orig_set);
-		FD_SET(fd, &orig_set);
-#else
-		pf.fd=fd;
-		pf.events=POLLOUT;
-#endif
-	while(1){
-		elapsed = get_time_diff(&begin);
-		if (elapsed<to)
-			to-=elapsed;
-		else
-			goto error_timeout;
-#if defined(HAVE_SELECT) && defined(BLOCKING_USE_SELECT)
-		sel_set=orig_set;
-		timeout.tv_sec = to/1000000;
-		timeout.tv_usec = to%1000000;
-		n=select(fd+1, 0, &sel_set, 0, &timeout);
-#else
-		n=poll(&pf, 1, to/1000);
-#endif
-		if (n<0){
-			if (errno==EINTR) continue;
-			get_su_info( servaddr, ip, port);
-			LM_ERR("poll/select failed:[server=%s:%d] (%d) %s\n",
-				ip, port, errno, strerror(errno));
-			goto error;
-		}else if (n==0) /* timeout */ continue;
-#if defined(HAVE_SELECT) && defined(BLOCKING_USE_SELECT)
-		if (FD_ISSET(fd, &sel_set))
-#else
-		if (pf.revents&(POLLERR|POLLHUP|POLLNVAL)){
-			LM_ERR("poll error: flags %d - %d %d %d %d \n", pf.revents,
-				   POLLOUT,POLLERR,POLLHUP,POLLNVAL);
-			poll_err=1;
-		}
-#endif
-		{
-			err_len=sizeof(err);
-			getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &err_len);
-			if ((err==0) && (poll_err==0)) goto end;
-			if (err!=EINPROGRESS && err!=EALREADY){
-				get_su_info( servaddr, ip, port);
-				LM_ERR("failed to retrieve SO_ERROR [server=%s:%d] (%d) %s\n",
-					ip, port, err, strerror(err));
-				goto error;
-			}
-		}
-	}
-error_timeout:
-	/* timeout */
-	LM_ERR("connect timed out, %d us elapsed out of %d us\n", elapsed,
-		timeout*1000);
-error:
-	return -1;
-end:
-	return 0;
-}
-
-int tcp_connect_blocking(int fd, const struct sockaddr *servaddr,
-															socklen_t addrlen)
-{
-	return tcp_connect_blocking_timeout(fd, servaddr, addrlen,
-			tcp_connect_timeout);
-}
-
-
-
 static int send2worker(struct tcp_connection* tcpconn,int rw)
 {
 	int i;
@@ -737,6 +619,13 @@ static void _tcpconn_rm(struct tcp_connection* c)
 			&c->con_aliases[r], next, prev);
 	lock_destroy(&c->write_lock);
 
+	if (c->async) {
+		for (r = 0; r<c->async->pending; r++)
+			shm_free(c->async->chunks[r]);
+		shm_free(c->async);
+		c->async = NULL;
+	}
+
 	if (protos[c->type].net.conn_clean)
 		protos[c->type].net.conn_clean(c);
 
@@ -903,6 +792,18 @@ static struct tcp_connection* tcpconn_new(int sock, union sockaddr_union* su,
 	c->hist = sh_push(c, con_hist);
 #endif
 
+	if (protos[si->proto].net.async_chunks) {
+		c->async = shm_malloc(sizeof(struct tcp_async_data) +
+				protos[si->proto].net.async_chunks *
+				sizeof(struct tcp_async_chunk));
+		if (c->async) {
+			c->async->allocated = protos[si->proto].net.async_chunks;
+			c->async->oldest = 0;
+			c->async->pending = 0;
+		} else
+			LM_WARN("could not allocate async data for con!\n");
+	}
+
 	tcp_connections_no++;
 	return c;
 
@@ -914,26 +815,14 @@ error0:
 }
 
 
-/* creates a new tcp connection structure and informs the TCP Main on that
+/* creates a new tcp connection structure
+ * if send2main is 1, the function informs the TCP Main about the new conn
  * a +1 ref is set for the new conn !
  * IMPORTANT - the function assumes you want to create a new TCP conn as
  * a result of a connect operation - the conn will be set as connect !!
  * Accepted connection are triggered internally only */
 struct tcp_connection* tcp_conn_create(int sock, union sockaddr_union* su,
-											struct socket_info* si, int state)
-{
-	struct tcp_connection *c;
-
-	/* create the connection structure */
-	c = tcp_conn_new(sock, su, si, state);
-	if (c==NULL)
-		return NULL;
-
-	return (tcp_conn_send(c) == 0 ? c : NULL);
-}
-
-struct tcp_connection* tcp_conn_new(int sock, union sockaddr_union* su,
-		struct socket_info* si, int state)
+		struct socket_info* si, int state, int send2main)
 {
 	struct tcp_connection *c;
 
@@ -943,9 +832,6 @@ struct tcp_connection* tcp_conn_new(int sock, union sockaddr_union* su,
 		LM_ERR("tcpconn_new failed\n");
 		return NULL;
 	}
-	c->refcnt++; /* safe to do it w/o locking, it's not yet
-					available to the rest of the world */
-	sh_log(c->hist, TCP_REF, "connect, (%d)", c->refcnt);
 
 	if (protos[c->type].net.conn_init &&
 			protos[c->type].net.conn_init(c) < 0) {
@@ -956,9 +842,14 @@ struct tcp_connection* tcp_conn_new(int sock, union sockaddr_union* su,
 	}
 	c->flags |= F_CONN_INIT;
 
-	return c;
-}
+	c->refcnt++; /* safe to do it w/o locking, it's not yet
+					available to the rest of the world */
+	sh_log(c->hist, TCP_REF, "connect, (%d)", c->refcnt);
+	if (!send2main)
+		return c;
 
+	return (tcp_conn_send(c) == 0 ? c : NULL);
+}
 
 /* sends a new connection from a worker to main */
 int tcp_conn_send(struct tcp_connection *c)
@@ -2234,6 +2125,3 @@ error:
 	free_mi_response(resp);
 	return 0;
 }
-
-
-

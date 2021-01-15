@@ -1202,7 +1202,7 @@ int _b2b_handle_reply(struct sip_msg *msg, b2bl_tuple_t *tuple,
 				b2bl_print_tuple(tuple, L_DBG);
 			}
 			else
-			if(statuscode >= 200 && statuscode < 300)
+			if(statuscode >= 200)
 			{
 				b2bl_print_tuple(tuple, L_DBG);
 				if (entity->prev || entity->next)
@@ -2977,7 +2977,7 @@ str *b2b_scenario_hdrs(struct b2bl_new_entity *entity)
 	unsigned int len;
 	char *tmp_buf;
 	int_str name_value, body_value;
-	struct usr_avp *avp_hdrs = NULL, *avp_hdr_vals;
+	struct usr_avp *avp_hdrs = NULL, *avp_hdr_vals = NULL;
 
 	/* reset the buffer to fill in with new information */
 	b2b_hdrs_buf.len = 0;
