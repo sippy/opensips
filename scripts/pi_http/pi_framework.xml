@@ -247,6 +247,7 @@
 	<db_table id="cachedb">
 		<table_name>cachedb</table_name>
 		<db_url_id>mysql</db_url_id>
+		<column><field>id</field><type>DB_INT</type></column>
 		<column><field>keyname</field><type>DB_STR</type></column>
 		<column><field>value</field><type>DB_BLOB</type></column>
 		<column><field>counter</field><type>DB_INT</type></column>
@@ -875,6 +876,7 @@
 		<column><field>expiry</field><type>DB_INT</type></column>
 		<column><field>forced_socket</field><type>DB_STR</type></column>
 		<column><field>cluster_shtag</field><type>DB_STR</type></column>
+		<column><field>state</field><type>DB_INT</type></column>
 	</db_table>
 	<!-- Declaration of rls_presentity table-->
 	<db_table id="rls_presentity">
@@ -1897,6 +1899,7 @@
 			<db_table_id>cachedb</db_table_id>
 			<cmd_type>DB_QUERY</cmd_type>
 			<query_cols>
+				<col><field>id</field><link_cmd>update</link_cmd></col>
 				<col><field>keyname</field><link_cmd>update</link_cmd></col>
 				<col><field>value</field></col>
 				<col><field>counter</field></col>
@@ -1917,6 +1920,7 @@
 			<db_table_id>cachedb</db_table_id>
 			<cmd_type>DB_UPDATE</cmd_type>
 			<clause_cols>
+				<col><field>id</field><operator>=</operator></col>
 				<col><field>keyname</field><operator>=</operator></col>
 			</clause_cols>
 			<query_cols>
@@ -1929,6 +1933,7 @@
 			<db_table_id>cachedb</db_table_id>
 			<cmd_type>DB_DELETE</cmd_type>
 			<clause_cols>
+				<col><field>id</field><operator>=</operator></col>
 				<col><field>keyname</field><operator>=</operator></col>
 			</clause_cols>
 		</cmd>
@@ -4361,6 +4366,7 @@
 				<col><field>expiry</field></col>
 				<col><field>forced_socket</field></col>
 				<col><field>cluster_shtag</field></col>
+				<col><field>state</field></col>
 			</query_cols>
 		</cmd>
 		<cmd><cmd_name>add</cmd_name>
@@ -4378,6 +4384,7 @@
 				<col><field>expiry</field></col>
 				<col><field>forced_socket</field></col>
 				<col><field>cluster_shtag</field></col>
+				<col><field>state</field></col>
 			</query_cols>
 		</cmd>
 		<cmd><cmd_name>update</cmd_name>
@@ -4398,6 +4405,7 @@
 				<col><field>expiry</field></col>
 				<col><field>forced_socket</field></col>
 				<col><field>cluster_shtag</field></col>
+				<col><field>state</field></col>
 			</query_cols>
 		</cmd>
 		<cmd><cmd_name>delete</cmd_name>

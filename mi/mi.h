@@ -55,8 +55,11 @@
 #define JSONRPC_SERVER_ERR_MSG     "Server error"
 
 #define ERR_DET_POS_PARAMS_S "Command only supports named parameters"
-#define ERR_DET_AMBIG_CALL_S "Ambiguous call"
-
+#define ERR_DET_AMBIG_CALL_S "Ambiguous call, use named parameters instead"
+#define ERR_DET_NO_PARAMS_S  "Too few or too many parameters"
+#define ERR_DET_MATCH_PARAMS_S "Named parameters do not match"
+#define ERR_DET_CMD_NULL_S "Command handler returned null"
+#define ERR_DET_PARAM_HANDLE_S "Failed to handle parameter"
 
 struct mi_handler;
 

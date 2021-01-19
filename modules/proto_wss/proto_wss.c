@@ -33,6 +33,7 @@
 #include "../../pt.h"
 #include "../../sr_module.h"
 #include "../../net/net_tcp.h"
+#include "../../net/tcp_common.h"
 #include "../../net/api_proto.h"
 #include "../../net/api_proto_net.h"
 #include "../../socket_info.h"
@@ -490,7 +491,7 @@ static int wss_read_req(struct tcp_connection* con, int* bytes_read)
 	struct ws_data* d;
 
 	/* we need to fix the SSL connection before doing anything */
-	if (tls_fix_read_conn(con, t_dst) < 0) {
+	if (tls_fix_read_conn(con, 0, t_dst) < 0) {
 		LM_ERR("cannot fix read connection\n");
 		if ( (d=con->proto_data) && d->dest && d->tprot ) {
 			if ( d->message ) {

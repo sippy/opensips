@@ -1253,7 +1253,7 @@ int b2b_logic_notify_reply(int src, struct sip_msg* msg, str* key, str* body, st
 					b2bl_print_tuple(tuple, L_DBG);
 				}
 				else
-				if(statuscode >= 200 && statuscode < 300)
+				if(statuscode >= 200)
 				{
 					b2bl_print_tuple(tuple, L_DBG);
 					if (entity->prev || entity->next)
@@ -2961,7 +2961,6 @@ int b2b_scenario_parse_uri(xmlNodePtr value_node, char* value_content,
 	str value= {value_content, strlen(value_content)};
 	unsigned char* value_type= NULL;
 	unsigned int param_no;
-	str check_uri;
 
 	value_type = xmlNodeGetAttrContentByName(value_node, "type");
 	if(value_type == NULL)
@@ -2999,7 +2998,7 @@ int b2b_scenario_parse_uri(xmlNodePtr value_node, char* value_content,
 	if(xmlStrcasecmp(value_type, (unsigned char*)"initial") == 0)
 	{
 		LM_DBG("URI of type initial\n");
-		// FIXME: this may not exist after a transfer that will leave us with two clients
+		// this may not exist after a transfer that will leave us with two clients
 		if (tuple->servers[0])
 			*client_to = tuple->servers[0]->to_uri;
 	}
@@ -3009,6 +3008,7 @@ int b2b_scenario_parse_uri(xmlNodePtr value_node, char* value_content,
 		struct hdr_field* sip_hdr, hdr;
 		char buf[BUF_LEN];
 		struct sip_uri sip_uri;
+		struct to_body to;
 
 		LM_DBG("URI of type header value\n");
 		if(msg == NULL)
@@ -3056,20 +3056,25 @@ int b2b_scenario_parse_uri(xmlNodePtr value_node, char* value_content,
 				goto error;
 			}
 		}
-		check_uri = sip_hdr->body;
-		trim(&check_uri);
 
-		if(check_uri.s[0] == '<')
-		{
-			check_uri.s++;
-			check_uri.len-=2;
-		}
-		if(parse_uri(check_uri.s, check_uri.len, &sip_uri)< 0)
-		{
-			LM_ERR("Not a valid sip uri [%.*s]\n", check_uri.len, check_uri.s);
+		/* as the hdr body is part of a SIP msg, we can to a +1 in len
+		 * without the risk of overlowing the buffer. */
+		if ( parse_to(sip_hdr->body.s, sip_hdr->body.s+sip_hdr->body.len+1,
+		&to)<0 || to.error == PARSE_ERROR) {
+			LM_ERR("hdr '%.*s' does not follow a name_addr SIP format\n",
+					sip_hdr->name.len, sip_hdr->name.s);
 			goto error;
 		}
-		*client_to = check_uri;
+		/* we can safely free the to-hdr params now, as we do not need them,
+		 * we need only the URI. */
+		free_to_params(&to);
+
+		if(parse_uri(to.uri.s, to.uri.len, &sip_uri)< 0)
+		{
+			LM_ERR("Not a valid sip uri [%.*s]\n", to.uri.len, to.uri.s);
+			goto error;
+		}
+		*client_to = to.uri;
 	}
 	else
 	{
@@ -3764,7 +3769,7 @@ int b2bl_bridge(str* key, str* new_dst, str* new_from_dname, int entity_no)
 
 	local_ctx_tuple = tuple;
 
-	// FIXME: we may have no server at some point in time
+	// we may have no server at some point in time
 	if(tuple->servers[0] == NULL)
 	{
 		LM_ERR("Wrong usage - no server entity present\n");
@@ -4071,7 +4076,7 @@ int b2bl_bridge_2calls(str* key1, str* key2)
 		e->peer = NULL;
 	}
 
-	// FIXME: this logic may need to be updated
+	// this logic may need to be updated
 	if(e2->type == B2B_SERVER)
 	{
 		if(e2 == tuple->servers[0])
