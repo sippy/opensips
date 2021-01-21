@@ -95,4 +95,9 @@ static inline str *_str(const char *s)
 	return &st;
 }
 
+static inline int str_bcmp(const str *a, const str *b)
+{
+
+	return (a->len != b->len || memcmp(a->s, b->s, a->len) != 0);
+}
 #endif
