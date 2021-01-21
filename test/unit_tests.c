@@ -20,13 +20,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301,USA
  */
 
+#include <assert.h>
+
 #include <tap.h>
 
+#include "../str.h"
 #include "../cachedb/test/test_backends.h"
 #include "../lib/test/test_csv.h"
 #include "../parser/test/test_parser.h"
 #include "../mem/test/test_malloc.h"
-#include "../str.h"
 
 #include "../lib/list.h"
 #include "../globals.h"
@@ -40,6 +42,7 @@
 #define ENABLE_MAIN
 #endif
 
+#include "test_pvar.h"
 #include "unit_tests.h"
 
 void init_unit_tests(void)
@@ -54,6 +57,27 @@ void init_unit_tests(void)
 	ensure_global_context();
 }
 
+static const str sip_msg = str_init(
+    "SIP/2.0 100 Trying\r\n"
+    "Via: SIP/2.0/UDP 127.0.0.1:5061;received=127.0.0.1;rport=5061;branch=z9hG4bK02a524d19149e70db415ad24199cae6b\r\n"
+    "From: \"Alice Smith\" <sip:alice_3_ipv4@127.0.0.1>;tag=JZ8sHU.`'u.HOVzs01Xpk`w*4M!*Msr%\r\n"
+    "To: <sip:bob_3@127.0.0.1>\r\n"
+    "Call-ID: i%lu5JEz[9[1?Kfd6%.Oq]d%U_}MlFl.@'SPnm3PI9oPVdJC~\r\n"
+    "CSeq: 200 INVITE\r\n"
+    "Server: OpenSIPS (3.2.0-dev (x86_64/linux))\r\n"
+    "Content-Length: 100500\r\n\r\n"
+);
+static const struct pvar_tts pvar_tset[] = {
+    {.vname = str_init("$ci"), .rval = str_init("i%lu5JEz[9[1?Kfd6%.Oq]d%U_}MlFl.@'SPnm3PI9oPVdJC~")},
+    {.vname = str_init("$cl"), .rval = str_init("100500")},
+    {.vname = str_init("$cs"), .rval = str_init("200")},
+    {.vname = str_init("$fd"), .rval = str_init("127.0.0.1")},
+    {.vname = str_init("$fn"), .rval = str_init("\"Alice Smith\"")},
+    {.vname = str_init("$ft"), .rval = str_init("JZ8sHU.`'u.HOVzs01Xpk`w*4M!*Msr%")},
+    {.vname = str_init("$fu"), .rval = str_init("sip:alice_3_ipv4@127.0.0.1")},
+    {.vname = STR_NULL, .rval = STR_NULL}
+};
+
 int run_unit_tests(void)
 {
 	char *error;
@@ -65,7 +89,9 @@ int run_unit_tests(void)
 		//test_cachedb_backends();
 		//test_malloc();
 		test_lib_csv();
-		test_parser();
+		struct sip_msg *m = test_parser(&sip_msg);
+		assert(m != NULL);
+		test_pvar(m, pvar_tset);
 
 	/* module tests */
 	} else {

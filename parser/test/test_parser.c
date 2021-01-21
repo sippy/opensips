@@ -26,6 +26,7 @@
 #include "test_parse_fcaps.h"
 #include "test_parser.h"
 #include "test_parse_authenticate_body.h"
+#include "test_parse_msg.h"
 
 void test_parse_uri(void)
 {
@@ -129,10 +130,11 @@ void test_parse_uri(void)
 	ok(str_match(&u.pn_purr_val, _str("t")), "puri-43");
 }
 
-void test_parser(void)
+struct sip_msg *test_parser(const str *tmsg)
 {
 	test_parse_qop_val();
 	test_parse_fcaps();
 	test_parse_uri();
 	test_parse_authenticate_body();
+	return test_parse_msg(tmsg);
 }
