@@ -481,6 +481,11 @@ inline static int pathmax(void)
 	return pathmax;
 }
 
+#define _isxdigit(c) \
+	((c >= '0' && c <= '9') || \
+	 (c >= 'a' && c <= 'f') || \
+	 (c >= 'A' && c <= 'F'))
+
 inline static int hex2int(char hex_digit)
 {
 	if (hex_digit>='0' && hex_digit<='9')
@@ -640,7 +645,7 @@ static inline int str2short(str* _s, unsigned short *_r)
 /*
  * Convert a str into integer
  */
-static inline int str2int(str* _s, unsigned int* _r)
+static inline int str2int(const str* _s, unsigned int* _r)
 {
 	int i;
 
@@ -663,7 +668,7 @@ static inline int str2int(str* _s, unsigned int* _r)
 /*
  * Convert a str into a big integer
  */
-static inline int str2int64(str* _s, uint64_t *_r)
+static inline int str2int64(const str* _s, uint64_t *_r)
 {
 	int i;
 
@@ -687,7 +692,7 @@ static inline int str2int64(str* _s, uint64_t *_r)
 /*
  * Convert a str into signed integer
  */
-static inline int str2sint(str* _s, int* _r)
+static inline int str2sint(const str* _s, int* _r)
 {
 	int i;
 	int s;
@@ -722,7 +727,7 @@ static inline int str2sint(str* _s, int* _r)
 /*
  * Convert a str (base 10 or 16) into integer
  */
-static inline int strno2int( str *val, unsigned int *mask )
+static inline int strno2int(const str *val, unsigned int *mask )
 {
 	/* hexa or decimal*/
 	if (val->len>2 && val->s[0]=='0' && val->s[1]=='x') {
@@ -754,10 +759,14 @@ static inline int shm_str_dup(str* dst, const str* src)
 /*
  * Make a copy of an str structure using shm_malloc
  *	  + an additional '\0' byte, so you can make use of dst->s
+ *
+ * dst == src is allowed!
  */
 static inline int shm_nt_str_dup(str* dst, const str* src)
 {
-	if (!src->s) {
+	const str _src = *src;
+
+	if (!_src.s) {
 		memset(dst, 0, sizeof *dst);
 		return 0;
 	}
@@ -766,36 +775,44 @@ static inline int shm_nt_str_dup(str* dst, const str* src)
 	if (!dst->s) {
 		LM_ERR("no shared memory left\n");
 		dst->len = 0;
+		if (dst == src)
+			*dst = _src;
 		return -1;
 	}
 
-	memcpy(dst->s, src->s, src->len);
-	dst->len = src->len;
-	dst->s[dst->len] = '\0';
+	memcpy(dst->s, _src.s, _src.len);
+	dst->len = _src.len;
+	dst->s[_src.len] = '\0';
 	return 0;
 }
 
 /*
  * Make a copy of an str structure using pkg_malloc
  *	  + an additional '\0' byte, so you can make use of dst->s
+ *
+ * dst == src is allowed!
  */
 static inline int pkg_nt_str_dup(str* dst, const str* src)
 {
-	if (!src->s) {
+	const str _src = *src;
+
+	if (!_src.s) {
 		memset(dst, 0, sizeof *dst);
 		return 0;
 	}
 
-	dst->s = pkg_malloc(src->len + 1);
+	dst->s = pkg_malloc(_src.len + 1);
 	if (!dst->s) {
 		LM_ERR("no private memory left\n");
 		dst->len = 0;
+		if (dst == src)
+			*dst = _src;
 		return -1;
 	}
 
-	memcpy(dst->s, src->s, src->len);
-	dst->len = src->len;
-	dst->s[dst->len] = '\0';
+	memcpy(dst->s, _src.s, _src.len);
+	dst->len = _src.len;
+	dst->s[_src.len] = '\0';
 	return 0;
 }
 
@@ -824,6 +841,8 @@ static inline int shm_str_extend(str *in, int size)
 {
 	char *p;
 
+	/* do not check for !in->s here, as it's better
+	 * to crash sooner on a corrupt @in string (e.g. {NULL, 172}) */
 	if (in->len < size) {
 		p = shm_realloc(in->s, size);
 		if (!p) {
@@ -910,6 +929,8 @@ static inline int pkg_str_extend(str *in, int size)
 {
 	char *p;
 
+	/* do not check for !in->s here, as it's better
+	 * to crash sooner on a corrupt @in string (e.g. {NULL, 172}) */
 	if (in->len < size) {
 		p = pkg_realloc(in->s, size);
 		if (!p) {

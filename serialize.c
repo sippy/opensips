@@ -26,6 +26,8 @@
  * \file
  * \brief Sequential forking implementation
  */
+#define _ISOC11_SOURCE
+#include <assert.h>
 
 #include <assert.h>
 

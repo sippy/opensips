@@ -39,7 +39,7 @@ static int mod_init(void);
 static void destroy(void);
 static int child_init(int rank);
 
-int pv_parse_name(pv_spec_p sp, str *in);
+int pv_parse_name(pv_spec_p sp, const str *in);
 int pv_init_param(pv_spec_p sp, int param);
 int pv_get_sql_cached_value(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res);
 static int parse_cache_entry(unsigned int type, void *val);
@@ -1529,6 +1529,7 @@ static int on_demand_load(pv_name_fix_t *pv_name, str *str_res, int *int_res,
 		}
 		if (cdb_res.len == 0 || !cdb_res.s) {
 			LM_ERR("Cache fetch result should not be empty\n");
+			pkg_free(cdb_res.s);
 			return -1;
 		}
 
@@ -1700,7 +1701,7 @@ static int parse_pv_name_s(pv_name_fix_t *pv_name, str *name_s)
 	return 0;
 }
 
-int pv_parse_name(pv_spec_p sp, str *in)
+int pv_parse_name(pv_spec_p sp, const str *in)
 {
 	pv_elem_t *model = NULL, *it;
 	pv_name_fix_t *pv_name;
@@ -1808,6 +1809,7 @@ int pv_get_sql_cached_value(struct sip_msg *msg, const pv_param_t *param, pv_val
 			if (cdb_res.len == 0 || !cdb_res.s) {
 				LM_ERR("Cache fetch result should not be empty\n");
 				lock_stop_read(pv_name->c_entry->ref_lock);
+				pkg_free(cdb_res.s);
 				return pv_get_null(msg, param, res);
 			}
 
@@ -1842,6 +1844,7 @@ int pv_get_sql_cached_value(struct sip_msg *msg, const pv_param_t *param, pv_val
 		} else {
 			if (cdb_res.len == 0 || !cdb_res.s) {
 				LM_DBG("key: %.*s not found in SQL db\n", pv_name->key.len, pv_name->key.s);
+				pkg_free(cdb_res.s);
 				return pv_get_null(msg, param, res);
 			}
 

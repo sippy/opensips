@@ -94,7 +94,7 @@ static int fixup_attest(void **param);
 static int fixup_check_wrvar(void **param);
 
 int pv_get_identity(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res);
-int pv_parse_identity_name(pv_spec_p sp, str *in);
+int pv_parse_identity_name(pv_spec_p sp, const str *in);
 
 static int auth_date_freshness = DEFAULT_AUTH_FRESHNESS;
 static int verify_date_freshness = DEFAULT_VERIFY_FRESHNESS;
@@ -334,12 +334,13 @@ static int add_date_hf(struct sip_msg *msg, time_t *date_ts)
 	#define DATE_HDR_S  "Date: "
 	#define DATE_HDR_L  (sizeof(DATE_HDR_S)-1)
 
+	struct tm ldate_tm;
 	struct tm *date_tm;
 	char *buf;
 	int len;
 	struct lump* anchor;
 
-	date_tm = gmtime(date_ts);
+	date_tm = gmtime_r(date_ts, &ldate_tm);
 	if (!date_tm) {
 		LM_ERR("Failed to convert timestamp to broken-down time\n");
 		return -1;
@@ -535,7 +536,7 @@ static int build_unsigned_pport(str *buf, time_t iat_ts, str *attest,
 
 	hdr_json_str.s = build_pport_hdr_json(cr_url);
 	if (!hdr_json_str.s) {
-		LM_ERR("Failed to build PASSporT's json header");
+		LM_ERR("Failed to build PASSporT's json header\n");
 		return -1;
 	}
 	hdr_json_str.len = strlen(hdr_json_str.s);
@@ -545,7 +546,7 @@ static int build_unsigned_pport(str *buf, time_t iat_ts, str *attest,
 	payload_json_str.s = build_pport_payload_json(attest, orig_tn, dest_tn,
 		iat_ts, origid);
 	if (!payload_json_str.s) {
-		LM_ERR("Failed to build PASSporT's json payload");
+		LM_ERR("Failed to build PASSporT's json payload\n");
 		goto error;
 	}
 	payload_json_str.len = strlen(payload_json_str.s);
@@ -939,7 +940,7 @@ static int w_stir_auth(struct sip_msg *msg, str *attest, str *origid,
 	}
 
 	if (get_header_by_static_name(msg, "Identity")) {
-		LM_INFO("Identity header already exists");
+		LM_INFO("Identity header already exists\n");
 		return -2;
 	}
 
@@ -1846,7 +1847,7 @@ static int w_stir_check_cert(struct sip_msg *msg, str *cert_buf)
 	return 1;
 }
 
-int pv_parse_identity_name(pv_spec_p sp, str *in)
+int pv_parse_identity_name(pv_spec_p sp, const str *in)
 {
 	if (!in || !in->s || !in->len) {
 		LM_ERR("Bad subname for $identity\n");

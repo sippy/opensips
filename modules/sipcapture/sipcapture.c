@@ -311,7 +311,7 @@ static int w_hep_resume_sip(struct sip_msg *msg);
 
 
 
-static int pv_parse_hep_net_name(pv_spec_p sp, str *in);
+static int pv_parse_hep_net_name(pv_spec_p sp, const str *in);
 
 static int parse_hep_index(str *s_index);
 
@@ -1352,9 +1352,10 @@ error:
 }
 
 
-static int pv_parse_hep_net_name(pv_spec_p sp, str* in)
+static int pv_parse_hep_net_name(pv_spec_p sp, const str* in)
 {
 	pv_spec_p e;
+	str _in;
 
 	unsigned id;
 
@@ -1363,10 +1364,13 @@ static int pv_parse_hep_net_name(pv_spec_p sp, str* in)
 		return -1;
 	}
 
-	str_trim_spaces_lr(*in);
+	_in = *in;
+	in = &_in;
+
+	str_trim_spaces_lr(_in);
 
 	if (in->s[0] != PV_MARKER) {
-		if (parse_hep_name(in, &id) < 0) {
+		if (parse_hep_name(&_in, &id) < 0) {
 			LM_ERR("Invalid hep net name <%.*s>!\n", in->len, in->s);
 			return -1;
 		}
@@ -3008,6 +3012,7 @@ out_safe:
 static inline void build_table_name(tz_table_t* table_format, str* table_s)
 {
 	time_t rawtime;
+	struct tm lgmtm;
 	struct tm* gmtm;
 
 	table_s->s = table_buf;
@@ -3016,7 +3021,7 @@ static inline void build_table_name(tz_table_t* table_format, str* table_s)
 
 	if (table_format->suffix.len && table_format->suffix.s) {
 		time(&rawtime);
-		gmtm = gmtime(&rawtime);
+		gmtm = gmtime_r(&rawtime, &lgmtm);
 		table_s->len += strftime(table_s->s+table_s->len, CAPTURE_TABLE_MAX_LEN-table_s->len,
 				table_format->suffix.s, gmtm);
 	}

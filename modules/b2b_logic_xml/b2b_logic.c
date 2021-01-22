@@ -81,10 +81,10 @@ int  b2b_init_request(struct sip_msg* msg, str* arg1, str* arg2, str* arg3,
 int  b2b_bridge_request(struct sip_msg* msg, str *key, int *entity_no);
 
 int pv_get_b2bl_key(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res);
-int pv_parse_entity_name(pv_spec_p sp, str *in);
-int pv_parse_entity_index(pv_spec_p sp, str* in);
+int pv_parse_entity_name(pv_spec_p sp, const str *in);
+int pv_parse_entity_index(pv_spec_p sp, const str* in);
 int pv_get_entity(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res);
-int pv_parse_ctx_name(pv_spec_p sp, str *in);
+int pv_parse_ctx_name(pv_spec_p sp, const str *in);
 int pv_get_ctx(struct sip_msg *msg,  const pv_param_t *param, pv_value_t *res);
 int pv_set_ctx(struct sip_msg* msg, pv_param_t *param, int op, pv_value_t *val);
 
@@ -167,7 +167,7 @@ static cmd_export_t cmds[]=
 };
 
 /** Exported parameters */
-static param_export_t params[]=
+static param_export_t mod_params[]=
 {
 	{"hash_size",       INT_PARAM,                &b2bl_hsize                },
 	{"cleanup_period",  INT_PARAM,                &b2b_clean_period          },
@@ -245,7 +245,7 @@ struct module_exports exports= {
 	&deps,                          /* OpenSIPS module dependencies */
 	cmds,                           /* exported functions */
 	0,                              /* exported async functions */
-	params,                         /* exported parameters */
+	mod_params,                     /* exported parameters */
 	0,                              /* exported statistics */
 	mi_cmds,                        /* exported MI functions */
 	mod_items,                      /* exported pseudo-variables */
@@ -1752,7 +1752,7 @@ int pv_get_b2bl_key(struct sip_msg *msg, const pv_param_t *param, pv_value_t *re
 	return 0;
 }
 
-int pv_parse_entity_name(pv_spec_p sp, str *in)
+int pv_parse_entity_name(pv_spec_p sp, const str *in)
 {
 	if (!in || !in->s || !in->len) {
 		sp->pvp.pvn.u.isname.name.n = PV_ENTITY_KEY;
@@ -1771,7 +1771,7 @@ int pv_parse_entity_name(pv_spec_p sp, str *in)
 	return 0;
 }
 
-int pv_parse_entity_index(pv_spec_p sp, str* in)
+int pv_parse_entity_index(pv_spec_p sp, const str* in)
 {
 	int idx;
 
@@ -2026,7 +2026,7 @@ int store_ctx_value(struct b2b_ctx_val **vals, str *name, str *new_val)
 	return 0;
 }
 
-int pv_parse_ctx_name(pv_spec_p sp, str *in)
+int pv_parse_ctx_name(pv_spec_p sp, const str *in)
 {
 	if (!in || !in->s || !sp)
 		return -1;

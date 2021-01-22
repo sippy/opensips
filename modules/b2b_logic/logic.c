@@ -1202,7 +1202,7 @@ int _b2b_handle_reply(struct sip_msg *msg, b2bl_tuple_t *tuple,
 				b2bl_print_tuple(tuple, L_DBG);
 			}
 			else
-			if(statuscode >= 200 && statuscode < 300)
+			if(statuscode >= 200)
 			{
 				b2bl_print_tuple(tuple, L_DBG);
 				if (entity->prev || entity->next)
@@ -2977,7 +2977,7 @@ str *b2b_scenario_hdrs(struct b2bl_new_entity *entity)
 	unsigned int len;
 	char *tmp_buf;
 	int_str name_value, body_value;
-	struct usr_avp *avp_hdrs = NULL, *avp_hdr_vals;
+	struct usr_avp *avp_hdrs = NULL, *avp_hdr_vals = NULL;
 
 	/* reset the buffer to fill in with new information */
 	b2b_hdrs_buf.len = 0;
@@ -4234,8 +4234,10 @@ int b2bl_bridge_msg(struct sip_msg* msg, str* key, int entity_no)
 	}
 
 	/* destroy the old_entity */
+	b2bl_htable[hash_index].locked_by = process_no;
 	b2b_api.entity_delete(old_entity->type, &old_entity->key,
 		old_entity->dlginfo, 1, 1);
+	b2bl_htable[hash_index].locked_by = -1;
 	if(old_entity->dlginfo)
 		shm_free(old_entity->dlginfo);
 	shm_free(old_entity);

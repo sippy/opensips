@@ -450,7 +450,7 @@ static int pv_rtpengine_stats_used(pv_spec_p sp, int param)
 	return 0;
 }
 
-static inline enum rtpe_stat rtpe_get_stat_by_name(str *name)
+static inline enum rtpe_stat rtpe_get_stat_by_name(const str *name)
 {
 	enum rtpe_stat s;
 	for (s = 0; s < STAT_UNKNOWN; s++) {
@@ -553,7 +553,7 @@ static inline enum rtpe_stat_dict rtpe_get_stat_by_dict(enum rtpe_stat s)
 #define PVE_NAME_INTSTR		1
 #define PVE_NAME_PVAR		2
 
-static int pv_parse_rtpstat(pv_spec_p sp, str *in)
+static int pv_parse_rtpstat(pv_spec_p sp, const str *in)
 {
 	enum rtpe_stat s;
 	pv_elem_t *format;
@@ -584,7 +584,7 @@ static int pv_parse_rtpstat(pv_spec_p sp, str *in)
 	return 0;
 }
 
-static int pv_rtpengine_index(pv_spec_p sp, str *in)
+static int pv_rtpengine_index(pv_spec_p sp, const str *in)
 {
 	pv_elem_t *format;
 	if (!in || in->s == NULL || in->len == 0 || sp == NULL)
@@ -3398,6 +3398,11 @@ static int rtpengine_play_dtmf_f(struct sip_msg* msg, str *code, str *flags, pv_
 		return -2;
 	}
 	d_code = bencode_dictionary(&bencbuf);
+	if (!d_code) {
+		LM_ERR("could not initialize bencode dictionary\n");
+		return -2;
+	}
+	bencode_dictionary_add_str(d_code, "code", code);
 	ret = rtpe_function_call(&bencbuf, msg, OP_PLAY_DTMF, flags, NULL, spvar, d_code);
 	if (!ret)
 		return -2;

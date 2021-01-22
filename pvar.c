@@ -101,8 +101,15 @@ static char pv_local_buf[PV_LOCAL_BUF_SIZE+1];
 /* pv context list */
 pv_context_t* pv_context_lst = NULL;
 
-pv_context_t* pv_get_context(str* name);
-pv_context_t* add_pv_context(str* name, pv_contextf_t get_context);
+static pv_context_t* pv_get_context(const str* name);
+static pv_context_t* add_pv_context(const str* name, pv_contextf_t get_context);
+
+static int pv_parse_argv_name(pv_spec_p sp, const str *in);
+static int pv_get_argv(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res);
+static int pv_contextlist_check(void);
+/* always obtain a printable version of the given (pv_value_t *) */
+static str pv_value_print(const pv_value_t *val);
+
 static int pvc_before_check = 1;
 
 int pv_print_buf_size = 20000;
@@ -141,7 +148,7 @@ int init_pvar_support(void)
 
 /* route param variable */
 static int pv_get_param(struct sip_msg *msg, const pv_param_t *ip, pv_value_t *res);
-static int pv_parse_param_name(pv_spec_p sp, str *in);
+static int pv_parse_param_name(pv_spec_p sp, const str *in);
 
 /********** helper functions ********/
 /**
@@ -203,7 +210,7 @@ int pv_get_strval(struct sip_msg *msg, const pv_param_t *param,
 /**
  * convert str-int to pv_value_t (type is str)
  */
-int pv_get_strintval(struct sip_msg *msg, const pv_param_t *param,
+static int pv_get_strintval(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res, str *sval, int ival)
 {
 	if(res==NULL)
@@ -218,7 +225,7 @@ int pv_get_strintval(struct sip_msg *msg, const pv_param_t *param,
 /**
  * convert int-str to pv_value_t (type is int)
  */
-int pv_get_intstrval(struct sip_msg *msg, const pv_param_t *param,
+static int pv_get_intstrval(struct sip_msg *msg, const pv_param_t *param,
 		pv_value_t *res, int ival, str *sval)
 {
 	if(res==NULL)
@@ -416,7 +423,7 @@ static int pv_get_start_times(struct sip_msg *msg, const pv_param_t *param,
 	return pv_get_uintval(msg, param, res, (unsigned int)startup_time);
 }
 
-static int pv_parse_time_name(pv_spec_p sp, str *in)
+static int pv_parse_time_name(pv_spec_p sp, const str *in)
 {
 	sp->pvp.pvn.type = PV_NAME_INTSTR;
 	sp->pvp.pvn.u.isname.type = AVP_NAME_STR;
@@ -690,7 +697,7 @@ static int pv_get_path(struct sip_msg *msg, const pv_param_t *param,
 #define CT_PARAMS_LEN    (sizeof(CT_PARAMS_S)-1)
 #define CT_PARAMS_ID     7
 
-int pv_parse_ct_name(pv_spec_p sp, str *in)
+static int pv_parse_ct_name(pv_spec_p sp, const str *in)
 {
 	if (sp==NULL)
 		return -1;
@@ -1609,7 +1616,7 @@ static int pv_get_content_length(struct sip_msg *msg, const pv_param_t *param,
 			&msg->content_length->body);
 }
 
-int pv_parse_rb_name(pv_spec_p sp, str *in)
+static int pv_parse_rb_name(pv_spec_p sp, const str *in)
 {
 	if(in==NULL || in->s==NULL || sp==NULL)
 		return -1;
@@ -1903,7 +1910,7 @@ static int pv_get_acc_username(struct sip_msg *msg, const pv_param_t *param,
 #define BR_SOCKET_LEN     (sizeof(BR_SOCKET_S)-1)
 #define BR_SOCKET_ID      6
 
-int pv_parse_branch_name(pv_spec_p sp, str *in)
+static int pv_parse_branch_name(pv_spec_p sp, const str *in)
 {
 	if (sp==NULL || in==NULL || in->s==NULL || in->len==0)
 		return -1;
@@ -2091,7 +2098,7 @@ static int pv_get_branch_fields(struct sip_msg *msg, const pv_param_t *param,
 #define SOCK_AF_LEN           (sizeof(SOCK_AF_S)-1)
 #define SOCK_AF_ID            8
 
-int pv_parse_socket_name(pv_spec_p sp, str *in)
+static int pv_parse_socket_name(pv_spec_p sp, const str *in)
 {
 	if (sp==NULL || in==NULL || in->s==NULL || in->len==0)
 		return -1;
@@ -2411,7 +2418,7 @@ static int pv_get_avp(struct sip_msg *msg, const pv_param_t *param, pv_value_t *
 }
 
 
-static int pv_resolve_hdr_name(str *in, pv_value_t *tv)
+static int pv_resolve_hdr_name(const str *in, pv_value_t *tv)
 {
 	struct hdr_field hdr;
 	str s;
@@ -2799,7 +2806,7 @@ static int pv_get_af(struct sip_msg *msg, const pv_param_t *param,
 /********* end PV get functions *********/
 
 /********* start PV set functions *********/
-int pv_set_avp(struct sip_msg* msg, pv_param_t *param,
+static int pv_set_avp(struct sip_msg* msg, pv_param_t *param,
 		int op, pv_value_t *val)
 {
 	int avp_name;
@@ -2884,7 +2891,7 @@ error:
 	return -1;
 }
 
-int pv_set_scriptvar(struct sip_msg* msg, pv_param_t *param,
+static int pv_set_scriptvar(struct sip_msg* msg, pv_param_t *param,
 		int op, pv_value_t *val)
 {
 	int_str avp_val;
@@ -2926,7 +2933,7 @@ error:
 	return -1;
 }
 
-int pv_set_dsturi(struct sip_msg* msg, pv_param_t *param,
+static int pv_set_dsturi(struct sip_msg* msg, pv_param_t *param,
 		int op, pv_value_t *val)
 {
 	if(msg==NULL || param==NULL)
@@ -2955,7 +2962,7 @@ error:
 	return -1;
 }
 
-int pv_set_ruri(struct sip_msg* msg, pv_param_t *param,
+static int pv_set_ruri(struct sip_msg* msg, pv_param_t *param,
 		int op, pv_value_t *val)
 {
 	if(msg==NULL || param==NULL || val==NULL)
@@ -2980,7 +2987,7 @@ error:
 	return -1;
 }
 
-int pv_set_ru_q(struct sip_msg* msg, pv_param_t *param,
+static int pv_set_ru_q(struct sip_msg* msg, pv_param_t *param,
 		int op, pv_value_t *val)
 {
 	if(msg==NULL || param==NULL || val==NULL)
@@ -3004,7 +3011,8 @@ int pv_set_ru_q(struct sip_msg* msg, pv_param_t *param,
 
 	return 0;
 }
-int pv_set_ruri_user(struct sip_msg* msg, pv_param_t *param,
+
+static int pv_set_ruri_user(struct sip_msg* msg, pv_param_t *param,
 		int op, pv_value_t *val)
 {
 	str sval;
@@ -3031,7 +3039,7 @@ int pv_set_ruri_user(struct sip_msg* msg, pv_param_t *param,
 	return 0;
 }
 
-int pv_set_ruri_host(struct sip_msg* msg, pv_param_t *param,
+static int pv_set_ruri_host(struct sip_msg* msg, pv_param_t *param,
 		int op, pv_value_t *val)
 {
 	if(msg==NULL || param==NULL || val==NULL)
@@ -3054,7 +3062,7 @@ int pv_set_ruri_host(struct sip_msg* msg, pv_param_t *param,
 	return 0;
 }
 
-int pv_set_dsturi_host(struct sip_msg* msg, pv_param_t *param,
+static int pv_set_dsturi_host(struct sip_msg* msg, pv_param_t *param,
 		int op, pv_value_t *val)
 {
 	if(msg==NULL || param==NULL || val==NULL)
@@ -3077,7 +3085,7 @@ int pv_set_dsturi_host(struct sip_msg* msg, pv_param_t *param,
 	return 0;
 }
 
-int pv_set_dsturi_port(struct sip_msg* msg, pv_param_t *param,
+static int pv_set_dsturi_port(struct sip_msg* msg, pv_param_t *param,
 		int op, pv_value_t *val)
 {
 	str sval;
@@ -3106,7 +3114,7 @@ int pv_set_dsturi_port(struct sip_msg* msg, pv_param_t *param,
 
 
 
-int pv_set_ruri_port(struct sip_msg* msg, pv_param_t *param,
+static int pv_set_ruri_port(struct sip_msg* msg, pv_param_t *param,
 		int op, pv_value_t *val)
 {
 	str sval;
@@ -3133,7 +3141,7 @@ int pv_set_ruri_port(struct sip_msg* msg, pv_param_t *param,
 }
 
 
-int pv_set_branch(struct sip_msg* msg, pv_param_t *param,
+static int pv_set_branch(struct sip_msg* msg, pv_param_t *param,
 		int op, pv_value_t *val)
 {
 	if (msg==NULL || param==NULL) {
@@ -3156,7 +3164,7 @@ int pv_set_branch(struct sip_msg* msg, pv_param_t *param,
 }
 
 
-int pv_set_branch_fields(struct sip_msg* msg, pv_param_t *param,
+static int pv_set_branch_fields(struct sip_msg* msg, pv_param_t *param,
 		int op, pv_value_t *val)
 {
 	int idx;
@@ -3267,7 +3275,7 @@ int pv_set_branch_fields(struct sip_msg* msg, pv_param_t *param,
 	}
 }
 
-int pv_set_force_sock(struct sip_msg* msg, pv_param_t *param,
+static int pv_set_force_sock(struct sip_msg* msg, pv_param_t *param,
 		int op, pv_value_t *val)
 {
 	struct socket_info *si;
@@ -3316,7 +3324,7 @@ error:
 
 /********* end PV set functions *********/
 
-int pv_parse_scriptvar_name(pv_spec_p sp, str *in)
+static int pv_parse_scriptvar_name(pv_spec_p sp, const str *in)
 {
 	if(in==NULL || in->s==NULL || sp==NULL)
 		return -1;
@@ -3331,7 +3339,7 @@ int pv_parse_scriptvar_name(pv_spec_p sp, str *in)
 	return 0;
 }
 
-int pv_parse_hdr_name(pv_spec_p sp, str *in)
+static int pv_parse_hdr_name(pv_spec_p sp, const str *in)
 {
 	char *p;
 	pv_spec_p nsp = 0;
@@ -3380,7 +3388,7 @@ int pv_parse_hdr_name(pv_spec_p sp, str *in)
 	return 0;
 }
 
-int pv_parse_avp_name(pv_spec_p sp, str *in)
+int pv_parse_avp_name(pv_spec_p sp, const str *in)
 {
 	char *p;
 	char *s;
@@ -3422,7 +3430,7 @@ int pv_parse_avp_name(pv_spec_p sp, str *in)
 	return 0;
 }
 
-int pv_parse_avp_index(pv_spec_p sp, str *in)
+static int pv_parse_avp_index(pv_spec_p sp, const str *in)
 {
 	#define AVP_APPEND_IDX "append"
 
@@ -3437,7 +3445,7 @@ int pv_parse_avp_index(pv_spec_p sp, str *in)
 	return pv_parse_index(sp,in);
 }
 
-int pv_parse_index(pv_spec_p sp, str *in)
+int pv_parse_index(pv_spec_p sp, const str *in)
 {
 	char *p;
 	char *s;
@@ -3548,7 +3556,7 @@ static int pv_get_cfg_file_name(struct sip_msg *msg, const pv_param_t *param, pv
 }
 
 
-int pv_set_log_level(struct sip_msg* msg, pv_param_t *param, int op,
+static int pv_set_log_level(struct sip_msg* msg, pv_param_t *param, int op,
 															pv_value_t *val)
 {
 	if(param==NULL)
@@ -3593,7 +3601,7 @@ static int pv_get_log_level(struct sip_msg *msg, const pv_param_t *param, pv_val
 	return 0;
 }
 
-int pv_set_xlog_level(struct sip_msg* msg, pv_param_t *param, int op,
+static int pv_set_xlog_level(struct sip_msg* msg, pv_param_t *param, int op,
 															pv_value_t *val)
 {
 	if(param==NULL)
@@ -3641,7 +3649,7 @@ static int pv_get_xlog_level(struct sip_msg *msg, const pv_param_t *param, pv_va
 
 /************** MSG FLAGS function *****************/
 
-int msg_flag_parse_name(pv_spec_p sp, str *in)
+static int msg_flag_parse_name(pv_spec_p sp, const str *in)
 {
 	unsigned int idx;
 	if (sp==NULL || in==NULL || in->s==NULL || in->len==0)
@@ -3661,7 +3669,7 @@ int msg_flag_parse_name(pv_spec_p sp, str *in)
 }
 
 
-int msg_flag_set(struct sip_msg* msg, pv_param_t *param, int op,
+static int msg_flag_set(struct sip_msg* msg, pv_param_t *param, int op,
 															pv_value_t *val)
 {
 	if(param==NULL) {
@@ -3684,7 +3692,7 @@ int msg_flag_set(struct sip_msg* msg, pv_param_t *param, int op,
 }
 
 
-static int msg_flag_get(struct sip_msg *msg,  const pv_param_t *param, pv_value_t *res)
+static int msg_flag_get(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res)
 {
 	if (param==NULL||res==NULL) {
 		LM_CRIT("BUG - bad parameters\n");
@@ -3756,7 +3764,7 @@ static int msg_type_get(struct sip_msg *msg, const pv_param_t *param, pv_value_t
 
 /************** BRANCH FLAGS function *****************/
 
-int branch_flag_parse_name(pv_spec_p sp, str *in)
+static int branch_flag_parse_name(pv_spec_p sp, const str *in)
 {
 	unsigned int idx;
 	if (sp==NULL || in==NULL || in->s==NULL || in->len==0)
@@ -3776,7 +3784,7 @@ int branch_flag_parse_name(pv_spec_p sp, str *in)
 }
 
 
-int branch_flag_set(struct sip_msg* msg, pv_param_t *param, int op,
+static int branch_flag_set(struct sip_msg* msg, pv_param_t *param, int op,
 															pv_value_t *val)
 {
 	int idx;
@@ -3872,7 +3880,7 @@ static int branch_flag_get(struct sip_msg *msg, const pv_param_t *param, pv_valu
 
 /********** generic helper functions ***************/
 
-int pv_is_obsolete(pv_spec_p sp, int param)
+static int pv_is_obsolete(const pv_spec_p sp, int param)
 {
 	char *old, *new;
 
@@ -3902,7 +3910,7 @@ int pv_is_obsolete(pv_spec_p sp, int param)
 			return -1;
 	}
 
-	LM_WARN("variable '%s' is marked as deprecated and it will be soone "
+	LM_WARN("variable '%s' is marked as deprecated and it will be soon "
 		"removed, please use '%s' instead\n",old,new);
 	return 0;
 }
@@ -3911,371 +3919,371 @@ int pv_is_obsolete(pv_spec_p sp, int param)
 /**
  * the table with core pseudo-variables
  */
-static pv_export_t _pv_names_table[] = {
-	{{"avp", (sizeof("avp")-1)}, PVT_AVP, pv_get_avp, pv_set_avp,
+static const pv_export_t _pv_names_table[] = {
+	{str_init("avp"), PVT_AVP, pv_get_avp, pv_set_avp,
 		pv_parse_avp_name, pv_parse_avp_index, 0, 0},
-	{{"hdr", (sizeof("hdr")-1)}, PVT_HDR, pv_get_hdr, 0, pv_parse_hdr_name,
+	{str_init("hdr"), PVT_HDR, pv_get_hdr, 0, pv_parse_hdr_name,
 		pv_parse_index, 0, 0},
-	{{"hdr_name", (sizeof("hdr_name")-1)}, PVT_HDR_NAME, pv_get_hdr_name, 0, 0,
+	{str_init("hdr_name"), PVT_HDR_NAME, pv_get_hdr_name, 0, 0,
 		pv_parse_index, 0, 0},
-	{{"hdrcnt", (sizeof("hdrcnt")-1)}, PVT_HDRCNT, pv_get_hdrcnt, 0, pv_parse_hdr_name, 0, 0, 0},
-	{{"var", (sizeof("var")-1)}, PVT_SCRIPTVAR, pv_get_scriptvar,
+	{str_init("hdrcnt"), PVT_HDRCNT, pv_get_hdrcnt, 0, pv_parse_hdr_name, 0, 0, 0},
+	{str_init("var"), PVT_SCRIPTVAR, pv_get_scriptvar,
 		pv_set_scriptvar, pv_parse_scriptvar_name, 0, 0, 0},
-	{{"ai", (sizeof("ai")-1)}, /* */
+	{str_init("ai"), /* */
 		PVT_PAI_URI, pv_get_pai, 0,
 		0, 0, 0, 0},
-	{{"au", (sizeof("au")-1)}, /* */
+	{str_init("au"), /* */
 		PVT_AUTH_USERNAME, pv_get_authattr, 0,
 		0, 0, pv_init_iname, 1},
-	{{"ar", (sizeof("ar")-1)}, /* auth realm */
+	{str_init("ar"), /* auth realm */
 		PVT_AUTH_REALM, pv_get_authattr, 0,
 		0, 0, pv_init_iname, 2},
-	{{"adu", (sizeof("adu")-1)}, /* auth digest uri */
+	{str_init("adu"), /* auth digest uri */
 		PVT_AUTH_DURI, pv_get_authattr, 0,
 		0, 0, pv_init_iname, 3},
-	{{"ad", (sizeof("ad")-1)}, /* */
+	{str_init("ad"), /* */
 		PVT_AUTH_DOMAIN, pv_get_authattr, 0,
 		0, 0, pv_init_iname, 4},
-	{{"an", (sizeof("an")-1)}, /* */
+	{str_init("an"), /* */
 		PVT_AUTH_NONCE, pv_get_authattr, 0,
 		0, 0, pv_init_iname, 5},
-	{{"auth.nonce", (sizeof("auth.nonce")-1)}, /* */
+	{str_init("auth.nonce"), /* */
 		PVT_AUTH_NONCE, pv_get_authattr, 0,
 		0, 0, pv_init_iname, 5},
-	{{"auth.resp", (sizeof("auth.resp")-1)}, /* */
+	{str_init("auth.resp"), /* */
 		PVT_AUTH_RESPONSE, pv_get_authattr, 0,
 		0, 0, pv_init_iname, 6},
-	{{"auth.cnonce", (sizeof("auth.cnonce")-1)}, /* */
+	{str_init("auth.cnonce"), /* */
 		PVT_AUTH_CNONCE, pv_get_authattr, 0,
 		0, 0, pv_init_iname, 7},
-	{{"auth.opaque", (sizeof("auth.opaque")-1)}, /* */
+	{str_init("auth.opaque"), /* */
 		PVT_AUTH_OPAQUE, pv_get_authattr, 0,
 		0, 0, pv_init_iname, 8},
-	{{"auth.alg", (sizeof("auth.alg")-1)}, /* */
+	{str_init("auth.alg"), /* */
 		PVT_AUTH_ALGORITHM, pv_get_authattr, 0,
 		0, 0, pv_init_iname, 9},
-	{{"auth.qop", (sizeof("auth.qop")-1)}, /* */
+	{str_init("auth.qop"), /* */
 		PVT_AUTH_QOP, pv_get_authattr, 0,
 		0, 0, pv_init_iname, 10},
-	{{"auth.nc", (sizeof("auth.nc")-1)}, /* */
+	{str_init("auth.nc"), /* */
 		PVT_AUTH_NONCE_COUNT, pv_get_authattr, 0,
 		0, 0, pv_init_iname, 11},
-	{{"aU", (sizeof("aU")-1)}, /* */
+	{str_init("aU"), /* */
 		PVT_AUTH_USERNAME_WHOLE, pv_get_authattr, 0,
 		0, 0, pv_init_iname, 99},
-	{{"Au", (sizeof("Au")-1)}, /* */
+	{str_init("Au"), /* */
 		PVT_ACC_USERNAME, pv_get_acc_username, 0,
 		0, 0, pv_init_iname, 1},
-	{{"af", (sizeof("af") -1)},
+	{str_init("af"),
 		PVT_AF, pv_get_af, 0,
 		0, 0, pv_is_obsolete, 0},	/* */
-	{{"bf", (sizeof("bf")-1)}, /* */
+	{str_init("bf"), /* */
 		PVT_BFLAGS, pv_get_bflags, 0,
 		0, 0, 0, 0},
-	{{"branch", (sizeof("branch")-1)}, /* */
+	{str_init("branch"), /* */
 		PVT_BRANCH, pv_get_branch_fields, pv_set_branch,
 		0, 0, 0, 0},
-	{{"branch", (sizeof("branch")-1)}, /* */
+	{str_init("branch"), /* */
 		PVT_BRANCH, pv_get_branch_fields, pv_set_branch_fields,
 		pv_parse_branch_name, pv_parse_index, 0, 0},
-	{{"branch.flag", (sizeof("branch.flag")-1)}, /* */
+	{str_init("branch.flag"), /* */
 		PVT_BRANCH_FLAG, branch_flag_get, branch_flag_set,
 		branch_flag_parse_name, pv_parse_index, 0, 0},
-	{{"ci", (sizeof("ci")-1)}, /* */
+	{str_init("ci"), /* */
 		PVT_CALLID, pv_get_callid, 0,
 		0, 0, 0, 0},
-	{{"cl", (sizeof("cl")-1)}, /* */
+	{str_init("cl"), /* */
 		PVT_CONTENT_LENGTH, pv_get_content_length, 0,
 		0, 0, 0, 0},
-	{{"cs", (sizeof("cs")-1)}, /* */
+	{str_init("cs"), /* */
 		PVT_CSEQ, pv_get_cseq, 0,
 		0, 0, 0, 0},
-	{{"ct", (sizeof("ct")-1)}, /* */
+	{str_init("ct"), /* */
 		PVT_CONTACT, pv_get_contact_body, 0,
 		0, pv_parse_index, 0, 0},
-	{{"ct.fields", (sizeof("ct.fields")-1)}, /* */
+	{str_init("ct.fields"), /* */
 		PVT_CONTACT, pv_get_contact_body, 0,
 		pv_parse_ct_name, pv_parse_index, 0, 0},
-	{{"cT", (sizeof("cT")-1)}, /* */
+	{str_init("cT"), /* */
 		PVT_CONTENT_TYPE, pv_get_content_type, 0,
 		0, pv_parse_index, 0, 0},
-	{{"dd", (sizeof("dd")-1)}, /* */
+	{str_init("dd"), /* */
 		PVT_DSTURI_DOMAIN, pv_get_dsturi_attr, pv_set_dsturi_host,
 		0, 0, pv_init_iname, 1},
-	{{"di", (sizeof("di")-1)}, /* */
+	{str_init("di"), /* */
 		PVT_DIVERSION_URI, pv_get_diversion, 0,
 		0, 0, pv_init_iname, 1},
-	{{"dir", (sizeof("dir")-1)}, /* */
+	{str_init("dir"), /* */
 		PVT_DIV_REASON, pv_get_diversion, 0,
 		0, 0, pv_init_iname, 2},
-	{{"dip", (sizeof("dis")-1)}, /* */
+	{str_init("dip"), /* */
 		PVT_DIV_PRIVACY, pv_get_diversion, 0,
 		0, 0, pv_init_iname, 3},
-	{{"dp", (sizeof("dp")-1)}, /* */
+	{str_init("dp"), /* */
 		PVT_DSTURI_PORT, pv_get_dsturi_attr, pv_set_dsturi_port,
 		0, 0, pv_init_iname, 2},
-	{{"dP", (sizeof("dP")-1)}, /* */
+	{str_init("dP"), /* */
 		PVT_DSTURI_PROTOCOL, pv_get_dsturi_attr, 0,
 		0, 0, pv_init_iname, 3},
-	{{"ds", (sizeof("ds")-1)}, /* */
+	{str_init("ds"), /* */
 		PVT_DSET, pv_get_dset, 0,
 		0, 0, 0, 0},
-	{{"du", (sizeof("du")-1)}, /* */
+	{str_init("du"), /* */
 		PVT_DSTURI, pv_get_dsturi, pv_set_dsturi,
 		0, 0, 0, 0},
-	{{"duri", (sizeof("duri")-1)}, /* */
+	{str_init("duri"), /* */
 		PVT_DSTURI, pv_get_dsturi, pv_set_dsturi,
 		0, 0, 0, 0},
-	{{"err.class", (sizeof("err.class")-1)}, /* */
+	{str_init("err.class"), /* */
 		PVT_ERR_CLASS, pv_get_errinfo_attr, 0,
 		0, 0, 0, 0},
-	{{"err.level", (sizeof("err.level")-1)}, /* */
+	{str_init("err.level"), /* */
 		PVT_ERR_LEVEL, pv_get_errinfo_attr, 0,
 		0, 0, pv_init_iname, 1},
-	{{"err.info", (sizeof("err.info")-1)}, /* */
+	{str_init("err.info"), /* */
 		PVT_ERR_INFO, pv_get_errinfo_attr, 0,
 		0, 0, pv_init_iname, 2},
-	{{"err.rcode", (sizeof("err.rcode")-1)}, /* */
+	{str_init("err.rcode"), /* */
 		PVT_ERR_RCODE, pv_get_errinfo_attr, 0,
 		0, 0, pv_init_iname, 3},
-	{{"err.rreason", (sizeof("err.rreason")-1)}, /* */
+	{str_init("err.rreason"), /* */
 		PVT_ERR_RREASON, pv_get_errinfo_attr, 0,
 		0, 0, pv_init_iname, 4},
-	{{"fd", (sizeof("fd")-1)}, /* */
+	{str_init("fd"), /* */
 		PVT_FROM_DOMAIN, pv_get_from_attr, 0,
 		0, 0, pv_init_iname, 3},
-	{{"from.domain", (sizeof("from.domain")-1)}, /* */
+	{str_init("from.domain"), /* */
 		PVT_FROM_DOMAIN, pv_get_from_attr, 0,
 		0, 0, pv_init_iname, 3},
-	{{"fn", (sizeof("fn")-1)}, /* */
+	{str_init("fn"), /* */
 		PVT_FROM_DISPLAYNAME, pv_get_from_attr, 0,
 		0, 0, pv_init_iname, 5},
-	{{"fs", (sizeof("fs")-1)}, /* */
+	{str_init("fs"), /* */
 		PVT_FORCE_SOCK, pv_get_force_sock, pv_set_force_sock,
 		0, 0, pv_is_obsolete, 0},
-	{{"ft", (sizeof("ft")-1)}, /* */
+	{str_init("ft"), /* */
 		PVT_FROM_TAG, pv_get_from_attr, 0,
 		0, 0, pv_init_iname, 4},
-	{{"fu", (sizeof("fu")-1)}, /* */
+	{str_init("fu"), /* */
 		PVT_FROM, pv_get_from_attr, 0,
 		0, 0, pv_init_iname, 1},
-	{{"from", (sizeof("from")-1)}, /* */
+	{str_init("from"), /* */
 		PVT_FROM, pv_get_from_attr, 0,
 		0, 0, pv_init_iname, 1},
-	{{"fU", (sizeof("fU")-1)}, /* */
+	{str_init("fU"), /* */
 		PVT_FROM_USERNAME, pv_get_from_attr, 0,
 		0, 0, pv_init_iname, 2},
-	{{"from.user", (sizeof("from.user")-1)}, /* */
+	{str_init("from.user"), /* */
 		PVT_FROM_USERNAME, pv_get_from_attr, 0,
 		0, 0, pv_init_iname, 2},
-	{{"log_level", (sizeof("log_level")-1)}, /* per process log level*/
+	{str_init("log_level"), /* per process log level*/
 		PVT_LOG_LEVEL, pv_get_log_level, pv_set_log_level,
 		0, 0, 0, 0},
-	{{"mb", (sizeof("mb")-1)}, /* */
+	{str_init("mb"), /* */
 		PVT_MSG_BUF, pv_get_msg_buf, 0,
 		0, 0, 0, 0},
-	{{"mf", (sizeof("mf")-1)}, /* */
+	{str_init("mf"), /* */
 		PVT_FLAGS, pv_get_flags, 0,
 		0, 0, 0, 0},
-	{{"msg.flag", (sizeof("msg.flag")-1)}, /* */
+	{str_init("msg.flag"), /* */
 		PVT_MSG_FLAG, msg_flag_get, msg_flag_set,
 		msg_flag_parse_name, 0, 0, 0},
-	{{"msg.is_request", (sizeof("msg.is_request")-1)}, /* */
+	{str_init("msg.is_request"), /* */
 		PVT_MSG_FLAG, msg_is_request_get, 0,
 		0, 0, 0, 0},
-	{{"msg.type", (sizeof("msg.type")-1)}, /* */
+	{str_init("msg.type"), /* */
 		PVT_MSG_FLAG, msg_type_get, 0,
 		0, 0, 0, 0},
-	{{"mi", (sizeof("mi")-1)}, /* */
+	{str_init("mi"), /* */
 		PVT_MSGID, pv_get_msgid, 0,
 		0, 0, 0, 0},
-	{{"ml", (sizeof("ml")-1)}, /* */
+	{str_init("ml"), /* */
 		PVT_MSG_LEN, pv_get_msg_len, 0,
 		0, 0, 0, 0},
-	{{"od", (sizeof("od")-1)}, /* */
+	{str_init("od"), /* */
 		PVT_OURI_DOMAIN, pv_get_ouri_attr, 0,
 		0, 0, pv_init_iname, 2},
-	{{"op", (sizeof("op")-1)}, /* */
+	{str_init("op"), /* */
 		PVT_OURI_PORT, pv_get_ouri_attr, 0,
 		0, 0, pv_init_iname, 3},
-	{{"oP", (sizeof("oP")-1)}, /* */
+	{str_init("oP"), /* */
 		PVT_OURI_PROTOCOL, pv_get_ouri_attr, 0,
 		0, 0, pv_init_iname, 4},
-	{{"ou", (sizeof("ou")-1)}, /* */
+	{str_init("ou"), /* */
 		PVT_OURI, pv_get_ouri, 0,
 		0, 0, 0, 0},
-	{{"ouri", (sizeof("ouri")-1)}, /* */
+	{str_init("ouri"), /* */
 		PVT_OURI, pv_get_ouri, 0,
 		0, 0, 0, 0},
-	{{"oU", (sizeof("oU")-1)}, /* */
+	{str_init("oU"), /* */
 		PVT_OURI_USERNAME, pv_get_ouri_attr, 0,
 		0, 0, pv_init_iname, 1},
-	{{"path", (sizeof("path")-1)}, /* */
+	{str_init("path"), /* */
 		PVT_PATH, pv_get_path, 0,
 		0, 0, 0, 0},
-	{{"pd", (sizeof("pd")-1)}, /* */
+	{str_init("pd"), /* */
 		PVT_PPI_DOMAIN, pv_get_ppi_attr, 0,
 		0, 0, pv_init_iname, 3},
-	{{"pn", (sizeof("pn")-1)}, /* */
+	{str_init("pn"), /* */
 		PVT_PPI_DISPLAYNAME, pv_get_ppi_attr, 0,
 		0, 0, pv_init_iname, 4},
-	{{"pp", (sizeof("pp")-1)}, /* */
+	{str_init("pp"), /* */
 		PVT_PID, pv_get_pid, 0,
 		0, 0, 0, 0},
-	{{"pr", (sizeof("pr")-1)}, /* */
+	{str_init("pr"), /* */
 		PVT_PROTO, pv_get_proto, 0,
 		0, 0, pv_is_obsolete, 0},
-	{{"proto", (sizeof("proto")-1)}, /* */
+	{str_init("proto"), /* */
 		PVT_PROTO, pv_get_proto, 0,
 		0, 0, pv_is_obsolete, 0},
-	{{"pu", (sizeof("pu")-1)}, /* */
+	{str_init("pu"), /* */
 		PVT_PPI, pv_get_ppi_attr, 0,
 		0, 0, pv_init_iname, 1},
-	{{"pU", (sizeof("pU")-1)}, /* */
+	{str_init("pU"), /* */
 		PVT_PPI_USERNAME, pv_get_ppi_attr, 0,
 		0, 0, pv_init_iname, 2},
-	{{"rb", (sizeof("rb")-1)}, /* */
+	{str_init("rb"), /* */
 		PVT_MSG_BODY, pv_get_msg_body, 0,
 		0, pv_parse_index, 0, 0},
-	{{"rb", (sizeof("rb")-1)}, /* */
+	{str_init("rb"), /* */
 		PVT_MSG_BODY, pv_get_msg_body, 0,
 		pv_parse_rb_name, pv_parse_index, 0, 0},
-	{{"rc", (sizeof("rc")-1)}, /* */
+	{str_init("rc"), /* */
 		PVT_RETURN_CODE, pv_get_return_code, 0,
 		0, 0, 0, 0},
-	{{"retcode", (sizeof("retcode")-1)}, /* */
+	{str_init("retcode"), /* */
 		PVT_RETURN_CODE, pv_get_return_code, 0,
 		0, 0, 0, 0},
-	{{"rd", (sizeof("rd")-1)}, /* */
+	{str_init("rd"), /* */
 		PVT_RURI_DOMAIN, pv_get_ruri_attr, pv_set_ruri_host,
 		0, 0, pv_init_iname, 2},
-	{{"ruri.domain", (sizeof("ruri.domain")-1)}, /* */
+	{str_init("ruri.domain"), /* */
 		PVT_RURI_DOMAIN, pv_get_ruri_attr, pv_set_ruri_host,
 		0, 0, pv_init_iname, 2},
-	{{"re", (sizeof("re")-1)}, /* */
+	{str_init("re"), /* */
 		PVT_RPID_URI, pv_get_rpid, 0,
 		0, 0, 0, 0},
-	{{"rm", (sizeof("rm")-1)}, /* */
+	{str_init("rm"), /* */
 		PVT_METHOD, pv_get_method, 0,
 		0, 0, 0, 0},
-	{{"route", (sizeof("route")-1)}, /* */
+	{str_init("route"), /* */
 		PVT_ROUTE_NAME, pv_get_route_name, 0,
 		0, pv_parse_index, 0, 0},
-	{{"rp", (sizeof("rp")-1)}, /* */
+	{str_init("rp"), /* */
 		PVT_RURI_PORT, pv_get_ruri_attr, pv_set_ruri_port,
 		0, 0, pv_init_iname, 3},
-	{{"rP", (sizeof("rP")-1)}, /* */
+	{str_init("rP"), /* */
 		PVT_RURI_PROTOCOL, pv_get_ruri_attr, 0,
 		0, 0, pv_init_iname, 4},
-	{{"rr", (sizeof("rr")-1)}, /* */
+	{str_init("rr"), /* */
 		PVT_REASON, pv_get_reason, 0,
 		0, 0, 0, 0},
-	{{"rs", (sizeof("rs")-1)}, /* */
+	{str_init("rs"), /* */
 		PVT_STATUS, pv_get_status, 0,
 		0, 0, 0, 0},
-	{{"rt", (sizeof("rt")-1)}, /* */
+	{str_init("rt"), /* */
 		PVT_REFER_TO, pv_get_refer_to, 0,
 		0, 0, 0, 0},
-	{{"ru", (sizeof("ru")-1)}, /* */
+	{str_init("ru"), /* */
 		PVT_RURI, pv_get_ruri, pv_set_ruri,
 		0, 0, 0, 0},
-	{{"ruri", (sizeof("ruri")-1)}, /* */
+	{str_init("ruri"), /* */
 		PVT_RURI, pv_get_ruri, pv_set_ruri,
 		0, 0, 0, 0},
-	{{"ru_q", (sizeof("ru_q")-1)}, /* */
+	{str_init("ru_q"), /* */
 		PVT_RU_Q, pv_get_ru_q, pv_set_ru_q,
 		0, 0, 0, 0},
-	{{"rU", (sizeof("rU")-1)}, /* */
+	{str_init("rU"), /* */
 		PVT_RURI_USERNAME, pv_get_ruri_attr, pv_set_ruri_user,
 		0, 0, pv_init_iname, 1},
-	{{"ruri.user", (sizeof("ruri.user")-1)}, /* */
+	{str_init("ruri.user"), /* */
 		PVT_RURI_USERNAME, pv_get_ruri_attr, pv_set_ruri_user,
 		0, 0, pv_init_iname, 1},
-	{{"Ri", (sizeof("Ri")-1)}, /* */
+	{str_init("Ri"), /* */
 		PVT_RCVIP, pv_get_rcvip, 0,
 		0, 0, pv_is_obsolete, 0},
-	{{"Rp", (sizeof("Rp")-1)}, /* */
+	{str_init("Rp"), /* */
 		PVT_RCVPORT, pv_get_rcvport, 0,
 		0, 0, pv_is_obsolete, 0},
-	{{"src_ip", (sizeof("src_ip")-1)}, /* */
+	{str_init("src_ip"), /* */
 		PVT_SRCIP, pv_get_srcip, 0,
 		0, 0, 0, 0},
-	{{"socket_in", (sizeof("socket_in")-1)}, /* */
+	{str_init("socket_in"), /* */
 		PVT_SOCKET_IN, pv_get_socket_in_fields, NULL,
 		0, 0, 0, 0},
-	{{"socket_in", (sizeof("socket_in")-1)}, /* */
+	{str_init("socket_in"), /* */
 		PVT_SOCKET_IN, pv_get_socket_in_fields, NULL,
 		pv_parse_socket_name, 0, 0, 0},
-	{{"socket_out", (sizeof("socket_out")-1)}, /* */
+	{str_init("socket_out"), /* */
 		PVT_SOCKET_OUT, pv_get_socket_out_fields, pv_set_force_sock,
 		0, 0, 0, 0},
-	{{"socket_out", (sizeof("socket_out")-1)}, /* */
+	{str_init("socket_out"), /* */
 		PVT_SOCKET_OUT, pv_get_socket_out_fields, NULL,
 		pv_parse_socket_name, 0, 0, 0},
-	{{"si", (sizeof("si")-1)}, /* */
+	{str_init("si"), /* */
 		PVT_SRCIP, pv_get_srcip, 0,
 		0, 0, 0, 0},
-	{{"sp", (sizeof("sp")-1)}, /* */
+	{str_init("sp"), /* */
 		PVT_SRCPORT, pv_get_srcport, 0,
 		0, 0, 0, 0},
-	{{"td", (sizeof("td")-1)}, /* */
+	{str_init("td"), /* */
 		PVT_TO_DOMAIN, pv_get_to_attr, 0,
 		0, 0, pv_init_iname, 3},
-	{{"to.domain", (sizeof("to.domain")-1)}, /* */
+	{str_init("to.domain"), /* */
 		PVT_TO_DOMAIN, pv_get_to_attr, 0,
 		0, 0, pv_init_iname, 3},
-	{{"time", (sizeof("time")-1)}, /* */
+	{str_init("time"), /* */
 		PVT_TIME, pv_get_formated_time, 0,
 		pv_parse_time_name, 0, 0, 0},
-	{{"tn", (sizeof("tn")-1)}, /* */
+	{str_init("tn"), /* */
 		PVT_TO_DISPLAYNAME, pv_get_to_attr, 0,
 		0, 0, pv_init_iname, 5},
-	{{"tt", (sizeof("tt")-1)}, /* */
+	{str_init("tt"), /* */
 		PVT_TO_TAG, pv_get_to_attr, 0,
 		0, 0, pv_init_iname, 4},
-	{{"tu", (sizeof("tu")-1)}, /* */
+	{str_init("tu"), /* */
 		PVT_TO, pv_get_to_attr, 0,
 		0, 0, pv_init_iname, 1},
-	{{"to", (sizeof("to")-1)}, /* */
+	{str_init("to"), /* */
 		PVT_TO, pv_get_to_attr, 0,
 		0, 0, pv_init_iname, 1},
-	{{"tU", (sizeof("tU")-1)}, /* */
+	{str_init("tU"), /* */
 		PVT_TO_USERNAME, pv_get_to_attr, 0,
 		0, 0, pv_init_iname, 2},
-	{{"to.user", (sizeof("to.user")-1)}, /* */
+	{str_init("to.user"), /* */
 		PVT_TO_USERNAME, pv_get_to_attr, 0,
 		0, 0, pv_init_iname, 2},
-	{{"Tf", (sizeof("Tf")-1)}, /* */
+	{str_init("Tf"), /* */
 		PVT_TIMEF, pv_get_timef, 0,
 		0, 0, 0, 0},
-	{{"Ts", (sizeof("Ts")-1)}, /* */
+	{str_init("Ts"), /* */
 		PVT_TIMES, pv_get_times, 0,
 		0, 0, 0, 0},
-	{{"Tsm", (sizeof("Tsm")-1)}, /* */
+	{str_init("Tsm"), /* */
 		PVT_TIMES, pv_get_timem, 0,
 		0, 0, 0, 0},
-	{{"TS", (sizeof("TS")-1)}, /* */
+	{str_init("TS"), /* */
 		PVT_TIMES, pv_get_start_times, 0,
 		0, 0, 0, 0},
-	{{"ua", (sizeof("ua")-1)}, /* */
+	{str_init("ua"), /* */
 		PVT_USERAGENT, pv_get_useragent, 0,
 		0, 0, 0, 0},
-	{{"C", sizeof("C")-1}, PVT_COLOR, pv_get_color, 0,
+	{str_init("C"), PVT_COLOR, pv_get_color, 0,
 		pv_parse_color_name, 0, 0, 0 },
-	{{"argv", sizeof("argv")-1}, PVT_ARGV, pv_get_argv, 0,
+	{str_init("argv"), PVT_ARGV, pv_get_argv, 0,
 		pv_parse_argv_name, 0, 0, 0 },
-	{{"param", sizeof("param")-1}, PVT_ROUTE_PARAM, pv_get_param, 0,
+	{str_init("param"), PVT_ROUTE_PARAM, pv_get_param, 0,
 		pv_parse_param_name, 0, 0, 0 },
-	{{"cfg_line", sizeof("cfg_line")-1}, PVT_LINE_NUMBER, pv_get_line_number, 0,
+	{str_init("cfg_line"), PVT_LINE_NUMBER, pv_get_line_number, 0,
 		0, 0, 0, 0 },
-	{{"cfg_file", sizeof("cfg_file")-1}, PVT_CFG_FILE_NAME, pv_get_cfg_file_name, 0,
+	{str_init("cfg_file"), PVT_CFG_FILE_NAME, pv_get_cfg_file_name, 0,
 	0, 0, 0, 0 },
-	{{"xlog_level", sizeof("xlog_level")-1}, PVT_XLOG_LEVEL, pv_get_xlog_level,
+	{str_init("xlog_level"), PVT_XLOG_LEVEL, pv_get_xlog_level,
 		pv_set_xlog_level, 0, 0, 0, 0 },
 	{{0,0}, 0, 0, 0, 0, 0, 0, 0}
 };
 
-pv_export_t* pv_lookup_spec_name(str *pvname, pv_spec_p e, int has_name)
+static const pv_export_t* pv_lookup_spec_name(str *pvname, pv_spec_p e, int has_name)
 {
 	int i;
 	pv_extra_p pvi;
@@ -4342,7 +4350,7 @@ static int is_pv_valid_char(char c)
 	return 0;
 }
 
-char* pv_parse_spec(str *in, pv_spec_p e)
+char* pv_parse_spec(const str *in, const pv_spec_p e)
 {
 	char *p;
 	str s;
@@ -4351,7 +4359,7 @@ char* pv_parse_spec(str *in, pv_spec_p e)
 	int pvstate;
 	int has_inner_name;
 	trans_t *tr = NULL;
-	pv_export_t *pte = NULL;
+	const pv_export_t *pte = NULL;
 	int n=0;
 
 	if(in==NULL || in->s==NULL || e==NULL || *in->s!=PV_MARKER)
@@ -4655,7 +4663,7 @@ error:
 /**
  *
  */
-int pv_parse_format(str *in, pv_elem_p *el)
+int pv_parse_format(const str *in, pv_elem_p *el)
 {
 	char *p, *p0;
 	int n = 0;
@@ -4749,7 +4757,7 @@ int pv_get_spec_name(struct sip_msg* msg, const pv_param_t *ip, pv_value_t *name
 		return 0;
 	}
 	/* pvar */
-	if(pv_get_spec_value(msg, (pv_spec_p)(ip->pvn.u.dname), name)!=0)
+	if(pv_get_spec_value(msg, (const pv_spec_p)(ip->pvn.u.dname), name)!=0)
 	{
 		LM_ERR("cannot get name value\n");
 		return -1;
@@ -4779,7 +4787,7 @@ int pv_get_avp_name(struct sip_msg* msg, const pv_param_t *ip, int *avp_name,
 		return 0;
 	}
 	/* pvar */
-	if(pv_get_spec_value(msg, (pv_spec_p)(ip->pvn.u.dname), &tv)!=0)
+	if(pv_get_spec_value(msg, (const pv_spec_p)(ip->pvn.u.dname), &tv)!=0)
 	{
 		LM_ERR("cannot get avp value\n");
 		return -1;
@@ -4826,7 +4834,7 @@ int pv_get_spec_index(struct sip_msg* msg, const pv_param_t *ip, int *idx, int *
 	}
 
 	/* pvar */
-	if(pv_get_spec_value(msg, (pv_spec_p)ip->pvi.u.dval, &tv)!=0)
+	if(pv_get_spec_value(msg, (const pv_spec_p)ip->pvi.u.dval, &tv)!=0)
 	{
 		LM_ERR("cannot get index value\n");
 		return -1;
@@ -4900,7 +4908,7 @@ int pv_get_spec_value(struct sip_msg* msg, const pv_spec_t *sp, pv_value_t *valu
 	return 0;
 }
 
-int pv_print_spec(struct sip_msg* msg, pv_spec_p sp, char *buf, int *len)
+int pv_print_spec(struct sip_msg* msg, const pv_spec_p sp, char *buf, int *len)
 {
 	pv_value_t tok;
 	if(msg==NULL || sp==NULL || buf==NULL || len==NULL)
@@ -5081,7 +5089,7 @@ int pv_elem_free_all(pv_elem_p log)
 	return 0;
 }
 
-str pv_value_print(pv_value_t *val)
+static str pv_value_print(const pv_value_t *val)
 {
 	str printed = str_init(NULL);
 
@@ -5136,7 +5144,7 @@ void pv_spec_free(pv_spec_t *spec)
 	pkg_free(spec);
 }
 
-int pv_spec_dbg(pv_spec_p sp)
+int pv_spec_dbg(const pv_spec_p sp)
 {
 	if(sp==NULL)
 	{
@@ -5192,7 +5200,7 @@ int pv_spec_dbg(pv_spec_p sp)
 /**
  *
  */
-int pv_init_extra_list(void)
+static int pv_init_extra_list(void)
 {
 	_pv_extra_list = (pv_extra_p*)pkg_malloc(sizeof(pv_extra_p));
 	if(_pv_extra_list==0)
@@ -5204,10 +5212,10 @@ int pv_init_extra_list(void)
 	return 0;
 }
 
-int pv_add_extra(pv_export_t *e)
+static int pv_add_extra(pv_export_t *e)
 {
 	char *p;
-	str  *in;
+	const str *in;
 	pv_extra_t *pvi = NULL;
 	pv_extra_t *pvj = NULL;
 	pv_extra_t *pvn = NULL;
@@ -5321,7 +5329,7 @@ int pv_free_extra_list(void)
 	return 0;
 }
 
-pv_context_t* new_pv_context(str* name, pv_contextf_t get_context)
+static pv_context_t* new_pv_context(const str* name, pv_contextf_t get_context)
 {
 	pv_context_t* pvc_new = NULL;
 	int size;
@@ -5393,7 +5401,7 @@ int register_pv_context(char* cname, pv_contextf_t get_context)
 
 
 /* function to register a pv context getter */
-pv_context_t* add_pv_context(str* name, pv_contextf_t get_context)
+static pv_context_t* add_pv_context(const str* name, pv_contextf_t get_context)
 {
 	pv_context_t* pvc = pv_context_lst;
 	pv_context_t* pvc_new, *pvc_prev;
@@ -5435,7 +5443,7 @@ pv_context_t* add_pv_context(str* name, pv_contextf_t get_context)
 	return pvc_new;
 }
 
-pv_context_t* pv_get_context(str* name)
+static pv_context_t* pv_get_context(const str* name)
 {
 	pv_context_t* pvc = pv_context_lst;
 
@@ -5451,7 +5459,7 @@ pv_context_t* pv_get_context(str* name)
 	return 0;
 }
 
-int pv_contextlist_check(void)
+static int pv_contextlist_check(void)
 {
 	pv_context_t* pvc = pv_context_lst;
 
@@ -5469,7 +5477,7 @@ int pv_contextlist_check(void)
 /* argument options '-o' */
 argv_p argv_vars = NULL;
 
-argv_p search_argv(str *name)
+static argv_p search_argv(const str *name)
 {
 	argv_p it;
 
@@ -5536,7 +5544,7 @@ int add_arg_var(char *opt)
 
 }
 
-int pv_parse_argv_name(pv_spec_p sp, str *in)
+static int pv_parse_argv_name(pv_spec_p sp, const str *in)
 {
 	argv_p v_arg;
 
@@ -5558,7 +5566,7 @@ int pv_parse_argv_name(pv_spec_p sp, str *in)
 	return 0;
 }
 
-int pv_get_argv(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res)
+static int pv_get_argv(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res)
 {
 	if (!param) {
 		LM_ERR("null parameter received\n");
@@ -5571,7 +5579,7 @@ int pv_get_argv(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res)
 	return pv_get_strval(msg, param, res, &param->pvv);
 }
 
-static int pv_parse_param_name(pv_spec_p sp, str *in)
+static int pv_parse_param_name(pv_spec_p sp, const str *in)
 {
 	char *p;
 	char *s;

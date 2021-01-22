@@ -55,7 +55,7 @@ static int mod_init(void);
 static int pv_set_dfks(struct sip_msg *msg, pv_param_t *param, int op,
 	pv_value_t *val);
 static int pv_get_dfks(struct sip_msg *msg, const pv_param_t *param, pv_value_t *res);
-static int pv_parse_dfks_name(pv_spec_p sp, str *in);
+static int pv_parse_dfks_name(pv_spec_p sp, const str *in);
 
 static str *dfks_handle_subscribe(str *pres_uri, str *subs_body,
 	str *ct_type, int *suppress_notify);
@@ -231,7 +231,7 @@ static int mod_init(void)
 	return 0;
 }
 
-static int pv_parse_dfks_name(pv_spec_p sp, str *in)
+static int pv_parse_dfks_name(pv_spec_p sp, const str *in)
 {
 	struct dfks_pv_name *name;
 	str val_node;
@@ -966,7 +966,7 @@ void mi_feature_notify(int sender, void *_params)
 	notify_body = build_feature_notify(&params->pres_uri, params->feature_idx,
 		0, &params->param, &ct_type);
 	if (notify_body == (str*)-1) {
-		LM_ERR("Failed to build NOTIFY body");
+		LM_ERR("Failed to build NOTIFY body\n");
 		goto end;
 	}
 
