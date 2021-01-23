@@ -463,7 +463,7 @@ int main(int argc, char** argv)
 					}
 					break;
 			case 'l':
-					if (parse_phostport(optarg, strlen(optarg), &tmp, &tmp_len,
+					if (parse_phostport(optarg, strlen(optarg), (const char **)&tmp, &tmp_len,
 											&port, &proto)<0){
 						LM_ERR("bad -l address specifier: %s\n", optarg);
 						goto error00;

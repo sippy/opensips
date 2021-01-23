@@ -37,7 +37,7 @@ struct dns_node;
 #define PROXY_SHM_FLAG  (1<<0)
 
 struct proxy_l{
-	str name; /* original name */
+	str_const name; /* original name */
 	unsigned short flags;
 	unsigned short port;
 	unsigned short proto;
@@ -52,9 +52,9 @@ struct proxy_l{
 
 extern struct proxy_l* proxies;
 
-struct proxy_l* mk_proxy( str* name, unsigned short port, unsigned short proto,
+struct proxy_l* mk_proxy(const str_const *name, unsigned short port, unsigned short proto,
 		int is_sips);
-struct proxy_l* mk_shm_proxy(str* name, unsigned short port, unsigned short proto,
+struct proxy_l* mk_shm_proxy(const str_const *name, unsigned short port, unsigned short proto,
 		int is_sips);
 struct proxy_l* mk_proxy_from_ip(struct ip_addr* ip, unsigned short port,
 		unsigned short proto);

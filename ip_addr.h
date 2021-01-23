@@ -511,9 +511,9 @@ static inline char* ip_addr2a(struct ip_addr* ip)
 }
 
 
-/*! \brief converts a str to an ipv4 address, returns the address or 0 on error
+/*! \brief converts a str_const to an ipv4 address, returns the address or 0 on error
    Warning: the result is a pointer to a statically allocated structure */
-static inline struct ip_addr* str2ip(str* st)
+static inline struct ip_addr* strC2ip(const str_const *st)
 {
 	int i, j;
 	unsigned char *limit;
@@ -583,6 +583,12 @@ error_dots:
 	return NULL;
 }
 
+/*! \brief converts a str to an ipv4 address, returns the address or 0 on error
+   Warning: the result is a pointer to a statically allocated structure */
+static inline struct ip_addr* str2ip(const str *st)
+{
+	return strC2ip(str2const(st));
+}
 
 /*! \brief returns an ip_addr struct.; on error returns 0
  * the ip_addr struct is static, so subsequent calls will destroy its content*/
@@ -691,7 +697,7 @@ static inline struct ip_addr* str2ip6(const str *st)
 
 /*! \brief converts an ip_addr structure to a hostent
  * \return pointer to internal statical structure */
-static inline struct hostent* ip_addr2he(str* name, struct ip_addr* ip)
+static inline struct hostent* ip_addr2he(const str_const *name, struct ip_addr* ip)
 {
 	static struct hostent he;
 	static char hostname[256];

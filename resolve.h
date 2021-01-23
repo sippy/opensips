@@ -60,8 +60,8 @@
 /*! \brief this is not official yet */
 #define T_EBL		65300
 
-typedef void* (fetch_dns_cache_f)(char *name,int r_type,int name_len);
-typedef int (put_dns_cache_f)(char *name,int r_type,void *record,int rdata_len,
+typedef void* (fetch_dns_cache_f)(const char *name,int r_type,int name_len);
+typedef int (put_dns_cache_f)(const char *name,int r_type,void *record,int rdata_len,
 				int failure,int ttl);
 
 extern fetch_dns_cache_f *dnscache_fetch_func;
@@ -168,10 +168,10 @@ extern int dns_try_naptr;
 int  check_ip_address(struct ip_addr* ip, str *name,
 		unsigned short port, unsigned short proto, int resolver);
 
-struct hostent* sip_resolvehost(str* name, unsigned short* port,
+struct hostent* sip_resolvehost(const str_const* name, unsigned short* port,
 		unsigned short *proto, int is_sips, struct dns_node **dn);
 
-struct hostent* resolvehost(char* name, int no_ip_test);
+struct hostent* resolvehost(const char* name, int no_ip_test);
 
 struct hostent* rev_resolvehost(struct ip_addr *ip);
 

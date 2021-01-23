@@ -346,7 +346,7 @@ cmd_export_t* find_core_cmd_export_t(char* name, int flags)
 static int fixup_destination(void** param)
 {
 	str *s = (str*)*param;
-	str host;
+	str_const host;
 	int proto=PROTO_NONE, port;
 
 	if (parse_phostport(s->s, s->len, &host.s, &host.len, &port, &proto) != 0) {
@@ -427,8 +427,8 @@ static int fixup_qvalue(void** param)
 
 static int fixup_f_send_sock(void** param)
 {
-	str *s = (str*)*param;
-	str host, host_nt;
+	str_const *s = str2const((str*)*param);
+	str_const host, host_nt;
 	int proto=PROTO_NONE, port;
 	struct hostent* he;
 	struct socket_info* si;
@@ -438,7 +438,7 @@ static int fixup_f_send_sock(void** param)
 		LM_ERR("Failed to parse socket\n");
 		return E_CFG;
 	}
-	if (pkg_nt_str_dup(&host_nt, &host) < 0) {
+	if (pkg_nt_strC_dup(&host_nt, &host) < 0) {
 		LM_ERR("oom\n");
 		return E_OUT_OF_MEM;
 	}
@@ -457,13 +457,13 @@ static int fixup_f_send_sock(void** param)
 		goto error;
 	}
 
-	pkg_free(host_nt.s);
+	pkg_free((void *)host_nt.s);
 
 	*param = si;
 	return 0;
 
 error:
-	pkg_free(host_nt.s);
+	pkg_free((void *)host_nt.s);
 	return E_BAD_ADDRESS;
 }
 
@@ -620,7 +620,7 @@ static int w_forward(struct sip_msg *msg, struct proxy_l *dest)
 			return E_BAD_ADDRESS;
 		}
 		/* create a temporary proxy*/
-		p=mk_proxy(u->maddr_val.len?&u->maddr_val:&u->host,
+		p=mk_proxy(str2const(u->maddr_val.len?&u->maddr_val:&u->host),
 			u->port_no, u->proto, (u->type==SIPS_URI_T)?1:0 );
 		if (p==0){
 			LM_ERR("bad host name in uri, dropping packet\n");

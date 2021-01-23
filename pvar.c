@@ -3254,7 +3254,7 @@ static int pv_set_branch_fields(struct sip_msg* msg, pv_param_t *param,
 			if (!val || val->flags&PV_VAL_NULL) {
 				si = NULL;
 			} else {
-				str host;
+				str_const host;
 				int port, proto;
 				if (parse_phostport(val->rs.s, val->rs.len, &host.s, &host.len,
 				&port, &proto) < 0) {
@@ -3280,7 +3280,7 @@ static int pv_set_force_sock(struct sip_msg* msg, pv_param_t *param,
 {
 	struct socket_info *si;
 	int port, proto;
-	str host;
+	str_const host;
 
 	if(msg==NULL || param==NULL)
 	{

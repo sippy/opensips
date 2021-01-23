@@ -193,7 +193,7 @@ void free_hostent(struct hostent *dst)
 /* Creates a proxy structure out of the host, port and proto
  * uses also SRV if possible & port==0 (quick hack) */
 
-struct proxy_l* mk_proxy(str* name, unsigned short port, unsigned short proto,
+struct proxy_l* mk_proxy(const str_const *name, unsigned short port, unsigned short proto,
 		int is_sips)
 {
 	struct proxy_l* p;
@@ -290,7 +290,7 @@ void free_shm_proxy(struct proxy_l* p)
 /* same as add_proxy, but it doesn't add the proxy to the list
  * uses also SRV if possible & port==0 (quick hack)
    works in shared memory */
-struct proxy_l* mk_shm_proxy(str* name, unsigned short port, unsigned short proto,
+struct proxy_l* mk_shm_proxy(const str_const *name, unsigned short port, unsigned short proto,
 		int is_sips)
 {
 	struct proxy_l* p;

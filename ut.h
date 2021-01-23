@@ -795,33 +795,45 @@ static inline int shm_nt_str_dup(str* dst, const str* src)
 }
 
 /*
- * Make a copy of an str structure using pkg_malloc
+ * Make a copy of an str_const structure using pkg_malloc
  *	  + an additional '\0' byte, so you can make use of dst->s
  *
  * dst == src is allowed!
  */
-static inline int pkg_nt_str_dup(str* dst, const str* src)
+static inline int pkg_nt_strC_dup(str_const* dst, const str_const* src)
 {
-	const str _src = *src;
+	const str_const _src = *src;
+	str _dst;
 
 	if (!_src.s) {
 		memset(dst, 0, sizeof *dst);
 		return 0;
 	}
 
-	dst->s = pkg_malloc(_src.len + 1);
-	if (!dst->s) {
+	_dst.s = pkg_malloc(_src.len + 1);
+	if (!_dst.s) {
 		LM_ERR("no private memory left\n");
-		dst->len = 0;
-		if (dst == src)
-			*dst = _src;
+		if (dst != src)
+			*dst = STR_NULL_const;
 		return -1;
 	}
 
-	memcpy(dst->s, _src.s, _src.len);
-	dst->len = _src.len;
-	dst->s[_src.len] = '\0';
+	memcpy(_dst.s, _src.s, _src.len);
+	_dst.len = _src.len;
+	_dst.s[_src.len] = '\0';
+	*dst = *str2const(&_dst);
 	return 0;
+}
+
+/*
+ * Make a copy of an str structure using pkg_malloc
+ *        + an additional '\0' byte, so you can make use of dst->s
+ *
+ * dst == src is allowed!
+ */
+static inline int pkg_nt_str_dup(str* dst, const str* src)
+{
+	return pkg_nt_strC_dup(str2const(dst), str2const(src));
 }
 
 static inline char *shm_strdup(const char *str)
@@ -1237,9 +1249,9 @@ static inline int get_time_diff(struct timeval *begin)
 	} while (0)
 
 static inline void log_expiry(int time_diff,int expire,
-					const char *func_info,char *extra_dbg,int dbg_len,int tcp)
+					const char *func_info,const char *extra_dbg,int dbg_len,int tcp)
 {
-	str param;
+	str_const param;
 	evi_params_p list;
 	static str func_str = str_init("source");
 	static str time_str = str_init("time");
@@ -1275,11 +1287,11 @@ static inline void log_expiry(int time_diff,int expire,
 		}
 		if (evi_probe_event(EVI_THRESHOLD_ID)) {
 
-			param.s = (char *)func_info;
+			param.s = func_info;
 			param.len = strlen(func_info);
 			if (!(list = evi_get_params()))
 				return;
-			if (evi_param_add_str(list, &func_str, &param)) {
+			if (evi_param_add_strC(list, &func_str, &param)) {
 				LM_ERR("unable to add func parameter\n");
 				goto error;
 			}
@@ -1289,7 +1301,7 @@ static inline void log_expiry(int time_diff,int expire,
 			}
 			param.s = extra_dbg;
 			param.len = dbg_len;
-			if (evi_param_add_str(list, &extra_str, &param)) {
+			if (evi_param_add_strC(list, &extra_str, &param)) {
 				LM_ERR("unable to add extra parameter\n");
 				goto error;
 			}

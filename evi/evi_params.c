@@ -48,7 +48,7 @@ evi_param_p evi_param_create(evi_params_p list, const str *name)
 	memset(new_p, 0, sizeof(evi_param_t));
 
 	if (name)
-		new_p->name = *name;
+		new_p->name = *str2const(name);
 
 	new_p->next = NULL;
 	if (list->last) {
@@ -79,7 +79,7 @@ int evi_param_set(evi_param_p el, const void *param, int flags)
 		LM_DBG("set int %.*s=%d\n", el->name.len, el->name.s,
 		       el->val.n);
 	} else {
-		memcpy(&el->val, param, sizeof(str));
+		memcpy(&el->val, param, sizeof(str_const));
 		LM_DBG("set str %.*s='%.*s'\n", el->name.len, el->name.s,
 		       el->val.s.len, el->val.s.s);
 	}
@@ -94,7 +94,7 @@ int evi_param_add(evi_params_p list, const str *name, const void *param, int fla
 {
 	evi_param_p new_p;
 
-	if (!(EVI_INT_VAL & flags) && !(EVI_STR_VAL & flags)) {
+	if (!(flags & (EVI_INT_VAL|EVI_STR_VAL))) {
 		LM_ERR("params should be int or str [%x]\n", flags);
 		return -1;
 	}
@@ -178,15 +178,15 @@ evi_params_p evi_dup_shm_params(evi_params_p pkg_params)
 		sp->next = NULL;
 		sp->name.len = param->name.len;
 		if (sp->name.len) {
+			memcpy(p, param->name.s, param->name.len);
 			sp->name.s = p;
 			p += param->name.len;
-			memcpy(sp->name.s, param->name.s, param->name.len);
 		}
 		if (param->flags & EVI_STR_VAL) {
 			sp->val.s.len = param->val.s.len;
+			memcpy(p, param->val.s.s, param->val.s.len);
 			sp->val.s.s = p;
 			p += param->val.s.len;
-			memcpy(sp->val.s.s, param->val.s.s, param->val.s.len);
 		} else
 			sp->val.n = param->val.n;
 		if (prev) {

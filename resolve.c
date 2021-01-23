@@ -140,7 +140,7 @@ static inline unsigned int dns_get32(const u_char *src) {
 	return dst;
 }
 
-int get_dns_answer(union dns_query *answer,int anslen,char *qname,int qtype,int *min_ttl)
+static int get_dns_answer(union dns_query *answer,int anslen,const char *qname,int qtype,int *min_ttl)
 {
 	register const HEADER *hp;
 	register int n;
@@ -393,7 +393,7 @@ int get_dns_answer(union dns_query *answer,int anslen,char *qname,int qtype,int 
 	return 0;
 }
 
-struct hostent* own_gethostbyname2(char *name,int af)
+static struct hostent* own_gethostbyname2(const char *name,int af)
 {
 	int size,type;
 	struct hostent *cached_he;
@@ -448,7 +448,7 @@ query:
 	return &global_he;
 }
 
-inline struct hostent* resolvehost(char* name, int no_ip_test)
+inline struct hostent* resolvehost(const char* name, int no_ip_test)
 {
 	static struct hostent *he = NULL;
 #ifdef HAVE_GETIPNODEBYNAME
@@ -457,14 +457,14 @@ inline struct hostent* resolvehost(char* name, int no_ip_test)
 #endif
 	struct timeval start;
 	struct ip_addr *ip;
-	str s;
+	str_const s;
 
 	if (!no_ip_test) {
 		s.s = (char *)name;
 		s.len = strlen(name);
 
 		/* check if it's an ip address */
-		if ((ip = str2ip(&s)) || (ip = str2ip6(&s))) {
+		if ((ip = strC2ip(&s)) || (ip = strC2ip6(&s))) {
 			/* we are lucky, this is an ip address */
 			return ip_addr2he(&s, ip);
 		}
@@ -632,7 +632,7 @@ int check_ip_address(struct ip_addr* ip, str *name,
 	if (resolver&DO_DNS){
 		LM_DBG("doing dns lookup\n");
 		/* try all names ips */
-		he=sip_resolvehost(name, &port, &proto, 0, 0);
+		he=sip_resolvehost(str2const(name), &port, &proto, 0, 0);
 		if (he && (int)ip->af==he->h_addrtype){
 			for(i=0;he && he->h_addr_list[i];i++){
 				if ( memcmp(&he->h_addr_list[i], ip->u.addr, ip->len)==0)
@@ -1744,7 +1744,7 @@ err_proto:
 
 
 
-struct hostent* sip_resolvehost( str* name, unsigned short* port,
+struct hostent* sip_resolvehost(const str_const *name, unsigned short* port,
 		unsigned short *proto, int is_sips, struct dns_node **dn)
 {
 	static char tmp[MAX_DNS_NAME];
@@ -1761,7 +1761,7 @@ struct hostent* sip_resolvehost( str* name, unsigned short* port,
 		proto = &local_proto;
 
 	/* check if it's an ip address */
-	if ( ((ip=str2ip(name))!=0) || ((ip=str2ip6(name))!=0) ){
+	if ( ((ip=strC2ip(name))!=0) || ((ip=strC2ip6(name))!=0) ){
 		/* we are lucky, this is an ip address */
 		if (*proto==PROTO_NONE)
 			*proto = (is_sips)?PROTO_TLS:PROTO_UDP;
@@ -2095,14 +2095,14 @@ int resolve_hostport(str *in, unsigned short default_port,
 	struct proxy_l* proxy;
 	char *p;
 	unsigned int port;
-	str st;
+	str_const st;
 
 	p = memchr(in->s, ':', in->len);
 	if (p != NULL) {
 		st.s = p+1;
 		st.len = in->len - (p + 1 - in->s);
 
-		if (str2int(&st, &port) != 0) {
+		if (strC2int(&st, &port) != 0) {
 			LM_ERR("failed to parse port '%.*s' %d in host '%.*s'\n",
 			       st.len, st.s, st.len, in->len, in->s);
 			return -1;
@@ -2110,7 +2110,7 @@ int resolve_hostport(str *in, unsigned short default_port,
 		st.s = in->s;
 		st.len = p - in->s;
 	} else {
-		st = *in;
+		st = *str2const(in);
 		port = default_port;
 	}
 

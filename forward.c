@@ -451,7 +451,7 @@ int update_sock_struct_from_via( union sockaddr_union* to,
 		}
 	}
 	LM_DBG("trying SRV lookup\n");
-	he=sip_resolvehost(name, &port, &via->proto, 0, 0);
+	he=sip_resolvehost(str2const(name), &port, &via->proto, 0, 0);
 
 	if (he==0){
 		LM_NOTICE("resolve_host(%.*s) failure\n", name->len, name->s);
