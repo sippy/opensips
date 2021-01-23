@@ -27,13 +27,13 @@
  * values and print SQL queries from the internal API representation.
  */
 
+#define _XOPEN_SOURCE /* See feature_test_macros(7), strptime(3) */
+#include <time.h>
 #include <limits.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define _XOPEN_SOURCE /* See feature_test_macros(7), strptime(3) */
-#include <time.h>
 
 #include "../mem/mem.h"
 #include "../dprint.h"
