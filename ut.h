@@ -969,10 +969,32 @@ static inline int pkg_str_extend(str *in, int size)
 /*
  * test if two str's are equal
  */
-static inline int str_match(const str *a, const str *b)
+static inline int _str_matchCC(const str_const *a, const str_const *b)
 {
 	return a->len == b->len && !memcmp(a->s, b->s, a->len);
 }
+static inline int _str_matchSS(const str *a, const str *b)
+{
+        return _str_matchCC(str2const(a), str2const(b));
+}
+static inline int _str_matchSC(const str *a, const str_const *b)
+{
+        return _str_matchCC(str2const(a), b);
+}
+static inline int _str_matchCS(const str_const *a, const str *b)
+{
+        return _str_matchCC(a, str2const(b));
+}
+
+
+#define str_match(_a, _b) _Generic(*(_a), \
+        str: _Generic(*(_b), \
+            str: _str_matchSS, \
+            str_const: _str_matchSC), \
+        str_const: _Generic(*(_b), \
+            str: _str_matchCS, \
+            str_const: _str_matchCC) \
+    )(_a, _b)
 
 
 /*
