@@ -681,7 +681,7 @@ int pn_trigger_pn(struct sip_msg *req, const ucontact_t *ct,
 }
 
 
-int pn_has_uri_params(const str *ct, struct sip_uri *puri)
+int pn_has_uri_params(const str_const *ct, struct sip_uri *puri)
 {
 	str_list *param;
 	struct sip_uri _puri;
