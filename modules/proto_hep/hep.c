@@ -1704,7 +1704,7 @@ int send_hep_message(trace_message message, trace_dest dest, struct socket_info*
 	}
 
 	/* */
-	p=mk_proxy( &hep_dest->ip, hep_dest->port_no ? hep_dest->port_no : HEP_PORT, hep_dest->transport, 0);
+	p=mk_proxy(str2const(&hep_dest->ip), hep_dest->port_no ? hep_dest->port_no : HEP_PORT, hep_dest->transport, 0);
 	if (p == NULL) {
 		pkg_free(buf);
 		LM_ERR("bad hep host name!\n");

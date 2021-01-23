@@ -276,7 +276,7 @@ int add_dest2list(int id, str uri, struct socket_info *sock, str *comsock, int s
 	}
 
 	/* Do a DNS-Lookup for the Host-Name: */
-	proxy = mk_proxy( &puri.host, puri.port_no, puri.proto,
+	proxy = mk_proxy(str2const(&puri.host), puri.port_no, puri.proto,
 		(puri.type==SIPS_URI_T));
 	if (proxy==NULL) {
 		LM_ERR("could not resolve %.*s, skipping it\n",

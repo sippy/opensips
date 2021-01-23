@@ -650,7 +650,7 @@ add_dst(
 	pgw->type = type;
 
 	/* add address in the global list of destinations/GWs */
-	proxy = mk_proxy(&uri.host,uri.port_no,uri.proto,(uri.type==SIPS_URI_T));
+	proxy = mk_proxy(str2const(&uri.host),uri.port_no,uri.proto,(uri.type==SIPS_URI_T));
 	if (proxy==NULL) {
 		if(dr_force_dns) {
 			LM_ERR("cannot resolve <%.*s>\n",

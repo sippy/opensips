@@ -2913,7 +2913,7 @@ static int trace_send_duplicate(char *buf, int len, struct sip_uri *uri)
 
 	/* create a temporary proxy*/
 	proto = PROTO_UDP;
-	p=mk_proxy(&uri->host, (uri->port_no)?uri->port_no:SIP_PORT,
+	p=mk_proxy(str2const(&uri->host), (uri->port_no)?uri->port_no:SIP_PORT,
 			proto, 0);
 	if (p==0){
 		LM_ERR("bad host name in uri\n");

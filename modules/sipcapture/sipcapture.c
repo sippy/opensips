@@ -4291,7 +4291,7 @@ static int w_hep_relay(struct sip_msg *msg)
 
 	/* get net info */
 	proxy = mk_proxy(
-		&uri.host,
+		str2const(&uri.host),
 		uri.port_no?uri.port_no:SIP_PORT, proto, 0 );
 	if (proxy == 0) {
 		LM_ERR("bad host name in URI <%.*s>\n", uri_s->len, ZSW(uri_s->s));

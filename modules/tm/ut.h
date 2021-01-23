@@ -91,7 +91,7 @@ inline static struct proxy_l *uri2proxy( str *uri, int forced_proto )
 	proto = get_proto(forced_proto, proto);
 
 	p = mk_proxy(
-		parsed_uri.maddr_val.len?&parsed_uri.maddr_val:&parsed_uri.host,
+		str2const(parsed_uri.maddr_val.len?&parsed_uri.maddr_val:&parsed_uri.host),
 		parsed_uri.port_no, proto, (parsed_uri.type==SIPS_URI_T)?1:0 );
 	if (p == 0) {
 		LM_ERR("bad host name in URI <%.*s>\n", uri->len, ZSW(uri->s));

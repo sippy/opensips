@@ -314,7 +314,7 @@ int add_lb_dsturi( struct lb_data *data, int id, int group, char *uri,
 	}
 
 	/* Do a SIP wise DNS-Lookup for the domain part */
-	proxy = mk_proxy( &puri.host, puri.port_no, puri.proto,
+	proxy = mk_proxy(str2const(&puri.host), puri.port_no, puri.proto,
 		(puri.type==SIPS_URI_T));
 	if (proxy==NULL) {
 		LM_ERR("could not resolve %.*s\n", puri.host.len, puri.host.s);

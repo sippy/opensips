@@ -486,7 +486,7 @@ static int fixup_phostport2proxy(void** param)
 	str s = *(str*)*param;
 	int port;
 	int proto;
-	str host;
+	str_const host;
 
 	if (s.s == NULL || s.len == 0) {
 		LM_CRIT("empty parameter\n");
