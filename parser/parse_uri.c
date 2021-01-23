@@ -304,7 +304,7 @@ int print_uri(struct sip_uri *uri, str *out_buf)
  * len= len of uri
  * returns: fills uri & returns <0 on error or 0 if ok
  */
-int parse_uri(char* buf, int len, struct sip_uri* uri)
+int parse_uri(const char* buf, int len, struct sip_uri* uri)
 {
 	enum states  {	URI_INIT, URI_USER, URI_PASSWORD, URI_PASSWORD_ALPHA,
 					URI_HOST, URI_HOST_P,
@@ -350,17 +350,17 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 
 	};
 	register enum states state;
-	char* s;
-	char* b; /* param start */
-	char *v; /* value start */
-	str* param; /* current param */
-	str* param_val; /* current param val */
-	str user;
-	str password;
+	const char* s;
+	const char* b; /* param start */
+	const char *v; /* value start */
+	str_const* param; /* current param */
+	str_const* param_val; /* current param val */
+	str_const user;
+	str_const password;
 	int port_no;
-	register char* p;
-	char* end;
-	char* pass;
+	const char* p;
+	const char* end;
+	const char* pass;
 	int found_user;
 	int error_headers;
 	unsigned int scheme;
@@ -390,8 +390,8 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 							memset(uri, 0, sizeof(struct sip_uri)); \
 							/* restore the scheme, copy user & pass */ \
 							uri->type=backup; \
-							uri->user=user; \
-							if (pass)	uri->passwd=password;  \
+							*str2const(&uri->user)=user; \
+							if (pass)	*str2const(&uri->passwd)=password;  \
 							s=p+1; \
 							found_user=1;\
 							error_headers=0; \
@@ -401,19 +401,19 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 #define check_host_end \
 					case ':': \
 						/* found the host */ \
-						uri->host.s=s; \
+						str2const(&uri->host)->s=s; \
 						uri->host.len=p-s; \
 						state=URI_PORT; \
 						s=p+1; \
 						break; \
 					case ';': \
-						uri->host.s=s; \
+						str2const(&uri->host)->s=s; \
 						uri->host.len=p-s; \
 						state=URI_PARAM; \
 						s=p+1; \
 						break; \
 					case '?': \
-						uri->host.s=s; \
+						str2const(&uri->host)->s=s; \
 						uri->host.len=p-s; \
 						state=URI_HEADERS; \
 						s=p+1; \
@@ -432,14 +432,14 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 #define u_param_set(t_start, v_start) \
 			if (uri->u_params_no < URI_MAX_U_PARAMS){ \
 				if((v_start)>(t_start)){ \
-					uri->u_name[uri->u_params_no].s=(t_start); \
+					str2const(&uri->u_name[uri->u_params_no])->s=(t_start); \
 					uri->u_name[uri->u_params_no].len=((v_start)-(t_start)-1); \
 					if(p>(v_start)) { \
-						uri->u_val[uri->u_params_no].s=(v_start); \
+						str2const(&uri->u_val[uri->u_params_no])->s=(v_start); \
 						uri->u_val[uri->u_params_no].len=(p-(v_start)); \
 					} \
 				} else { \
-					uri->u_name[uri->u_params_no].s=(t_start); \
+					str2const(&uri->u_name[uri->u_params_no])->s=(t_start); \
 					uri->u_name[uri->u_params_no].len=(p-(t_start)); \
 				} \
 				uri->u_params_no++; \
@@ -457,7 +457,7 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 
 #define question_case \
 					case '?': \
-						uri->params.s=s; \
+						str2const(&uri->params)->s=s; \
 						uri->params.len=p-s; \
 						state=URI_HEADERS; \
 						s=p+1; \
@@ -701,7 +701,7 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 				switch(*p){
 					case '@':
 						/* found the user*/
-						uri->user.s=s;
+						str2const(&uri->user)->s=s;
 						uri->user.len=p-s;
 						state=URI_HOST;
 						found_user=1;
@@ -709,7 +709,7 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 						break;
 					case ':':
 						/* found the user, or the host? */
-						uri->user.s=s;
+						str2const(&uri->user)->s=s;
 						uri->user.len=p-s;
 						state=URI_PASSWORD;
 						s=p+1; /* skip ':' */
@@ -717,13 +717,13 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 					case ';':
 						/* this could be still the user or
 						 * params?*/
-						uri->host.s=s;
+						str2const(&uri->host)->s=s;
 						uri->host.len=p-s;
 						state=URI_PARAM;
 						s=p+1;
 						break;
 					case '?': /* still user or headers? */
-						uri->host.s=s;
+						str2const(&uri->host)->s=s;
 						uri->host.len=p-s;
 						state=URI_HEADERS;
 						s=p+1;
@@ -738,7 +738,7 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 				switch(*p){
 					case '@':
 						/* found the password*/
-						uri->passwd.s=s;
+						str2const(&uri->passwd)->s=s;
 						uri->passwd.len=p-s;
 						port_no=0;
 						state=URI_HOST;
@@ -747,7 +747,7 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 						break;
 					case ';':
 						/* upps this is the port */
-						uri->port.s=s;
+						str2const(&uri->port)->s=s;
 						uri->port.len=p-s;
 						uri->port_no=port_no;
 						/* user contains in fact the host */
@@ -761,7 +761,7 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 						break;
 					case '?':
 						/* upps this is the port */
-						uri->port.s=s;
+						str2const(&uri->port)->s=s;
 						uri->port.len=p-s;
 						uri->port_no=port_no;
 						/* user contains in fact the host */
@@ -797,7 +797,7 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 				switch(*p){
 					case '@':
 						/* found the password*/
-						uri->passwd.s=s;
+						str2const(&uri->passwd)->s=s;
 						uri->passwd.len=p-s;
 						state=URI_HOST;
 						found_user=1;
@@ -855,14 +855,14 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 			case URI_PORT:
 				switch(*p){
 					case ';':
-						uri->port.s=s;
+						str2const(&uri->port)->s=s;
 						uri->port.len=p-s;
 						uri->port_no=port_no;
 						state=URI_PARAM;
 						s=p+1;
 						break;
 					case '?':
-						uri->port.s=s;
+						str2const(&uri->port)->s=s;
 						uri->port.len=p-s;
 						uri->port_no=port_no;
 						state=URI_HEADERS;
@@ -958,8 +958,8 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 			param_switch1(PT_T2, '=',  PT_eq);
 			/* value parsing */
 			case PT_eq:
-				param=&uri->transport;
-				param_val=&uri->transport_val;
+				param=str2const(&uri->transport);
+				param_val=str2const(&uri->transport_val);
 				uri->proto = PROTO_OTHER;
 				switch (*p){
 					param_common_cases;
@@ -1027,8 +1027,8 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 			param_switch(PTTL_T2,  'l', 'L', PTTL_L);
 			param_switch1(PTTL_L,  '=', PTTL_eq);
 			case PTTL_eq:
-				param=&uri->ttl;
-				param_val=&uri->ttl_val;
+				param=str2const(&uri->ttl);
+				param_val=str2const(&uri->ttl_val);
 				switch(*p){
 					param_common_cases;
 					default:
@@ -1043,8 +1043,8 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 			param_switch(PU_E, 'r', 'R', PU_R);
 			param_switch1(PU_R, '=', PU_eq);
 			case PU_eq:
-				param=&uri->user_param;
-				param_val=&uri->user_param_val;
+				param=str2const(&uri->user_param);
+				param_val=str2const(&uri->user_param_val);
 				switch(*p){
 					param_common_cases;
 					default:
@@ -1061,8 +1061,8 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 			param_switch(PM_O, 'd', 'D', PM_D);
 			param_switch1(PM_D, '=', PM_eq);
 			case PM_eq:
-				param=&uri->method;
-				param_val=&uri->method_val;
+				param=str2const(&uri->method);
+				param_val=str2const(&uri->method_val);
 				switch(*p){
 					param_common_cases;
 					default:
@@ -1077,8 +1077,8 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 			param_switch(PMA_D2, 'r', 'R', PMA_R);
 			param_switch1(PMA_R, '=', PMA_eq);
 			case PMA_eq:
-				param=&uri->maddr;
-				param_val=&uri->maddr_val;
+				param=str2const(&uri->maddr);
+				param_val=str2const(&uri->maddr_val);
 				switch(*p){
 					param_common_cases;
 					default:
@@ -1098,11 +1098,11 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 						state=PLR_eq;
 						break;
 					semicolon_case;
-						uri->lr.s=b;
+						str2const(&uri->lr)->s=b;
 						uri->lr.len=(p-b);
 						break;
 					question_case;
-						uri->lr.s=b;
+						str2const(&uri->lr)->s=b;
 						uri->lr.len=(p-b);
 						break;
 					colon_case;
@@ -1113,8 +1113,8 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 				break;
 				/* handle lr=something case */
 			case PLR_eq:
-				param=&uri->lr;
-				param_val=&uri->lr_val;
+				param=str2const(&uri->lr);
+				param_val=str2const(&uri->lr_val);
 				switch(*p){
 					param_common_cases;
 					default:
@@ -1134,11 +1134,11 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 						state=PR2_eq;
 						break;
 					semicolon_case;
-						uri->r2.s=b;
+						str2const(&uri->r2)->s=b;
 						uri->r2.len=(p-b);
 						break;
 					question_case;
-						uri->r2.s=b;
+						str2const(&uri->r2)->s=b;
 						uri->r2.len=(p-b);
 						break;
 					colon_case;
@@ -1149,8 +1149,8 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 				break;
 				/* handle r2=something case */
 			case PR2_eq:
-				param=&uri->r2;
-				param_val=&uri->r2_val;
+				param=str2const(&uri->r2);
+				param_val=str2const(&uri->r2_val);
 				switch(*p){
 					param_common_cases;
 					default:
@@ -1171,11 +1171,11 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 						state=PG_eq;
 						break;
 					semicolon_case;
-						uri->gr.s=b;
+						str2const(&uri->gr)->s=b;
 						uri->gr.len=(p-b);
 						break;
 					question_case;
-						uri->gr.s=b;
+						str2const(&uri->gr)->s=b;
 						uri->gr.len=(p-b);
 						break;
 					colon_case;
@@ -1186,8 +1186,8 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 				break;
 				/* handle gr=something case */
 			case PG_eq:
-				param=&uri->gr;
-				param_val=&uri->gr_val;
+				param=str2const(&uri->gr);
+				param_val=str2const(&uri->gr_val);
 				switch(*p){
 					param_common_cases;
 					default:
@@ -1213,7 +1213,7 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 			param_switch(PN1_D, 'e', 'E', PN1_E);
 			param_switch(PN1_E, 'r', 'R', PN1_FIN);
 			case PN1_FIN:
-				param=&uri->pn_provider;
+				param=str2const(&uri->pn_provider);
 				switch(*p){
 					case '@':
 						still_at_user;
@@ -1222,11 +1222,11 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 						state=PN1_eq;
 						break;
 					semicolon_case;
-						uri->pn_provider.s=b;
+						str2const(&uri->pn_provider)->s=b;
 						uri->pn_provider.len=(p-b);
 						break;
 					question_case;
-						uri->pn_provider.s=b;
+						str2const(&uri->pn_provider)->s=b;
 						uri->pn_provider.len=(p-b);
 						break;
 					colon_case;
@@ -1237,8 +1237,8 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 				break;
 				/* handle pn-provider=something case */
 			case PN1_eq:
-				param=&uri->pn_provider;
-				param_val=&uri->pn_provider_val;
+				param=str2const(&uri->pn_provider);
+				param_val=str2const(&uri->pn_provider_val);
 				switch(*p){
 					param_common_cases;
 					default:
@@ -1251,8 +1251,8 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 			param_switch(PN2_I, 'd', 'D', PN2_D);
 			param_xswitch1(PN2_D, '=', PN2_eq);
 			case PN2_eq:
-				param=&uri->pn_prid;
-				param_val=&uri->pn_prid_val;
+				param=str2const(&uri->pn_prid);
+				param_val=str2const(&uri->pn_prid_val);
 				switch(*p){
 					param_common_cases;
 					default:
@@ -1267,8 +1267,8 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 			param_switch(PN3_A2, 'm', 'M', PN3_M);
 			param_xswitch1(PN3_M, '=', PN3_eq);
 			case PN3_eq:
-				param=&uri->pn_param;
-				param_val=&uri->pn_param_val;
+				param=str2const(&uri->pn_param);
+				param_val=str2const(&uri->pn_param_val);
 				switch(*p){
 					param_common_cases;
 					default:
@@ -1282,8 +1282,8 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 			param_switch(PN4_R, 'r', 'R', PN4_R2);
 			param_xswitch1(PN4_R2, '=', PN4_eq);
 			case PN4_eq:
-				param=&uri->pn_purr;
-				param_val=&uri->pn_purr_val;
+				param=str2const(&uri->pn_purr);
+				param_val=str2const(&uri->pn_purr_val);
 				switch(*p){
 					param_common_cases;
 					default:
@@ -1341,14 +1341,14 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 		case URI_USER:
 			/* this is the host, it can't be the user */
 			if (found_user) goto error_bad_uri;
-			uri->host.s=s;
+			str2const(&uri->host)->s=s;
 			uri->host.len=p-s;
 			state=URI_HOST;
 			break;
 		case URI_PASSWORD:
 			/* this is the port, it can't be the passwd */
 			if (found_user) goto error_bad_port;
-			uri->port.s=s;
+			str2const(&uri->port)->s=s;
 			uri->port.len=p-s;
 			uri->port_no=port_no;
 			uri->host=uri->user;
@@ -1360,14 +1360,14 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 			goto error_bad_port;
 		case URI_HOST_P:
 		case URI_HOST6_END:
-			uri->host.s=s;
+			str2const(&uri->host)->s=s;
 			uri->host.len=p-s;
 			break;
 		case URI_HOST: /* error: null host */
 		case URI_HOST6_P: /* error: unterminated ipv6 reference*/
 			goto error_bad_host;
 		case URI_PORT:
-			uri->port.s=s;
+			str2const(&uri->port)->s=s;
 			uri->port.len=p-s;
 			uri->port_no=port_no;
 			break;
@@ -1404,36 +1404,36 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 		case PLR_L: /* lr */
 		case PR2_R:  /* r2 */
 		case PG_G: /* gr */
-			uri->params.s=s;
+			str2const(&uri->params)->s=s;
 			uri->params.len=p-s;
 			break;
 		/* fin param states */
 		case PLR_R_FIN:
 		case PLR_eq:
-			uri->params.s=s;
+			str2const(&uri->params)->s=s;
 			uri->params.len=p-s;
-			uri->lr.s=b;
+			str2const(&uri->lr)->s=b;
 			uri->lr.len=p-b;
 			break;
 		case PR2_2_FIN:
 		case PR2_eq:
-			uri->params.s=s;
+			str2const(&uri->params)->s=s;
 			uri->params.len=p-s;
-			uri->r2.s=b;
+			str2const(&uri->r2)->s=b;
 			uri->r2.len=p-b;
 			break;
 		case PG_G_FIN:
 		case PG_eq:
-			uri->params.s=s;
+			str2const(&uri->params)->s=s;
 			uri->params.len=p-s;
-			uri->gr.s=b;
+			str2const(&uri->gr)->s=b;
 			uri->gr.len=p-b;
 			break;
 		case PN1_FIN:
 		case PN1_eq:
-			uri->params.s=s;
+			str2const(&uri->params)->s=s;
 			uri->params.len=p-s;
-			uri->pn_provider.s=b;
+			str2const(&uri->pn_provider)->s=b;
 			uri->pn_provider.len=p-b;
 			break;
 		case URI_VAL_P:
@@ -1447,51 +1447,51 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 		case VS_C:
 		case VW_W:
 		case VS_T:
-			uri->params.s=s;
+			str2const(&uri->params)->s=s;
 			uri->params.len=p-s;
 			param_set(b, v);
 			break;
 		/* fin value states */
 		case VU_P_FIN:
-			uri->params.s=s;
+			str2const(&uri->params)->s=s;
 			uri->params.len=p-s;
 			param_set(b, v);
 			uri->proto=PROTO_UDP;
 			break;
 		case VT_P_FIN:
-			uri->params.s=s;
+			str2const(&uri->params)->s=s;
 			uri->params.len=p-s;
 			param_set(b, v);
 			uri->proto=PROTO_TCP;
 			break;
 		case VTLS_S_FIN:
-			uri->params.s=s;
+			str2const(&uri->params)->s=s;
 			uri->params.len=p-s;
 			param_set(b, v);
 			uri->proto=PROTO_TLS;
 			break;
 		case VS_P_FIN:
-			uri->params.s=s;
+			str2const(&uri->params)->s=s;
 			uri->params.len=p-s;
 			param_set(b, v);
 			uri->proto=PROTO_SCTP;
 			break;
 		case VW_S:
 		case VW_S_FIN:
-			uri->params.s=s;
+			str2const(&uri->params)->s=s;
 			uri->params.len=p-s;
 			param_set(b, v);
 			uri->proto=PROTO_WS;
 			break;
 		case VWS_S_FIN:
-			uri->params.s=s;
+			str2const(&uri->params)->s=s;
 			uri->params.len=p-s;
 			param_set(b, v);
 			uri->proto=PROTO_WSS;
 			break;
 		/* headers */
 		case URI_HEADERS:
-			uri->headers.s=s;
+			str2const(&uri->headers)->s=s;
 			uri->headers.len=p-s;
 			if (error_headers) goto error_headers;
 			break;
@@ -1512,7 +1512,7 @@ int parse_uri(char* buf, int len, struct sip_uri* uri)
 		case PN3_A2:
 		case PN4_U:
 		case PN4_R:
-			uri->params.s=s;
+			str2const(&uri->params)->s=s;
 			uri->params.len=p-s;
 			break;
 		case PN2_D:

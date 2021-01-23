@@ -46,7 +46,7 @@
  * len= len of uri
  * returns: fills uri & returns <0 on error or 0 if ok
  */
-int parse_uri(char *buf, int len, struct sip_uri* uri);
+int parse_uri(const char *buf, int len, struct sip_uri* uri);
 
 /*
  * Fully prints a given "struct sip_uri" into a given buffer
