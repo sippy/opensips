@@ -643,9 +643,9 @@ static inline int str2short(str* _s, unsigned short *_r)
 }
 
 /*
- * Convert a str into integer
+ * Convert a str_const into integer
  */
-static inline int str2int(const str* _s, unsigned int* _r)
+static inline int strC2int(const str_const* _s, unsigned int* _r)
 {
 	int i;
 
@@ -663,6 +663,14 @@ static inline int str2int(const str* _s, unsigned int* _r)
 	}
 
 	return 0;
+}
+
+/*
+ * Convert a str into integer
+ */
+static inline int str2int(const str* _s, unsigned int* _r)
+{
+	return strC2int(str2const(_s), _r);
 }
 
 /*

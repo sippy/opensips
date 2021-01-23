@@ -142,7 +142,7 @@ void print_aliases();
 #define grep_internal_sock_info(_host, _port, _proto) \
 	grep_sock_info_ext(_host, _port, _proto, 1)
 
-struct socket_info* grep_sock_info_ext(str* host, unsigned short port,
+struct socket_info* grep_sock_info_ext(const str_const *host, unsigned short port,
 										unsigned short proto, int check_tag);
 
 struct socket_info* find_si(struct ip_addr* ip, unsigned short port,
@@ -263,15 +263,15 @@ inline static int parse_proto(unsigned char* s, long len, int* proto)
  * parses [proto:]host[:port] where proto= udp|tcp|tls
  * \return 0 on success and -1 on failure
  */
-inline static int parse_phostport(char* s, int slen, char** host, int* hlen,
+inline static int parse_phostport(const char* s, int slen, const char** host, int* hlen,
 													int* port, int* proto)
 {
-	char* first; /* first ':' occurrence */
-	char* second; /* second ':' occurrence */
-	char* p;
+	const char* first; /* first ':' occurrence */
+	const char* second; /* second ':' occurrence */
+	const char* p;
 	int   bracket;
-	str   tmp;
-	char* end;
+	str_const   tmp;
+	const char* end;
 
 	first=second=0;
 	bracket=0;
@@ -314,7 +314,7 @@ inline static int parse_phostport(char* s, int slen, char** host, int* hlen,
 			goto error_proto;
 		tmp.s = second+1;
 		tmp.len = end - tmp.s;
-		if (str2int( &tmp, (unsigned int*)port )==-1) goto error_port;
+		if (strC2int(&tmp, (unsigned int*)port )==-1) goto error_port;
 		*host=first+1;
 		*hlen=(int)(second-*host);
 		return 0;
@@ -322,7 +322,7 @@ inline static int parse_phostport(char* s, int slen, char** host, int* hlen,
 	/* only 1 ':' found => it's either proto:host or host:port */
 	tmp.s = first+1;
 	tmp.len = end - tmp.s;
-	if (str2int( &tmp, (unsigned int*)port )==-1) {
+	if (strC2int(&tmp, (unsigned int*)port )==-1) {
 		/* invalid port => it's proto:host */
 		if (parse_proto((unsigned char*)s, first-s, proto)<0) goto error_proto;
 		*port=0;

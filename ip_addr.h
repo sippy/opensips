@@ -586,7 +586,7 @@ error_dots:
 
 /*! \brief returns an ip_addr struct.; on error returns 0
  * the ip_addr struct is static, so subsequent calls will destroy its content*/
-static inline struct ip_addr* str2ip6(str* st)
+static inline struct ip_addr* strC2ip6(const str_const *st)
 {
 	int i, idx1, rest;
 	int no_colons;
@@ -682,6 +682,12 @@ error_char:
 	return 0;
 }
 
+/*! \brief returns an ip_addr struct.; on error returns 0
+ * the ip_addr struct is static, so subsequent calls will destroy its content*/
+static inline struct ip_addr* str2ip6(const str *st)
+{
+	return(strC2ip6(str2const(st)));
+}
 
 /*! \brief converts an ip_addr structure to a hostent
  * \return pointer to internal statical structure */

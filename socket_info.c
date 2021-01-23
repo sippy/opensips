@@ -226,10 +226,10 @@ static void free_sock_info(struct socket_info* si)
  * WARNING: uses str2ip6 so it will overwrite any previous
  *  unsaved result of this function (static buffer)
  */
-struct socket_info* grep_sock_info_ext(str* host, unsigned short port,
+struct socket_info* grep_sock_info_ext(const str_const *host, unsigned short port,
 										unsigned short proto, int check_tags)
 {
-	char* hname;
+	const char* hname;
 	int h_len;
 	struct socket_info* si;
 	struct socket_info** list;
@@ -303,7 +303,7 @@ struct socket_info* grep_sock_info_ext(str* host, unsigned short port,
 				goto found;
 			/* check if host == ip address */
 			/* ipv6 case is uglier, host can be [3ffe::1] */
-			ip6=str2ip6(host);
+			ip6=strC2ip6(host);
 			if (ip6){
 				if (ip_addr_cmp(ip6, &si->address))
 					goto found; /* match */
