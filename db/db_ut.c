@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#define _XOPEN_SOURCE /* See feature_test_macros(7), strptime(3) */
 #include <time.h>
 
 #include "../mem/mem.h"
