@@ -47,25 +47,25 @@
 #define avl_free(dest,flags) do \
 { \
 	if(flags & AVLMAP_SHARED) \
-		shm_free(dest); \
+		shm_free((void *)dest); \
 	else if (flags & AVLMAP_PERSISTENT) \
-		rpm_free(dest); \
+		rpm_free((void *)dest); \
 	else \
-		pkg_free(dest); \
+		pkg_free((void *)dest); \
 } while(0)
 
 
 #define min(a,b)  ((a)<(b))?(a):(b)
 
 
-static int str_cmp(str s1, str s2)
+static int str_cmp(const str_const *s1, const str_const *s2)
 {
 	int ret;
 
-	ret = strncmp( s1.s, s2.s, min( s1.len, s2.len) );
+	ret = strncmp( s1->s, s2->s, min( s1->len, s2->len) );
 
 	if( ret == 0)
-		ret =  s1.len -  s2.len;
+		ret =  s1->len -  s2->len;
 
 
 	return ret;
@@ -96,12 +96,12 @@ map_t map_create(enum map_flags flags)
 
 /* Search |tree| for an item matching |item|, and return it if found.
    Otherwise return |NULL|. */
-void ** map_find( map_t tree, str key)
+void ** _map_find_C( map_t tree, str_const key)
 {
 	struct avl_node *p;
 
 	for (p = tree->avl_root; p != NULL;) {
-		int cmp = str_cmp(key, p->key);
+		int cmp = str_cmp(&key, &p->key);
 
 		if (cmp < 0)
 			p = p->avl_link[0];
@@ -114,25 +114,32 @@ void ** map_find( map_t tree, str key)
 	return NULL;
 }
 
+/* Search |tree| for an item matching |item|, and return it if found.
+   Otherwise return |NULL|. */
+void ** _map_find( map_t tree, str key)
+{
+	return _map_find_C(tree, *str2const(&key));
+}
+
 /* Inserts |item| into |tree| and returns a pointer to |item|'s address.
    If a duplicate item is found in the tree,
    returns a pointer to the duplicate without inserting |item|.
    Returns |NULL| in case of memory allocation failure.
  */
 
-void ** map_get( map_t tree, str key)
+void ** _map_get_C( map_t tree, str_const key)
 {
 	struct avl_node *y;     /* Top node to update balance factor, and parent. */
 	struct avl_node *p, *q; /* Iterator, and parent. */
 	struct avl_node *n;	/* Newly inserted node. */
 	struct avl_node *w;	/* New root of rebalanced subtree. */
 	int dir;		/* Direction to descend. */
-	str key_copy;
+	str_const key_copy;
 
 	y = tree->avl_root;
 	dir = 0;
 	for (q = NULL, p = tree->avl_root; p != NULL; q = p, p = p->avl_link[dir]) {
-		int cmp = str_cmp(key, p->key);
+		int cmp = str_cmp(&key, &p->key);
 		if (cmp == 0)
 			return &p->val;
 		dir = cmp > 0;
@@ -152,11 +159,13 @@ void ** map_get( map_t tree, str key)
 
 	if( !( tree->flags & AVLMAP_NO_DUPLICATE ) )
 	{
-		avl_malloc(key_copy.s, key.len, tree->flags );
-		if (!key_copy.s)
+		void *bp;
+		avl_malloc(bp, key.len, tree->flags );
+		if (!bp)
 			return NULL;
 
-		memcpy(key_copy.s,key.s,key.len);
+		memcpy(bp,key.s,key.len);
+		key_copy.s = bp;
 		key_copy.len = key.len;
 		n->key = key_copy;
 	}
@@ -257,12 +266,23 @@ void ** map_get( map_t tree, str key)
 	return &n->val;
 }
 
+/* Inserts |item| into |tree| and returns a pointer to |item|'s address.
+   If a duplicate item is found in the tree,
+   returns a pointer to the duplicate without inserting |item|.
+   Returns |NULL| in case of memory allocation failure.
+ */
+void ** _map_get( map_t tree, str key)
+{
+	return _map_get_C(tree, *str2const(&key));
+}
+
+
 
 /* Inserts |item| into |table|.
    Returns |NULL| if |item| was successfully inserted
    or if a memory allocation error occurred.
    Otherwise, returns the duplicate item. */
-void * map_put( map_t table, str key, void *item)
+void * _map_put_C( map_t table, str_const key, void *item)
 {
 	void **p = map_get(table, key);
 	void * ret;
@@ -275,6 +295,15 @@ void * map_put( map_t table, str key, void *item)
 	*p = item;
 
 	return ret == item ? NULL : ret;
+}
+
+/* Inserts |item| into |table|.
+   Returns |NULL| if |item| was successfully inserted
+   or if a memory allocation error occurred.
+   Otherwise, returns the duplicate item. */
+void * _map_put( map_t table, str key, void *item)
+{
+	return _map_put_C(table, *str2const(&key), item);
 }
 
 void * delete_node(map_t tree, struct avl_node * p)
@@ -460,7 +489,7 @@ void * map_remove( map_t tree, str key)
 
 	p = tree->avl_root;
 	for (;;) {
-		int cmp = str_cmp(key, p->key);
+		int cmp = str_cmp(str2const(&key), &p->key);
 		if (cmp == 0)
 			break;
 
@@ -571,7 +600,7 @@ int map_last( map_t map, map_iterator_t * it)
 	return 0;
 }
 
-str *	iterator_key( map_iterator_t * it )
+const str_const *	iterator_key( map_iterator_t * it )
 {
 	if( it == NULL )
 		return NULL;
