@@ -119,7 +119,7 @@ static int push_kv_to_json(void *param, str key, void *value)
 		return -1;
 	}
 
-	_cJSON_AddItemToObject(flat_map, &key, val_json);
+	_cJSON_AddItemToObject(flat_map, str2const(&key), val_json);
 
 	return 0;
 }

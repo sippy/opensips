@@ -1864,7 +1864,7 @@ void cJSON_AddItemToArray(cJSON *array, cJSON *item)
     }
 }
 
-void   _cJSON_AddItemToObject(cJSON *object, const str *string, cJSON *item)
+void   _cJSON_AddItemToObject(cJSON *object, const str_const *string, cJSON *item)
 {
     if (!item)
     {

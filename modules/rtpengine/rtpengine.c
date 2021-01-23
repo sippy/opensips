@@ -3154,7 +3154,6 @@ error:
 
 static cJSON *bson2json(bencode_item_t *i)
 {
-	str stmp;
 	cJSON *ret, *tmp;
 	bencode_item_t *c;
 	switch (i->type) {
@@ -3179,6 +3178,7 @@ static cJSON *bson2json(bencode_item_t *i)
 		case BENCODE_DICTIONARY:
 			ret = cJSON_CreateObject();
 			for (c = i->child; c; c = c->sibling) {
+				str_const stmp;
 				/* first is key */
 				stmp.s = c->iov[1].iov_base;
 				stmp.len = c->iov[1].iov_len;
