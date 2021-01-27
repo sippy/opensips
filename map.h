@@ -68,7 +68,7 @@ typedef struct avl_iterator {
 struct avl_node {
 	struct avl_node * avl_link[2];	/* Subtrees. */
 	struct avl_node * avl_parent;  /* Parent node. */
-	str key;			/* Key */
+	str_const key;			/* Key */
 	void * val;			/* Value */
 	signed char avl_balance;	/* Balance factor. */
 };
@@ -89,7 +89,7 @@ typedef  void (* value_destroy_func)(void *);
  *
  */
 
-typedef  int (* process_each_func )(void * param, str key, void * value);
+typedef  int (* process_each_func )(void * param, str_const key, void * value);
 
 /* Map functions. */
 
@@ -122,8 +122,12 @@ void map_destroy( map_t, value_destroy_func );
  * If the key is not found NULL is returned.
  *
  */
-void **	map_find   ( map_t, str );
-
+void **	_map_find   ( map_t, str );
+void **	_map_find_C   ( map_t, str_const );
+#define map_find(map, _s) _Generic((_s), \
+        str:_map_find, \
+        str_const:_map_find_C \
+    )(map, _s)
 
 /*
  * Searches for a given key in the map.
@@ -133,7 +137,12 @@ void **	map_find   ( map_t, str );
  *
  */
 
-void **	map_get  ( map_t, str );
+void **	_map_get  ( map_t, str );
+void **	_map_get_C  ( map_t, str_const );
+#define map_get(map, _s) _Generic((_s), \
+        str:_map_get, \
+        str_const:_map_get_C \
+    )(map, _s)
 
 /*
  * Inserts a (key;value) pair.
@@ -142,7 +151,12 @@ void **	map_get  ( map_t, str );
  *
  */
 
-void* map_put ( map_t, str, void *);
+void* _map_put ( map_t, str, void *);
+void* _map_put_C ( map_t, str_const, void *);
+#define map_put(map, _s, _p) _Generic((_s), \
+        str:_map_put, \
+        str_const:_map_put_C \
+    )(map, _s, _p)
 
 /*
  * Deletes a key from the map.
@@ -199,7 +213,7 @@ int map_last( map_t map, map_iterator_t * it);
  *
  */
 
-str *	iterator_key( map_iterator_t * it );
+const str_const *	iterator_key( map_iterator_t * it );
 
 /*
  * Returns a pointer to the location where the value is stored.
