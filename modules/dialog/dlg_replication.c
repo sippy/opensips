@@ -1278,7 +1278,7 @@ release:
 	return;
 }
 
-static int repl_prof_add(bin_packet_t *packet, str *name, int has_value, str *value,
+static int repl_prof_add(bin_packet_t *packet, str *name, int has_value, const str_const *value,
 													unsigned int count)
 {
 	int ret = 0;
@@ -1309,7 +1309,7 @@ int repl_prof_remove(str *name, str *value)
 		return -1;
 	}
 
-	if (repl_prof_add(&packet, name, value?1:0, value, 0) < 0) {
+	if (repl_prof_add(&packet, name, value?1:0, str2const(value), 0) < 0) {
 		bin_free_packet(&packet);
 		return -1;
 	}
@@ -1407,7 +1407,6 @@ static void broadcast_profiles(utime_t ticks, void *param)
 	int nr = 0;
 	int ret = 0;
 	void **dst;
-	str *value;
 	bin_packet_t packet;
 
 	if (bin_init(&packet, &prof_repl_cap, REPLICATION_DLG_PROFILE, BIN_VERSION, 0) < 0) {
@@ -1436,6 +1435,7 @@ static void broadcast_profiles(utime_t ticks, void *param)
 					goto next_entry;
 				}
 				while (iterator_is_valid(&it)) {
+					const str_const *value;
 					dst = iterator_val(&it);
 					if (!dst || !*dst) {
 						LM_ERR("[BUG] bogus map[%d] state\n", i);
