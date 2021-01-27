@@ -51,6 +51,21 @@
             str: _str_strcmpCS, \
             str_const: _str_strcmpCC) \
     )(_a, _b)
+
+#define evi_param_add_int(p_list, p_name, p_int) _Generic(*(p_name), \
+        str:_evi_param_addS, \
+        str_const:evi_param_add \
+    )(p_list, p_name, p_int, EVI_INT_VAL)
+
+#define evi_param_add_str(p_list, p_name, p_str) _Generic(*(p_name), \
+        str:_evi_param_addS, \
+        default:evi_param_add \
+    )(p_list, p_name, p_str, EVI_STR_VAL)
+
+#define evi_param_create(list, name) _Generic(*(name), \
+	str:_evi_param_createS, \
+	str_const:_evi_param_create \
+    )(list, name)
 #else /* !HAVE_GENERICS */
 #define str2const(_sp) ((str_const *)(void *)(_sp))
 #define escape_user(sin, sout) _escape_user(str2const(sin), sout)
@@ -58,6 +73,9 @@
 #define escape_param(sin, sout) _escape_param(str2const(sin), sout)
 #define unescape_param(sin, sout) _unescape_param(str2const(sin), sout)
 #define str_strcmp(_a, _b) _str_strcmpCC(str2const(_a), str2const(_b))
+#define evi_param_add_int(p_list, p_name, p_int) evi_param_add(p_list, str2const(p_name), p_int, EVI_INT_VAL)
+#define evi_param_add_str(p_list, p_name, p_str) evi_param_add(p_list, str2const(p_name), p_str, EVI_STR_VAL)
+#define evi_param_create(list, name) _evi_param_create(list, str2const(name))
 #endif /* HAVE_GENERICS */
 
 #endif /* __LIB_STR2CONST_H__ */

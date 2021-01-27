@@ -31,7 +31,7 @@
 
 /* creates an element and links it to the parameters list
  * but without populating the parameter value */
-evi_param_p evi_param_create(evi_params_p list, const str_const *name)
+evi_param_p _evi_param_create(evi_params_p list, const str_const *name)
 {
 	evi_param_p new_p;
 

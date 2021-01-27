@@ -27,6 +27,7 @@
 #define _EVI_PARAMS_H_
 
 #include "../str.h"
+#include "../lib/str2const.h"
 
 #define EVI_INT_VAL		0x01	/* val is int */
 #define EVI_STR_VAL		0x02	/* val is str */
@@ -60,23 +61,23 @@ void evi_free_params(evi_params_p);
 
 /* generic parameter add */
 int evi_param_add(evi_params_p list, const str_const *name, const void *param, int flags);
-static inline int _evi_param_addS(evi_params_p list, const str_const *name, const str *param, int flags)
+static inline int _evi_param_addS(evi_params_p list, const str *name, const void *param, int flags)
 {
-	return evi_param_add(list, name, str2const(param), flags);
+	return evi_param_add(list, str2const(name), param, flags);
 }
 
 /* adds an integer to the list */
-#define evi_param_add_int(p_list, p_name, p_int) \
-		evi_param_add(p_list, p_name, p_int, EVI_INT_VAL)
+/* evi_param_add_int(p_list, p_name, p_int) - see "lib/str2const.h" */
 
 /* adds a str_const to the list */
-#define evi_param_add_str(p_list, p_name, p_str) _Generic(*(p_str), \
-        str:_evi_param_addS, \
-        str_const:evi_param_add \
-    )(p_list, p_name, p_str, EVI_STR_VAL)
+/* evi_param_add_str(p_list, p_name, p_str) - see "lib/str2const.h" */
 
 /* creates a new parameter */
-evi_param_p evi_param_create(evi_params_p list, const str_const *name);
+evi_param_p _evi_param_create(evi_params_p list, const str_const *name);
+static inline evi_param_p _evi_param_createS(evi_params_p list, const str *name)
+{
+	return _evi_param_create(list, str2const(name));
+}
 
 /* sets the value of a parameter */
 int evi_param_set(evi_param_p element, const void *param, int flags);
