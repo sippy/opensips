@@ -39,9 +39,8 @@
 #include "mem/mem.h"
 #include "usr_avp.h"
 #include "locking.h"
-
 #include "map.h"
-
+#include "lib/str2const.h"
 
 static gen_lock_t *extra_lock;
 static struct usr_avp *global_avps = 0;
@@ -588,7 +587,7 @@ int _parse_avp_spec(const str *name, int *avp_name)
 	return _parse_avp_specC(str2const(name), avp_name);
 }
 
-int get_avp_id(const str_const *name)
+int _get_avp_id(const str_const *name)
 {
 	int id;
 	if (parse_avp_spec(name, &id)) {

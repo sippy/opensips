@@ -118,14 +118,10 @@ struct usr_avp** get_avp_list( );
 int replace_avp(unsigned short flags, int name, int_str val, int index);
 
 /* global alias functions (manipulation and parsing)*/
-int get_avp_id(const str_const *alias);
+int _get_avp_id(const str_const *alias);
+static inline int _get_avp_idS(const str *alias) { return _get_avp_id(str2const(alias)); }
 int _parse_avp_spec(const str *name, int *avp_name);
 int _parse_avp_specC(const str_const *name, int *avp_name);
-
-#define parse_avp_spec(name, avp_name) _Generic(*(name), \
-        str:_parse_avp_spec, \
-        str_const:_parse_avp_specC \
-    )(name, avp_name)
 
 #endif
 

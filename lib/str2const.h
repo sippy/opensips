@@ -43,6 +43,16 @@
     _Generic(*(sin), str: _unescape_paramSS, str_const: _unescape_param)(sin, sout) \
 )
 
+#define parse_avp_spec(name, avp_name) _Generic(*(name), \
+	str:_parse_avp_spec, \
+	str_const:_parse_avp_specC \
+    )(name, avp_name)
+
+#define get_avp_id(name) _Generic(*(name), \
+	str:_get_avp_idS, \
+	str_const:_get_avp_id \
+    )(name)
+
 #define str_match(_a, _b) _Generic(*(_a), \
 	str: _Generic(*(_b), \
 	    str: _str_matchSS, \
@@ -95,6 +105,8 @@
 #define unescape_user(sin, sout) _unescape_user(str2const(sin), sout)
 #define escape_param(sin, sout) _escape_param(str2const(sin), sout)
 #define unescape_param(sin, sout) _unescape_param(str2const(sin), sout)
+#define parse_avp_spec(name, avp_name) _parse_avp_specC(str2const(name), avp_name)
+#define get_avp_id(name) _get_avp_id(str2const(name))
 #define str_match(_a, _b) _str_matchCC(str2const(_a), str2const(_b))
 #define str_casematch(_a, _b) _str_casematchCC(str2const(_a), str2const(_b))
 #define str_strcmp(_a, _b) _str_strcmpCC(str2const(_a), str2const(_b))
