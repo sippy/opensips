@@ -729,7 +729,7 @@ error:
 /*! \brief
  * loads from DB all contacts for an AOR
  */
-urecord_t* db_load_urecord(db_con_t* _c, udomain_t* _d, str *_aor)
+urecord_t* db_load_urecord(db_con_t* _c, udomain_t* _d, const str *_aor)
 {
 	/*static db_ps_t my_ps = NULL;*/
 	ucontact_info_t *ci;
@@ -1217,7 +1217,7 @@ int mem_timer_udomain(udomain_t* _d)
 /*! \brief
  * Get lock
  */
-void lock_udomain(udomain_t* _d, str* _aor)
+void lock_udomain(udomain_t* _d, const str* _aor)
 {
 	unsigned int sl;
 	if (have_mem_storage())
@@ -1236,7 +1236,7 @@ void lock_udomain(udomain_t* _d, str* _aor)
 /*! \brief
  * Release lock
  */
-void unlock_udomain(udomain_t* _d, str* _aor)
+void unlock_udomain(udomain_t* _d, const str* _aor)
 {
 	unsigned int sl;
 	if (have_mem_storage())
@@ -1400,7 +1400,7 @@ static inline urecord_t *find_mem_urecord(udomain_t *_d, const str *_aor)
 /*! \brief
  * obtain urecord pointer if urecord exists;
  */
-int get_urecord(udomain_t* _d, str* _aor, struct urecord** _r)
+int get_urecord(udomain_t* _d, const str* _aor, struct urecord** _r)
 {
 	urecord_t* r;
 

@@ -120,13 +120,13 @@ void mem_delete_urecord(udomain_t* _d, struct urecord* _r);
 /*! \brief
  * Locks the domain hash entrie corresponding to AOR
  */
-void lock_udomain(udomain_t* _d, str *_aor);
+void lock_udomain(udomain_t* _d, const str *_aor);
 
 
 /*! \brief
  *  Unlocks the domain hash entrie corresponding to AOR
  */
-void unlock_udomain(udomain_t* _d, str *_aor);
+void unlock_udomain(udomain_t* _d, const str *_aor);
 
 struct ucontact* get_ucontact_from_id(udomain_t *d, uint64_t contact_id, struct urecord **_r);
 
@@ -160,7 +160,7 @@ int insert_urecord(udomain_t* _d, str* _aor, struct urecord** _r,
 /*! \brief
  * Obtain a urecord pointer if the urecord exists in domain
  */
-int get_urecord(udomain_t* _d, str* _aor, struct urecord** _r);
+int get_urecord(udomain_t* _d, const str* _aor, struct urecord** _r);
 
 /*! \brief
  * Only relevant in a federation @cluster_mode.

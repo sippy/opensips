@@ -622,7 +622,7 @@ error:
 	return 0;
 }
 
-static int mi_process_sync(void *param, str key, void *value)
+static int mi_process_sync(void *param, str_const key, void *value)
 {
 	struct ucontact* c;
 	struct urecord* rec = (struct urecord *)value;
@@ -672,7 +672,7 @@ error:
 	return 0;
 }
 
-static mi_response_t *mi_sync_aor(udomain_t *dom, str *aor)
+static mi_response_t *mi_sync_aor(udomain_t *dom, const str *aor)
 {
 	urecord_t *rec;
 
@@ -687,7 +687,7 @@ static mi_response_t *mi_sync_aor(udomain_t *dom, str *aor)
 		goto error;
 	}
 
-	if (mi_process_sync(dom, *aor, rec))
+	if (mi_process_sync(dom, *str2const(aor), rec))
 		goto error;
 
 	unlock_udomain( dom, aor);

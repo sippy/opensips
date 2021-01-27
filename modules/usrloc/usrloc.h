@@ -89,8 +89,8 @@ typedef struct usrloc_api {
 	 * @d: the usrloc domain to use
 	 * @aor: the AoR to grab/release the entry for
 	 */
-	void (*lock_udomain) (udomain_t *d, str *aor);
-	void (*unlock_udomain) (udomain_t *d, str *aor);
+	void (*lock_udomain) (udomain_t *d, const str *aor);
+	void (*unlock_udomain) (udomain_t *d, const str *aor);
 
 	/**
 	 * Fetch a given AoR from an usrloc domain.
@@ -102,7 +102,7 @@ typedef struct usrloc_api {
 	 *
 	 * Return: 0 (found), 1 (not found) otherwise
 	 */
-	int (*get_urecord) (udomain_t *d, str *aor, struct urecord **r);
+	int (*get_urecord) (udomain_t *d, const str *aor, struct urecord **r);
 
 	/**
 	 * Fetch a given AoR from an usrloc domain, across multiple locations.
