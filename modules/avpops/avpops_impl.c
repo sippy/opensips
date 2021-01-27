@@ -563,7 +563,6 @@ int ops_dbstore_avps (struct sip_msg* msg, struct fis_param *sp,
 	int              n;
 	pv_value_t xvalue;
 	str *s0, *s1, *s2;
-	str *sn;
 
 	s0 = s1 = s2 = NULL;
 	name_type = 0;
@@ -742,6 +741,7 @@ int ops_dbstore_avps (struct sip_msg* msg, struct fis_param *sp,
 
 		for ( ; avp ; avp=avp->next )
 		{
+			const str_const *sn;
 			/* don't insert avps which were loaded */
 			if (avp->flags&AVP_IS_IN_DB)
 				continue;
@@ -750,7 +750,7 @@ int ops_dbstore_avps (struct sip_msg* msg, struct fis_param *sp,
 			if ( (sn=get_avp_name(avp))==0 )
 				i_s.n = avp->id;
 			else
-				i_s.s = *sn;
+				i_s.s_const = *sn;
 			int_str2db_val( i_s, &store_vals[1].val.str_val, AVP_NAME_STR);
 			store_vals[3].val.int_val =
 				(avp->flags&AVP_NAME_STR?0:AVPOPS_DB_NAME_INT)|
@@ -1456,7 +1456,7 @@ int ops_print_avp(void)
 	struct usr_avp **avp_list;
 	struct usr_avp *avp;
 	int_str         val;
-	str            *name;
+	const str_const *name;
 
 	/* go through all list */
 	avp_list = get_avp_list();

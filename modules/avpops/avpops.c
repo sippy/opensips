@@ -418,8 +418,9 @@ struct db_param *dbp_fixup;
 
 static int fixup_avp_prefix(void **param)
 {
-	str st, *name, *prefix = (str *)*param;
+	str st, *prefix = (str *)*param;
 	char *p;
+	const str_const *name;
 
 	name = get_avp_name_id(dbp_fixup->a.u.sval.pvp.pvn.u.isname.name.n);
 

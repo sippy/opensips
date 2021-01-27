@@ -147,7 +147,6 @@ int parse_avp_db(char *s, struct db_param *dbp, int allow_scheme)
 {
 	str   tmp;
 	str   s0;
-	str *s1;
 	char  have_scheme;
 	char *p;
 	char *p0;
@@ -209,6 +208,7 @@ int parse_avp_db(char *s, struct db_param *dbp, int allow_scheme)
 		dbp->a.opd = AVPOPS_VAL_PVAR;
 		if(pv_has_iname(&dbp->a.u.sval))
 		{
+			const str_const *s1;
 			s1 = get_avp_name_id(dbp->a.u.sval.pvp.pvn.u.isname.name.n);
 			if (!s1)
 			{
