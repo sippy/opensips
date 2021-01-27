@@ -183,14 +183,14 @@ int create_process_group(enum process_type type,
 static void _pt_raise_event(struct process_group *pg, int p_id, int load,
 																char *scale)
 {
-	static str pt_ev_type = str_init("group_type");
-	static str pt_ev_filter = str_init("group_filter");
-	static str pt_ev_load = str_init("group_load");
-	static str pt_ev_scale = str_init("scale");
-	static str pt_ev_p_id = str_init("process_id");
-	static str pt_ev_pid = str_init("pid");
+	static const str_const pt_ev_type = str_const_init("group_type");
+	static const str_const pt_ev_filter = str_const_init("group_filter");
+	static const str_const pt_ev_load = str_const_init("group_load");
+	static const str_const pt_ev_scale = str_const_init("scale");
+	static const str_const pt_ev_p_id = str_const_init("process_id");
+	static const str_const pt_ev_pid = str_const_init("pid");
 	evi_params_p list = NULL;
-	str s;
+	str_const s;
 
 	if (!evi_probe_event(EVI_PROC_AUTO_SCALE_ID))
 		return;
@@ -202,11 +202,11 @@ static void _pt_raise_event(struct process_group *pg, int p_id, int load,
 	}
 
 	if (pg->type==TYPE_UDP) {
-		s.s = "UDP"; s.len = 3;
+		s = str_const_init("UDP");
 	} else if (pg->type==TYPE_TCP) {
-		s.s = "TCP"; s.len = 3;
+		s = str_const_init("TCP");
 	} else if (pg->type==TYPE_TIMER) {
-		s.s = "TIMER"; s.len = 5;
+		s = str_const_init("TIMER");
 	} else {
 		LM_BUG("trying to raise event for unsupported group %d\n",pg->type);
 		return;
@@ -217,9 +217,9 @@ static void _pt_raise_event(struct process_group *pg, int p_id, int load,
 	}
 
 	if (pg->si_filter==NULL) {
-		s.s = "none"; s.len = 4;
+		s = str_const_init("none");
 	} else {
-		s = pg->si_filter->sock_str;
+		s = *str2const(&pg->si_filter->sock_str);
 	}
 	if (evi_param_add_str(list, &pt_ev_filter, &s) < 0) {
 		LM_ERR("cannot add group filter\n");

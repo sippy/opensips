@@ -242,11 +242,11 @@ long event_pkg_last = 0;
 // determines if there is a pending event
 int event_pkg_pending = 0;
 
-static str pkg_usage_str = { "usage", 5 };
-static str pkg_threshold_str = { "threshold", 9 };
-static str pkg_used_str = { "used", 4 };
-static str pkg_size_str = { "size", 4 };
-static str pkg_pid_str = { "pid", 3 };
+static const str_const pkg_usage_str = str_const_init("usage");
+static const str_const pkg_threshold_str = str_const_init("threshold");
+static const str_const pkg_used_str = str_const_init("used");
+static const str_const pkg_size_str = str_const_init("size");
+static const str_const pkg_pid_str = str_const_init("pid");
 
 
 void pkg_event_raise(long used, long size, long perc)

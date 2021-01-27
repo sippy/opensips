@@ -37,9 +37,9 @@ typedef struct evi_param_ {
 	int flags;
 	union {
 		int n;
-		str s;
+		str_const s;
 	} val;
-	str name;
+	str_const name;
 	struct evi_param_ *next;
 } evi_param_t, *evi_param_p;
 
@@ -59,18 +59,24 @@ evi_params_p evi_get_params(void);
 void evi_free_params(evi_params_p);
 
 /* generic parameter add */
-int evi_param_add(evi_params_p list, const str *name, const void *param, int flags);
+int evi_param_add(evi_params_p list, const str_const *name, const void *param, int flags);
+static inline int _evi_param_addS(evi_params_p list, const str_const *name, const str *param, int flags)
+{
+	return evi_param_add(list, name, str2const(param), flags);
+}
 
 /* adds an integer to the list */
 #define evi_param_add_int(p_list, p_name, p_int) \
 		evi_param_add(p_list, p_name, p_int, EVI_INT_VAL)
 
-/* adds a string to the list */
-#define evi_param_add_str(p_list, p_name, p_str) \
-		evi_param_add(p_list, p_name, p_str, EVI_STR_VAL)
+/* adds a str_const to the list */
+#define evi_param_add_str(p_list, p_name, p_str) _Generic(*(p_str), \
+        str:_evi_param_addS, \
+        str_const:evi_param_add \
+    )(p_list, p_name, p_str, EVI_STR_VAL)
 
 /* creates a new parameter */
-evi_param_p evi_param_create(evi_params_p list, const str *name);
+evi_param_p evi_param_create(evi_params_p list, const str_const *name);
 
 /* sets the value of a parameter */
 int evi_param_set(evi_param_p element, const void *param, int flags);
@@ -81,7 +87,7 @@ int evi_param_set(evi_param_p element, const void *param, int flags);
 
 /* sets a string value to a parameter */
 #define evi_param_set_str(p_el, p_str) \
-		evi_param_set(p_el, p_str, EVI_STR_VAL)
+		evi_param_set(p_el, str2const(p_str), EVI_STR_VAL)
 
 evi_params_p evi_dup_shm_params(evi_params_p);
 void evi_free_shm_params(evi_params_p);

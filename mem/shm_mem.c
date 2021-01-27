@@ -141,10 +141,10 @@ unsigned long (*shm_frag_line)(void *p);
 #endif
 #endif
 
-static str shm_usage_str = { "usage", 5 };
-static str shm_threshold_str = { "threshold", 9 };
-static str shm_used_str = { "used", 4 };
-static str shm_size_str = { "size", 4 };
+static const str_const shm_usage_str = str_const_init("usage");
+static const str_const shm_threshold_str = str_const_init("threshold");
+static const str_const shm_used_str = str_const_init("used");
+static const str_const shm_size_str = str_const_init("size");
 
 int set_shm_mm(const char *mm_name)
 {

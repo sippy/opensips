@@ -374,7 +374,7 @@ int evi_raise_script_event(struct sip_msg *msg, event_id_t id, void * _a, void *
 	struct usr_avp *a_avp = NULL;
 	int err = evi_probe_event(id);
 	int_str val, attr;
-	str *at;
+	str_const *at;
 	evi_params_p params = NULL;
 
 	if (err < 0)
@@ -406,7 +406,7 @@ int evi_raise_script_event(struct sip_msg *msg, event_id_t id, void * _a, void *
 				LM_ERR("invalid attribute name - must be string\n");
 				goto error;
 			}
-			at = &attr.s;
+			at = str2const(&attr.s);
 		}
 
 		if (v_avp->flags & AVP_VAL_STR)
@@ -754,7 +754,7 @@ evi_params_p mi_raise_event_json_params(str *params)
 	int err;
 	cJSON *param;
 	cJSON *jparams;
-	str name, jstring;
+	str jstring;
 	evi_params_p eparams = NULL;
 	char *tmp = pkg_malloc(params->len + 1);
 	if (!tmp) {
@@ -781,6 +781,7 @@ evi_params_p mi_raise_event_json_params(str *params)
 		goto error;
 	}
 	for (param = jparams->child; param; param = param->next) {
+		str_const name;
 		name.s = param->string;
 		name.len = strlen(name.s);
 		switch (param->type) {

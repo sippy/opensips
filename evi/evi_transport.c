@@ -164,7 +164,7 @@ static int payload_add_params(cJSON *ret_obj, evi_params_t *params,
 		if (!params->first->name.s)
 			cJSON_AddItemToArray(param_obj, tmp);
 		else
-			_cJSON_AddItemToObject(param_obj, extra_param_k, tmp);
+			_cJSON_AddItemToObject(param_obj, str2const(extra_param_k), tmp);
 	}
 
 	cJSON_AddItemToObject(ret_obj, "params", param_obj);

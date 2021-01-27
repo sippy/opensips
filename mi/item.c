@@ -204,7 +204,6 @@ static mi_item_t *_add_mi_item(mi_item_t *to, char *name, int name_len,
 							int type, double dval, const char *sval, int sval_len)
 {
 	mi_item_t *item = NULL;
-	str name_str;
 
 	_init_mi_sys_mem_hooks();
 
@@ -245,6 +244,7 @@ static mi_item_t *_add_mi_item(mi_item_t *to, char *name, int name_len,
 	if (MI_ITEM_IS_ARRAY(to))
 		cJSON_AddItemToArray(to, item);
 	else {
+		str_const name_str;
 		name_str.len = name_len;
 		name_str.s = name;
 		_cJSON_AddItemToObject(to, &name_str, item);
