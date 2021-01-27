@@ -232,7 +232,7 @@ int replace_avp(unsigned short flags, int name, int_str val, int index)
 }
 
 /* get name functions */
-static inline str* __get_avp_name(int id, map_t m)
+static inline const str_const * __get_avp_name(int id, map_t m)
 {
 	map_iterator_t it;
 	int **idp;
@@ -259,9 +259,9 @@ static inline str* __get_avp_name(int id, map_t m)
 }
 
 
-inline str* get_avp_name_id(int id)
+inline const str_const* get_avp_name_id(int id)
 {
-	str *name;
+	const str_const *name;
 
 	if (id < 0)
 		return NULL;
@@ -276,7 +276,7 @@ inline str* get_avp_name_id(int id)
 	return name;
 }
 
-inline str* get_avp_name(struct usr_avp *avp)
+inline const str_const* get_avp_name(struct usr_avp *avp)
 {
 	return get_avp_name_id(avp->id);
 }
@@ -489,7 +489,7 @@ struct usr_avp** set_avp_list( struct usr_avp **list )
 	return foo;
 }
 
-static inline int __search_avp_map(const str *alias, map_t m)
+static inline int __search_avp_map(const str_const *alias, map_t m)
 {
 	int **id = (int **)map_find(m, *alias);
 	LM_DBG("looking for [%.*s] avp %s - found %d\n", alias->len, alias->s,
@@ -498,7 +498,7 @@ static inline int __search_avp_map(const str *alias, map_t m)
 }
 
 
-static int lookup_avp_alias_str(const str *alias, int extra)
+static int lookup_avp_alias_str(const str_const *alias, int extra)
 {
 	int id;
 	if (!alias || !alias->len || !alias->s)
@@ -514,7 +514,7 @@ static int lookup_avp_alias_str(const str *alias, int extra)
 	return id;
 }
 
-static inline int new_avp_alias(const str *alias)
+static inline int new_avp_alias(const str_const *alias)
 {
 	int id = last_avp_index + 1;
 
@@ -531,7 +531,7 @@ static inline int new_avp_alias(const str *alias)
 	return id;
 }
 
-static inline int new_avp_extra_alias(const str *alias)
+static inline int new_avp_extra_alias(const str_const *alias)
 {
 	int id;
 
@@ -556,7 +556,7 @@ static inline int new_avp_extra_alias(const str *alias)
 	return id;
 }
 
-int parse_avp_spec(const str *name, int *avp_name)
+int _parse_avp_specC(const str_const *name, int *avp_name)
 {
 	int id, extra;
 
@@ -583,7 +583,12 @@ int parse_avp_spec(const str *name, int *avp_name)
 	return 0;
 }
 
-int get_avp_id(str *name)
+int _parse_avp_spec(const str *name, int *avp_name)
+{
+	return _parse_avp_specC(str2const(name), avp_name);
+}
+
+int get_avp_id(const str_const *name)
 {
 	int id;
 	if (parse_avp_spec(name, &id)) {
