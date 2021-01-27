@@ -250,7 +250,7 @@ int pn_purr_unpack(const str *purr, ucontact_id *ct_id);
  *
  * Return: 1 if true, 0 otherwise
  */
-int pn_has_uri_params(const str *ct, struct sip_uri *parsed_uri);
+int pn_has_uri_params(const str_const *ct, struct sip_uri *parsed_uri);
 
 
 /**

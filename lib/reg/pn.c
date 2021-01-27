@@ -534,7 +534,8 @@ static struct usr_avp *pn_trim_pn_params(evi_params_t *params)
 	evi_param_t *p;
 	int_str val;
 	int avp_id;
-	str *sval, _sval;
+	str_const *sval;
+	str _sval;
 
 	for (p = params->first; p; p = p->next) {
 		/* get an AVP name matching the param name */
@@ -552,7 +553,7 @@ static struct usr_avp *pn_trim_pn_params(evi_params_t *params)
 				       p->val.s.len, p->val.s.s);
 				sval = &p->val.s;
 			} else {
-				sval = &_sval;
+				sval = str2const(&_sval);
 			}
 		} else {
 			sval = &p->val.s;
@@ -560,7 +561,7 @@ static struct usr_avp *pn_trim_pn_params(evi_params_t *params)
 
 		/* create a new AVP */
 		if (p->flags & EVI_STR_VAL) {
-			val.s = *sval;
+			val.s_const = *sval;
 			avp = new_avp(AVP_VAL_STR, avp_id, val);
 		} else if (p->flags & EVI_INT_VAL) {
 			val.n = p->val.n;
@@ -681,7 +682,7 @@ int pn_trigger_pn(struct sip_msg *req, const ucontact_t *ct,
 }
 
 
-int pn_has_uri_params(const str *ct, struct sip_uri *puri)
+int pn_has_uri_params(const str_const *ct, struct sip_uri *puri)
 {
 	str_list *param;
 	struct sip_uri _puri;
@@ -690,7 +691,7 @@ int pn_has_uri_params(const str *ct, struct sip_uri *puri)
 	if (!puri)
 		puri = &_puri;
 
-	if (parse_uri(ct->s, ct->len, puri) != 0) {
+	if (parse_uri((char *)ct->s, ct->len, puri) != 0) {
 		LM_ERR("failed to parse contact: '%.*s'\n", ct->len, ct->s);
 		return 0;
 	}
