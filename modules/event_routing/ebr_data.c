@@ -353,7 +353,7 @@ static struct usr_avp *pack_evi_params_as_avp_list(evi_params_t *params)
 
 		/* create a new AVP */
 		if (e_param->flags&EVI_STR_VAL) {
-			val.s = e_param->val.s;
+			val.s_const = e_param->val.s;
 			avp = new_avp( AVP_VAL_STR, avp_id, val);
 		} else if (e_param->flags&EVI_INT_VAL) {
 			val.n = e_param->val.n;
@@ -383,7 +383,7 @@ static inline int ebr_filter_match_evp(const ebr_filter *filter,
                                        const evi_param_t *e_param)
 {
 	char *s;
-	str match_str;
+	str_const match_str;
 	struct sip_uri puri;
 	int rc;
 
@@ -396,7 +396,7 @@ static inline int ebr_filter_match_evp(const ebr_filter *filter,
 		if (!(e_param->flags & EVI_STR_VAL))
 			return 0;
 
-		if (parse_uri(e_param->val.s.s, e_param->val.s.len, &puri) != 0) {
+		if (parse_uri((char *)e_param->val.s.s, e_param->val.s.len, &puri) != 0) {
 			LM_ERR("failed to parse URI: '%.*s'\n",
 			       e_param->val.s.len, e_param->val.s.s);
 			return 0;

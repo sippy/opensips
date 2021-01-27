@@ -3154,7 +3154,7 @@ error:
 
 static cJSON *bson2json(bencode_item_t *i)
 {
-	str stmp;
+	str_const stmp;
 	cJSON *ret, *tmp;
 	bencode_item_t *c;
 	switch (i->type) {
