@@ -468,7 +468,7 @@ struct mi_shvar_params {
 	int rc;
 };
 
-static int mi_shvar_push_shv(void *param, str key, void *value)
+static int mi_shvar_push_shv(void *param, str_const key, void *value)
 {
 	struct mi_shvar_params *params = (struct mi_shvar_params *)param;
 	mi_item_t *var_item;

@@ -88,7 +88,7 @@ static str pipe_repl_cap = str_init("ratelimit-pipe-repl");
 
 static str rl_name_buffer = {0, 0};
 
-static inline int rl_set_name(str * name)
+static inline int rl_set_name(const str_const * name)
 {
 	if (name->len + db_prefix.len > rl_name_buffer.len) {
 		rl_name_buffer.len = name->len + db_prefix.len;
@@ -106,7 +106,7 @@ static inline int rl_set_name(str * name)
 }
 
 /* NOTE: assumes that the pipe has been locked. If fails, releases the lock */
-static int rl_change_counter(str *name, rl_pipe_t *pipe, int c)
+static int rl_change_counter(const str_const *name, rl_pipe_t *pipe, int c)
 {
 	int new_counter;
 	int ret;
@@ -148,7 +148,7 @@ static int rl_change_counter(str *name, rl_pipe_t *pipe, int c)
 }
 
 /* NOTE: assumes that the pipe has been locked */
-static int rl_get_counter(str *name, rl_pipe_t * pipe)
+static int rl_get_counter(const str_const *name, rl_pipe_t * pipe)
 {
 	int new_counter;
 
@@ -404,7 +404,7 @@ int w_rl_check(struct sip_msg *_m, str *name, int *limit, str *algorithm)
 	(*pipe)->last_used = time(0);
 	if (RL_USE_CDB(*pipe)) {
 		/* release the counter for a while */
-		if (rl_change_counter(name, *pipe, 1) < 0) {
+		if (rl_change_counter(str2const(name), *pipe, 1) < 0) {
 			LM_ERR("cannot increase counter\n");
 			goto release;
 		}
@@ -435,7 +435,7 @@ void rl_timer(unsigned int ticks, void *param)
 	unsigned int i = 0;
 	map_iterator_t it, del;
 	rl_pipe_t **pipe;
-	str *key;
+	const str_const *key;
 	void *value;
 	unsigned long now = time(0);
 
@@ -536,7 +536,7 @@ next_map:
 	}
 }
 
-static int rl_map_print(void *param, str key, void *value)
+static int rl_map_print(void *param, str_const key, void *value)
 {
 	rl_pipe_t *pipe = (rl_pipe_t *) value;
 	str *alg;
@@ -579,7 +579,7 @@ static int rl_map_print(void *param, str key, void *value)
 	return 0;
 }
 
-static int rl_map_print_array(void *param, str key, void *value)
+static int rl_map_print_array(void *param, str_const key, void *value)
 {
 	mi_item_t *pipe_item = add_mi_object((mi_item_t *)param, NULL, 0);
 	if (!pipe_item)
@@ -605,7 +605,7 @@ int rl_stats(mi_item_t *resp_obj, str * value)
 		pipe_item = add_mi_object(resp_obj, MI_SSTR("Pipe"));
 		if (!pipe_item)
 			goto error;
-		if (rl_map_print(pipe_item, *value, *pipe)) {
+		if (rl_map_print(pipe_item, *str2const(value), *pipe)) {
 			LM_ERR("cannot print value for key %.*s\n",
 				value->len, value->s);
 			goto error;
@@ -650,7 +650,7 @@ int w_rl_set_count(str key, int val)
 	}
 
 	if (RL_USE_CDB(*pipe)) {
-		if (rl_change_counter(&key, *pipe, val) < 0) {
+		if (rl_change_counter(str2const(&key), *pipe, val) < 0) {
 			LM_ERR("cannot decrease counter\n");
 			goto release;
 		}
@@ -906,7 +906,7 @@ void rl_timer_repl(utime_t ticks, void *param)
 	unsigned int i = 0;
 	map_iterator_t it;
 	rl_pipe_t **pipe;
-	str *key;
+	const str_const *key;
 	int nr = 0;
 	int ret;
 	bin_packet_t packet;
@@ -1020,7 +1020,7 @@ int rl_get_counter_value(str *key)
 	}
 
 	if (RL_USE_CDB(*pipe)) {
-		if (rl_get_counter(key, *pipe) < 0) {
+		if (rl_get_counter(str2const(key), *pipe) < 0) {
 			LM_ERR("cannot get the counter's value\n");
 			goto release;
 		}

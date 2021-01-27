@@ -1224,7 +1224,7 @@ mi_response_t *mi_get_profile_2(const mi_params_t *params,
 	return mi_get_profile(params, &value);
 }
 
-static inline int add_val_to_rpl(void * param, str key, void * val)
+static inline int add_val_to_rpl(void * param, str_const key, void * val)
 {
 	mi_item_t *val_item;
 
@@ -1240,7 +1240,7 @@ static inline int add_val_to_rpl(void * param, str key, void * val)
 	return 0;
 }
 
-static inline int add_val_to_rpl_r(void * param, str key, void * val)
+static inline int add_val_to_rpl_r(void * param, str_const key, void * val)
 {
 	mi_item_t *val_item;
 
