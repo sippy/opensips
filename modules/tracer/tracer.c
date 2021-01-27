@@ -2961,8 +2961,7 @@ static int send_trace_proto_duplicate(trace_dest dest, str* correlation,
 	unsigned short fromport, toport;
 
 	unsigned long long trans_correlation_id;
-	str conn_id_s;
-	static str net_s = str_init("net");
+	static const str_const net_s = str_const_init("net");
 
 	trace_message trace_msg;
 
@@ -3003,6 +3002,7 @@ static int send_trace_proto_duplicate(trace_dest dest, str* correlation,
 	}
 
 	if (conn_id != 0) {
+		str_const conn_id_s;
 		tcp_get_correlation_id(conn_id, &trans_correlation_id);
 
 		conn_id_s.s =  int2str( trans_correlation_id, &conn_id_s.len);

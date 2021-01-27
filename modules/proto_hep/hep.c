@@ -1547,7 +1547,7 @@ int add_hep_chunk(trace_message message, void* data, int len, int type, int data
 	return 0;
 }
 
-int add_hep_correlation(trace_message message, str* corr_name, str* corr_value)
+static int add_hep_correlation(trace_message message, const str_const* corr_name, const str_const* corr_value)
 {
 	cJSON* root;
 	struct hep_desc* hep_msg;
@@ -2007,8 +2007,8 @@ int correlate_w(struct sip_msg* msg, str* hep_id,
 		return -1;
 	}
 
-	add_hep_correlation( message, type1, corr_s1 );
-	add_hep_correlation( message, type2, corr_s2 );
+	add_hep_correlation( message, str2const(type1), str2const(corr_s1) );
+	add_hep_correlation( message, str2const(type2), str2const(corr_s2) );
 
 	if ( send_hep_message( message, h, 0) < 0 ) {
 		LM_ERR(" failed to send hep message to destination!\n");
