@@ -326,7 +326,7 @@ int event_route_param_get(struct sip_msg *msg, pv_param_t *ip,
 		res->ri = it->val.n;
 		res->flags = PV_VAL_STR|PV_VAL_INT|PV_TYPE_INT;
 	} else {
-		res->rs.s = it->val.s.s;
+		str2const(&res->rs)->s = it->val.s.s;
 		res->rs.len = it->val.s.len;
 		res->flags = PV_VAL_STR;
 	}
