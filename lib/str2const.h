@@ -99,6 +99,11 @@
 	str:_get_uri_param_valS, \
 	str_const:_get_uri_param_val \
     )(uri, param, val)
+
+#define bin_push_str(packet, info) _Generic(*(info), \
+	str:_bin_push_str, \
+	default:_bin_push_strC \
+    )(packet, info)
 #else /* !HAVE_GENERICS */
 #define str2const(_sp) ((str_const *)(void *)(_sp))
 #define escape_user(sin, sout) _escape_user(str2const(sin), sout)
@@ -114,6 +119,7 @@
 #define evi_param_add_str(p_list, p_name, p_str) evi_param_add(p_list, str2const(p_name), p_str, EVI_STR_VAL)
 #define evi_param_create(list, name) _evi_param_create(list, str2const(name))
 #define get_uri_param_val(uri, param, val) _get_uri_param_val(uri, param, str2const(val))
+#define bin_push_str(packet, info) _bin_push_strC(packet, str2const(info))
 #endif /* HAVE_GENERICS */
 
 #endif /* __LIB_STR2CONST_H__ */

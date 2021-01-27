@@ -150,7 +150,7 @@ int bin_append_buffer(bin_packet_t *packet, str *buf)
  *		> 0: success, the size of the packet
  *		< 0: internal buffer limit reached
  */
-int bin_push_str(bin_packet_t *packet, const str *info)
+int _bin_push_strC(bin_packet_t *packet, const str_const *info)
 {
 	if (!packet->buffer.s || !packet->size) {
 		LM_ERR("not initialized yet, call bin_init before altering buffer\n");

@@ -28,6 +28,7 @@
 #include "ip_addr.h"
 #include "crc.h"
 #include "net/proto_tcp/tcp_common_defs.h"
+#include "lib/str2const.h"
 
 #define BIN_MAX_BUF_LEN TCP_BUF_SIZE
 #define BIN_PACKET_MARKER      "P4CK"
@@ -155,7 +156,11 @@ int bin_append_buffer(bin_packet_t *packet, str *buf);
  *		> 0: success, the size of the buffer
  *		< 0: internal buffer limit reached
  */
-int bin_push_str(bin_packet_t *packet, const str *info);
+int _bin_push_strC(bin_packet_t *packet, const str_const *info);
+static inline int _bin_push_str(bin_packet_t *packet, const str *info)
+{
+	return _bin_push_strC(packet, str2const(info));
+}
 
 /*
  * adds a new integer value to the packet being currently built
