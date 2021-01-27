@@ -104,7 +104,7 @@ void kv_del(map_t _store, const str* _key)
 		shm_free(val->s.s);
 }
 
-static int push_kv_to_json(void *param, str key, void *value)
+static int push_kv_to_json(void *param, str_const key, void *value)
 {
 	cJSON *flat_map = (cJSON *)param, *val_json;
 	int_str_t *val = (int_str_t *)value;
