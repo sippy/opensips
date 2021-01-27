@@ -43,6 +43,24 @@
     _Generic(*(sin), str: _unescape_paramSS, str_const: _unescape_param)(sin, sout) \
 )
 
+#define str_match(_a, _b) _Generic(*(_a), \
+	str: _Generic(*(_b), \
+	    str: _str_matchSS, \
+	    str_const: _str_matchSC), \
+	str_const: _Generic(*(_b), \
+	    str: _str_matchCS, \
+	    str_const: _str_matchCC) \
+    )(_a, _b)
+
+#define str_casematch(_a, _b) _Generic(*(_a), \
+	str: _Generic(*(_b), \
+	    str: _str_casematchSS, \
+	    str_const: _str_casematchSC), \
+	str_const: _Generic(*(_b), \
+	    str: _str_casematchCS, \
+	    str_const: _str_casematchCC) \
+    )(_a, _b)
+
 #define str_strcmp(_a, _b) _Generic(*(_a), \
         str: _Generic(*(_b), \
             str: _str_strcmpSS, \
@@ -66,16 +84,24 @@
 	str:_evi_param_createS, \
 	str_const:_evi_param_create \
     )(list, name)
+
+#define get_uri_param_val(uri, param, val) _Generic(*(val), \
+	str:_get_uri_param_valS, \
+	str_const:_get_uri_param_val \
+    )(uri, param, val)
 #else /* !HAVE_GENERICS */
 #define str2const(_sp) ((str_const *)(void *)(_sp))
 #define escape_user(sin, sout) _escape_user(str2const(sin), sout)
 #define unescape_user(sin, sout) _unescape_user(str2const(sin), sout)
 #define escape_param(sin, sout) _escape_param(str2const(sin), sout)
 #define unescape_param(sin, sout) _unescape_param(str2const(sin), sout)
+#define str_match(_a, _b) _str_matchCC(str2const(_a), str2const(_b))
+#define str_casematch(_a, _b) _str_casematchCC(str2const(_a), str2const(_b))
 #define str_strcmp(_a, _b) _str_strcmpCC(str2const(_a), str2const(_b))
 #define evi_param_add_int(p_list, p_name, p_int) evi_param_add(p_list, str2const(p_name), p_int, EVI_INT_VAL)
 #define evi_param_add_str(p_list, p_name, p_str) evi_param_add(p_list, str2const(p_name), p_str, EVI_STR_VAL)
 #define evi_param_create(list, name) _evi_param_create(list, str2const(name))
+#define get_uri_param_val(uri, param, val) _get_uri_param_val(uri, param, str2const(val))
 #endif /* HAVE_GENERICS */
 
 #endif /* __LIB_STR2CONST_H__ */

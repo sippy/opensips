@@ -32,6 +32,7 @@
 #include "../str.h"
 #include "../net/trans.h"
 #include "../parser/msg_parser.h"
+#include "../lib/str2const.h"
 
 #define SIP_SCH			0x3a706973
 #define SIPS_SCH		0x73706973
@@ -69,8 +70,8 @@ int parse_sip_msg_uri(struct sip_msg* msg);
 int parse_orig_ruri(struct sip_msg* msg);
 int compare_uris(str *raw_uri_a,struct sip_uri* parsed_uri_a,
 					str *raw_uri_b,struct sip_uri *parsed_uri_b);
-static inline int get_uri_param_val(const struct sip_uri *uri,
-                                    const str *param, str *val);
+static inline int _get_uri_param_val(const struct sip_uri *uri,
+                                    const str *param, str_const *val);
 static inline int get_uri_param_idx(const str *param,
                                     const struct sip_uri *parsed_uri);
 
@@ -116,8 +117,8 @@ static inline unsigned short get_uri_port(struct sip_uri* _uri,
  *
  * Return: 0 on success, -1 if not found
  */
-static inline int get_uri_param_val(const struct sip_uri *uri,
-                                    const str *param, str *val)
+static inline int _get_uri_param_val(const struct sip_uri *uri,
+                                    const str *param, str_const *val)
 {
 	int i;
 
@@ -128,22 +129,22 @@ static inline int get_uri_param_val(const struct sip_uri *uri,
 	case 'p':
 	case 'P':
 		if (str_casematch(param, _str("pn-provider"))) {
-			*val = uri->pn_provider_val;
+			*val = *str2const(&uri->pn_provider_val);
 			return 0;
 		}
 
 		if (str_casematch(param, _str("pn-prid"))) {
-			*val = uri->pn_prid_val;
+			*val = *str2const(&uri->pn_prid_val);
 			return 0;
 		}
 
 		if (str_casematch(param, _str("pn-param"))) {
-			*val = uri->pn_param_val;
+			*val = *str2const(&uri->pn_param_val);
 			return 0;
 		}
 
 		if (str_casematch(param, _str("pn-purr"))) {
-			*val = uri->pn_purr_val;
+			*val = *str2const(&uri->pn_purr_val);
 			return 0;
 		}
 		break;
@@ -151,12 +152,12 @@ static inline int get_uri_param_val(const struct sip_uri *uri,
 	case 't':
 	case 'T':
 		if (str_casematch(param, _str("transport"))) {
-			*val = uri->transport_val;
+			*val = *str2const(&uri->transport_val);
 			return 0;
 		}
 
 		if (str_casematch(param, _str("ttl"))) {
-			*val = uri->ttl_val;
+			*val = *str2const(&uri->ttl_val);
 			return 0;
 		}
 		break;
@@ -164,7 +165,7 @@ static inline int get_uri_param_val(const struct sip_uri *uri,
 	case 'u':
 	case 'U':
 		if (str_casematch(param, _str("user"))) {
-			*val = uri->user_param_val;
+			*val = *str2const(&uri->user_param_val);
 			return 0;
 		}
 		break;
@@ -172,12 +173,12 @@ static inline int get_uri_param_val(const struct sip_uri *uri,
 	case 'm':
 	case 'M':
 		if (str_casematch(param, _str("maddr"))) {
-			*val = uri->maddr_val;
+			*val = *str2const(&uri->maddr_val);
 			return 0;
 		}
 
 		if (str_casematch(param, _str("method"))) {
-			*val = uri->method_val;
+			*val = *str2const(&uri->method_val);
 			return 0;
 		}
 		break;
@@ -185,7 +186,7 @@ static inline int get_uri_param_val(const struct sip_uri *uri,
 	case 'l':
 	case 'L':
 		if (str_casematch(param, _str("lr"))) {
-			*val = uri->lr_val;
+			*val = *str2const(&uri->lr_val);
 			return 0;
 		}
 		break;
@@ -193,7 +194,7 @@ static inline int get_uri_param_val(const struct sip_uri *uri,
 	case 'r':
 	case 'R':
 		if (str_casematch(param, _str("r2"))) {
-			*val = uri->r2_val;
+			*val = *str2const(&uri->r2_val);
 			return 0;
 		}
 		break;
@@ -201,7 +202,7 @@ static inline int get_uri_param_val(const struct sip_uri *uri,
 	case 'g':
 	case 'G':
 		if (str_casematch(param, _str("gr"))) {
-			*val = uri->gr_val;
+			*val = *str2const(&uri->gr_val);
 			return 0;
 		}
 		break;
@@ -209,13 +210,17 @@ static inline int get_uri_param_val(const struct sip_uri *uri,
 
 	for (i = 0; i < uri->u_params_no; i++)
 		if (str_match(param, &uri->u_name[i])) {
-			*val = uri->u_val[i];
+			*val = *str2const(&uri->u_val[i]);
 			return 0;
 		}
 
 	return -1;
 }
-
+static inline int _get_uri_param_valS(const struct sip_uri *uri,
+				     const str *param, str *val)
+{
+	return _get_uri_param_val(uri, param, str2const(val));
+}
 
 /* Unknown URI param index.
  *
