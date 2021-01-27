@@ -622,7 +622,7 @@ static int flat_raise(struct sip_msg *msg, str* ev_name,
 				offset_buff += len;
 				idx++;
 			} else if ((param->flags & EVI_STR_VAL) && param->val.s.len && param->val.s.s) {
-				io_param[idx].iov_base = param->val.s.s;
+				io_param[idx].iov_base = (void *)param->val.s.s;
 				io_param[idx].iov_len = param->val.s.len;
 				idx++;
 			}
