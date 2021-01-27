@@ -51,6 +51,7 @@
 typedef union {
 	int  n;
 	str s;
+	str_const s_const;
 } int_str;
 
 
