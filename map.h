@@ -29,7 +29,7 @@
 #ifndef AVL_H
 #define AVL_H
 
-
+#include "lib/str2const.h"
 
 /* Maximum AVL tree height. */
 #ifndef AVL_MAX_HEIGHT
@@ -124,10 +124,6 @@ void map_destroy( map_t, value_destroy_func );
  */
 void **	_map_find   ( map_t, str );
 void **	_map_find_C   ( map_t, str_const );
-#define map_find(map, _s) _Generic((_s), \
-        str:_map_find, \
-        str_const:_map_find_C \
-    )(map, _s)
 
 /*
  * Searches for a given key in the map.
@@ -139,10 +135,6 @@ void **	_map_find_C   ( map_t, str_const );
 
 void **	_map_get  ( map_t, str );
 void **	_map_get_C  ( map_t, str_const );
-#define map_get(map, _s) _Generic((_s), \
-        str:_map_get, \
-        str_const:_map_get_C \
-    )(map, _s)
 
 /*
  * Inserts a (key;value) pair.
@@ -153,10 +145,6 @@ void **	_map_get_C  ( map_t, str_const );
 
 void* _map_put ( map_t, str, void *);
 void* _map_put_C ( map_t, str_const, void *);
-#define map_put(map, _s, _p) _Generic((_s), \
-        str:_map_put, \
-        str_const:_map_put_C \
-    )(map, _s, _p)
 
 /*
  * Deletes a key from the map.
