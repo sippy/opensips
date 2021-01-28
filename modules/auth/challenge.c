@@ -262,12 +262,12 @@ int fixup_qop(void** param)
 		return -1;
 	}
 	for (q = q_csv; q; q = q->next) {
-		if (!str_strcmp(&q->s, &str_init(QOP_AUTH_STR)))  {
+		if (!str_strcmp(&q->s, const_str(QOP_AUTH_STR)))  {
 			if (qop_type == QOP_TYPE_AUTH_INT)
 				qop_type = QOP_TYPE_BOTH;
 			else
 				qop_type = QOP_TYPE_AUTH;
-		} else if (!str_strcmp(&q->s, &str_init(QOP_AUTHINT_STR))) {
+		} else if (!str_strcmp(&q->s, const_str(QOP_AUTHINT_STR))) {
 			if (qop_type == QOP_TYPE_AUTH)
 				qop_type = QOP_TYPE_BOTH;
 			else

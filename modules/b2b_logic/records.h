@@ -38,6 +38,7 @@ typedef struct b2bl_entity_id
 	str scenario_id;
 	str key;
 	str to_uri;
+	str proxy;
 	str from_uri;
 	str from_dname;
 	str hdrs;
@@ -58,6 +59,7 @@ struct b2bl_new_entity {
 	enum b2b_entity_type type;
 	str id;
 	str dest_uri;
+	str proxy;
 	str from_dname;
 	int avp_hdrs;
 	int avp_hdr_vals;
@@ -73,6 +75,10 @@ struct b2bl_new_entity {
 
 #define MAX_B2BL_ENT		3
 #define MAX_BRIDGE_ENT		3
+
+#define B2BL_RT_REQ_CTX 1
+#define B2BL_RT_RPL_CTX 2
+#define B2BL_RT_DO_UPDATE 4
 
 struct b2b_ctx_val {
 	unsigned int id;
@@ -129,7 +135,7 @@ struct b2bl_route_ctx {
 	int peer_type;
 	str *extra_headers;
 	str *body;
-	int do_update;
+	int flags;
 };
 
 #define PREP_REQ_DATA(entity) do{		\
@@ -190,7 +196,8 @@ str* b2bl_bridge_extern(struct b2b_params *init_params,
 void destroy_b2bl_htable(void);
 
 b2bl_entity_id_t* b2bl_create_new_entity(enum b2b_entity_type type, str* entity_id,
-		str* to_uri,str* from_uri,str* from_dname,str* ssid,str* hdrs,struct sip_msg* msg);
+		str* to_uri, str *proxy, str* from_uri,str* from_dname,str* ssid,str* hdrs,
+		struct sip_msg* msg);
 
 void unchain_ent(b2bl_entity_id_t *ent, b2bl_entity_id_t **head);
 void b2bl_remove_single_entity(b2bl_entity_id_t *entity, b2bl_entity_id_t **head,
