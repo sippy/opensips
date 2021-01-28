@@ -96,12 +96,12 @@ map_t map_create(enum map_flags flags)
 
 /* Search |tree| for an item matching |item|, and return it if found.
    Otherwise return |NULL|. */
-void ** _map_find_C( map_t tree, str_const key)
+void ** _map_find_C( map_t tree, const str_const *key)
 {
 	struct avl_node *p;
 
 	for (p = tree->avl_root; p != NULL;) {
-		int cmp = str_cmp(&key, &p->key);
+		int cmp = str_cmp(key, &p->key);
 
 		if (cmp < 0)
 			p = p->avl_link[0];
@@ -116,9 +116,9 @@ void ** _map_find_C( map_t tree, str_const key)
 
 /* Search |tree| for an item matching |item|, and return it if found.
    Otherwise return |NULL|. */
-void ** _map_find( map_t tree, str key)
+void ** _map_find( map_t tree, const str *key)
 {
-	return _map_find_C(tree, *str2const(&key));
+	return _map_find_C(tree, str2const(key));
 }
 
 /* Inserts |item| into |tree| and returns a pointer to |item|'s address.
@@ -127,7 +127,7 @@ void ** _map_find( map_t tree, str key)
    Returns |NULL| in case of memory allocation failure.
  */
 
-void ** _map_get_C( map_t tree, str_const key)
+void ** _map_get_C( map_t tree, const str_const *key)
 {
 	struct avl_node *y;     /* Top node to update balance factor, and parent. */
 	struct avl_node *p, *q; /* Iterator, and parent. */
@@ -139,7 +139,7 @@ void ** _map_get_C( map_t tree, str_const key)
 	y = tree->avl_root;
 	dir = 0;
 	for (q = NULL, p = tree->avl_root; p != NULL; q = p, p = p->avl_link[dir]) {
-		int cmp = str_cmp(&key, &p->key);
+		int cmp = str_cmp(key, &p->key);
 		if (cmp == 0)
 			return &p->val;
 		dir = cmp > 0;
@@ -160,17 +160,17 @@ void ** _map_get_C( map_t tree, str_const key)
 	if( !( tree->flags & AVLMAP_NO_DUPLICATE ) )
 	{
 		void *bp;
-		avl_malloc(bp, key.len, tree->flags );
+		avl_malloc(bp, key->len, tree->flags );
 		if (!bp)
 			return NULL;
 
-		memcpy(bp,key.s,key.len);
+		memcpy(bp, key->s, key->len);
 		key_copy.s = bp;
-		key_copy.len = key.len;
+		key_copy.len = key->len;
 		n->key = key_copy;
 	}
 	else
-		n->key = key;
+		n->key = *key;
 
 	n->val = NULL;
 	if (q != NULL)
@@ -271,9 +271,9 @@ void ** _map_get_C( map_t tree, str_const key)
    returns a pointer to the duplicate without inserting |item|.
    Returns |NULL| in case of memory allocation failure.
  */
-void ** _map_get( map_t tree, str key)
+void ** _map_get( map_t tree, const str *key)
 {
-	return _map_get_C(tree, *str2const(&key));
+	return _map_get_C(tree, str2const(key));
 }
 
 
@@ -282,7 +282,7 @@ void ** _map_get( map_t tree, str key)
    Returns |NULL| if |item| was successfully inserted
    or if a memory allocation error occurred.
    Otherwise, returns the duplicate item. */
-void * _map_put_C( map_t table, str_const key, void *item)
+void * _map_put_C( map_t table, const str_const *key, void *item)
 {
 	void **p = map_get(table, key);
 	void * ret;
@@ -301,9 +301,9 @@ void * _map_put_C( map_t table, str_const key, void *item)
    Returns |NULL| if |item| was successfully inserted
    or if a memory allocation error occurred.
    Otherwise, returns the duplicate item. */
-void * _map_put( map_t table, str key, void *item)
+void * _map_put( map_t table, const str *key, void *item)
 {
-	return _map_put_C(table, *str2const(&key), item);
+	return _map_put_C(table, str2const(key), item);
 }
 
 void * delete_node(map_t tree, struct avl_node * p)
@@ -479,7 +479,7 @@ void * delete_node(map_t tree, struct avl_node * p)
 
 /* Deletes from |tree| and returns an item matching |item|.
    Returns a null pointer if no matching item found. */
-void * map_remove( map_t tree, str_const key)
+void * map_remove( map_t tree, const str_const *key)
 {
 	struct avl_node *p; /* Traverses tree to find node to delete. */
 	int dir; /* Side of |q| on which |p| is linked. */
@@ -489,7 +489,7 @@ void * map_remove( map_t tree, str_const key)
 
 	p = tree->avl_root;
 	for (;;) {
-		int cmp = str_cmp(&key, &p->key);
+		int cmp = str_cmp(key, &p->key);
 		if (cmp == 0)
 			break;
 
@@ -545,7 +545,7 @@ void process_all( map_t tree,  struct avl_node *p, process_each_func f, void * p
 	if( p->avl_link[0] )
 		process_all( tree, p->avl_link[0], f ,param );
 
-	tree->ret_code |= f( param, p->key, p->val);
+	tree->ret_code |= f( param, &p->key, p->val);
 
 	if( p->avl_link[1] )
 		process_all( tree, p->avl_link[1], f ,param );

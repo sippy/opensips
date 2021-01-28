@@ -490,7 +490,7 @@ struct usr_avp** set_avp_list( struct usr_avp **list )
 
 static inline int __search_avp_map(const str_const *alias, map_t m)
 {
-	int **id = (int **)map_find(m, *alias);
+	int **id = (int **)map_find(m, alias);
 	LM_DBG("looking for [%.*s] avp %s - found %d\n", alias->len, alias->s,
 			m == avp_map_shm ? "in shm": "", id ? p2int(*id) : -1);
 	return id ? p2int(*id) : -1;
@@ -517,7 +517,7 @@ static inline int new_avp_alias(const str_const *alias)
 {
 	int id = last_avp_index + 1;
 
-	if (map_put(avp_map, *alias, int2p(id))) {
+	if (map_put(avp_map, alias, int2p(id))) {
 		LM_WARN("[BUG] Value should have already be found [%.*s]\n",
 				alias->len, alias->s);
 		return -1;
@@ -542,7 +542,7 @@ static inline int new_avp_extra_alias(const str_const *alias)
 	/* check if last avp is valid */
 	lock_get(extra_lock);
 	id = (*last_avp_index_shm) + 1;
-	if (map_put(avp_map_shm, *alias, int2p(id))) {
+	if (map_put(avp_map_shm, alias, int2p(id))) {
 		LM_WARN("[BUG] Value should have already be found [%.*s]\n",
 				alias->len, alias->s);
 		return -1;

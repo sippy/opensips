@@ -69,7 +69,7 @@ sh_var_t* add_shvar(const str *name)
 	e = hash_entry(sh_vars, *name);
 	hash_lock(sh_vars, e);
 
-	shv_holder = (sh_var_t **)hash_get(sh_vars, e, *name);
+	shv_holder = (sh_var_t **)hash_get(sh_vars, e, name);
 	if (*shv_holder) {
 		hash_unlock(sh_vars, e);
 		return *shv_holder;
@@ -166,7 +166,7 @@ static inline sh_var_t* get_shvar_by_name(str *name)
 	sh_var_t **shv;
 
 	hash_lock(sh_vars, e);
-	shv = (sh_var_t **)hash_find(sh_vars, e, *name);
+	shv = (sh_var_t **)hash_find(sh_vars, e, name);
 	hash_unlock(sh_vars, e);
 
 	return shv ? *shv : NULL;
@@ -468,7 +468,7 @@ struct mi_shvar_params {
 	int rc;
 };
 
-static int mi_shvar_push_shv(void *param, str_const key, void *value)
+static int mi_shvar_push_shv(void *param, const str_const *key, void *value)
 {
 	struct mi_shvar_params *params = (struct mi_shvar_params *)param;
 	mi_item_t *var_item;

@@ -45,7 +45,7 @@ typedef struct {
 int init_hash_map(hash_map_t* hm);
 static inline void **get_item(hash_map_t *hm, str key, unsigned int hash)
 {
-	return map_get(hm->buckets[hash].items, key);
+	return map_get(hm->buckets[hash].items, &key);
 }
 
 void free_hash_map(hash_map_t* hm, void (*value_destroy_func)(void *));

@@ -330,10 +330,10 @@ tls_find_server_domain(struct ip_addr *ip, unsigned short port)
 	addr_s.s = addr_buf;
 	addr_s.len = strlen(addr_buf);
 
-	val = map_find(server_dom_matching, addr_s);
+	val = map_find(server_dom_matching, &addr_s);
 	if (!val) {
 		/* try to find a domain which matches any address */
-		val = map_find(server_dom_matching, match_any_s);
+		val = map_find(server_dom_matching, &match_any_s);
 		if (!val) {
 			if (dom_lock)
 				lock_stop_read(dom_lock);
@@ -374,11 +374,11 @@ tls_find_domain_by_filters(struct ip_addr *ip, unsigned short port,
 	addr_s.len = strlen(addr_buf);
 
 	val = map_find(type == DOM_FLAG_SRV ?
-					server_dom_matching : client_dom_matching, addr_s);
+					server_dom_matching : client_dom_matching, &addr_s);
 	if (!val) {
 		/* try to find domains which match any address */
 		val = map_find(type == DOM_FLAG_SRV ?
-						server_dom_matching : client_dom_matching, match_any_s);
+						server_dom_matching : client_dom_matching, &match_any_s);
 		if (!val) {
 			if (dom_lock)
 				lock_stop_read(dom_lock);
@@ -747,7 +747,7 @@ int update_matching_map(struct tls_domain *tls_dom)
 
 	for (addrf_s = tls_dom->match_addresses; addrf_s; addrf_s = addrf_s->next) {
 		val = map_get(tls_dom->flags & DOM_FLAG_SRV ?
-			server_dom_matching : client_dom_matching, addrf_s->s);
+			server_dom_matching : client_dom_matching, &addrf_s->s);
 		if (!val) {
 			LM_ERR("No more shm memory!\n");
 			return -1;

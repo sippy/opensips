@@ -290,7 +290,7 @@ int add_carrier(char *id, int flags, char *sort_alg, char *gwlist, char *attrs,
 	/* link it */
 	key.s = id;
 	key.len = strlen(id);
-	map_put(rd->carriers_tree, key, cr);
+	map_put(rd->carriers_tree, &key, cr);
 
 
 	return 0;
@@ -685,7 +685,7 @@ done:
 	key.s = id;
 	key.len = strlen(id);
 
-	if (map_put(r->pgw_tree, key, pgw)) {
+	if (map_put(r->pgw_tree, &key, pgw)) {
 		LM_ERR("Duplicate gateway!\n");
 		return -1;
 	}

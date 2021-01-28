@@ -89,7 +89,7 @@ typedef  void (* value_destroy_func)(void *);
  *
  */
 
-typedef  int (* process_each_func )(void * param, str_const key, void * value);
+typedef  int (* process_each_func )(void * param, const str_const *key, void * value);
 
 /* Map functions. */
 
@@ -122,8 +122,8 @@ void map_destroy( map_t, value_destroy_func );
  * If the key is not found NULL is returned.
  *
  */
-void **	_map_find   ( map_t, str );
-void **	_map_find_C   ( map_t, str_const );
+void **	_map_find   ( map_t, const str * );
+void **	_map_find_C   ( map_t, const str_const * );
 
 /*
  * Searches for a given key in the map.
@@ -133,8 +133,8 @@ void **	_map_find_C   ( map_t, str_const );
  *
  */
 
-void **	_map_get  ( map_t, str );
-void **	_map_get_C  ( map_t, str_const );
+void **	_map_get  ( map_t, const str * );
+void **	_map_get_C  ( map_t, const str_const * );
 
 /*
  * Inserts a (key;value) pair.
@@ -143,8 +143,8 @@ void **	_map_get_C  ( map_t, str_const );
  *
  */
 
-void* _map_put ( map_t, str, void *);
-void* _map_put_C ( map_t, str_const, void *);
+void* _map_put ( map_t, const str *, void * );
+void* _map_put_C ( map_t, const str_const *, void * );
 
 /*
  * Deletes a key from the map.
@@ -153,7 +153,7 @@ void* _map_put_C ( map_t, str_const, void *);
  *
  */
 
-void* map_remove ( map_t, str_const);
+void* map_remove ( map_t, const str_const * );
 
 /*
  * Returns the size of the map.

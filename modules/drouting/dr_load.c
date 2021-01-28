@@ -180,7 +180,7 @@ static int add_cache_sock_info(struct head_cache *cache, struct socket_info *soc
 	return 0;
 }
 
-static int dr_cache_update_sock(void *param, str_const key, void *value)
+static int dr_cache_update_sock(void *param, const str_const *key, void *value)
 {
 	pgw_t *gw = (pgw_t *)value;
 	struct head_cache_socket *sock;

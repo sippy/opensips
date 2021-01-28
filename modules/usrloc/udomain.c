@@ -1393,7 +1393,7 @@ static inline urecord_t *find_mem_urecord(udomain_t *_d, const str *_aor)
 	aorhash = core_hash(_aor, NULL, 0);
 	sl = aorhash & (_d->size - 1);
 
-	r = (urecord_t **)map_find(_d->table[sl].records, *_aor);
+	r = (urecord_t **)map_find(_d->table[sl].records, _aor);
 	return r ? *r : NULL;
 }
 

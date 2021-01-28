@@ -75,10 +75,10 @@ static str pipe_repl_cap = str_init("ratelimit-pipe-repl");
 
 /* retrieves the structure associated with the index and key */
 #define RL_GET_PIPE(_i, _k) \
-	(rl_pipe_t **)map_get(rl_htable.maps[(_i)], _k)
+	(rl_pipe_t **)map_get(rl_htable.maps[(_i)], &_k)
 
 #define RL_FIND_PIPE(_i, _k) \
-	(rl_pipe_t **)map_find(rl_htable.maps[(_i)], _k)
+	(rl_pipe_t **)map_find(rl_htable.maps[(_i)], &_k)
 
 /* returns true if the pipe should use cachedb interface */
 #define RL_USE_CDB(_p) \
@@ -579,12 +579,12 @@ static int rl_map_print(void *param, str_const key, void *value)
 	return 0;
 }
 
-static int rl_map_print_array(void *param, str_const key, void *value)
+static int rl_map_print_array(void *param, const str_const *key, void *value)
 {
 	mi_item_t *pipe_item = add_mi_object((mi_item_t *)param, NULL, 0);
 	if (!pipe_item)
 		return -1;
-	return rl_map_print(pipe_item, key, value);
+	return rl_map_print(pipe_item, *key, value);
 }
 
 int rl_stats(mi_item_t *resp_obj, str * value)

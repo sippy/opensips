@@ -648,7 +648,7 @@ static void destroy_linker(struct dlg_profile_link *l, struct dlg_cell *dlg,
 		if( l->profile->has_value)
 		{
 			entry = l->profile->entries[l->hash_idx];
-			dest = map_find( entry, l->value );
+			dest = map_find( entry, &l->value );
 			if( dest )
 			{
 				prof_val_local_dec(dest, &dlg->shtag,
@@ -659,7 +659,7 @@ static void destroy_linker(struct dlg_profile_link *l, struct dlg_cell *dlg,
 					if (l->profile->repl_type==REPL_PROTOBIN)
 						repl_remove = 1;
 
-					map_remove(entry,*str2const(&l->value) );
+					map_remove(entry, str2const(&l->value) );
 				}
 			}
 		}
@@ -771,7 +771,7 @@ static int link_dlg_profile(struct dlg_profile_link *linker,
 		LM_DBG("Entered here with hash = %d \n",hash);
 		if (profile->has_value) {
 			p_entry = profile->entries[hash];
-			dest = map_get(p_entry, linker->value);
+			dest = map_get(p_entry, &linker->value);
 			if (!dest) {
 				LM_ERR("No more shm memory\n");
 				lock_set_release( profile->locks,hash );
@@ -1085,7 +1085,7 @@ next_val:
 				lock_set_get( profile->locks, i);
 				entry = profile->entries[i];
 
-				dest = map_find(entry,*value);
+				dest = map_find(entry, value);
 				if( dest )
 					n = prof_val_get_count(dest, 0,
 							profile->repl_type == REPL_PROTOBIN);
@@ -1224,7 +1224,7 @@ mi_response_t *mi_get_profile_2(const mi_params_t *params,
 	return mi_get_profile(params, &value);
 }
 
-static inline int add_val_to_rpl(void * param, str_const key, void * val)
+static inline int add_val_to_rpl(void * param, const str_const *key, void * val)
 {
 	mi_item_t *val_item;
 
@@ -1232,7 +1232,7 @@ static inline int add_val_to_rpl(void * param, str_const key, void * val)
 	if (!val_item)
 		return -1;
 
-	if (add_mi_string(val_item, MI_SSTR("value"), key.s , key.len) < 0)
+	if (add_mi_string(val_item, MI_SSTR("value"), key->s , key->len) < 0)
 		return -1;
 	if (add_mi_number(val_item, MI_SSTR("count"), prof_val_get_count(&val, 0, 0)) < 0)
 		return -1;
@@ -1240,7 +1240,7 @@ static inline int add_val_to_rpl(void * param, str_const key, void * val)
 	return 0;
 }
 
-static inline int add_val_to_rpl_r(void * param, str_const key, void * val)
+static inline int add_val_to_rpl_r(void * param, const str_const *key, void * val)
 {
 	mi_item_t *val_item;
 
@@ -1248,7 +1248,7 @@ static inline int add_val_to_rpl_r(void * param, str_const key, void * val)
 	if (!val_item)
 		return -1;
 
-	if (add_mi_string(val_item, MI_SSTR("value"), key.s , key.len) < 0)
+	if (add_mi_string(val_item, MI_SSTR("value"), key->s , key->len) < 0)
 		return -1;
 	if (add_mi_number(val_item, MI_SSTR("count"), prof_val_get_count(&val, 0, 1)) < 0)
 		return -1;

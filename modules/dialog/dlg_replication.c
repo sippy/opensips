@@ -1239,11 +1239,11 @@ void receive_prof_repl(bin_packet_t *packet)
 				lock_set_get(profile->locks, i);
 				/* if counter is 0 and we don't have it, don't try to create */
 				if (!counter) {
-					dst = map_find(profile->entries[i], value);
+					dst = map_find(profile->entries[i], &value);
 					if (!dst)
 						goto release;
 				} else {
-					dst = map_get(profile->entries[i], value);
+					dst = map_get(profile->entries[i], &value);
 				}
 				if (!*dst) {
 					rp = shm_malloc(sizeof(prof_value_info_t));

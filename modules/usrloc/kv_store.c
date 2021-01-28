@@ -31,7 +31,7 @@ int_str_t *kv_get(map_t _store, const str* _key)
 {
 	int_str_t **val;
 
-	val = (int_str_t **)map_find(_store, *_key);
+	val = (int_str_t **)map_find(_store, _key);
 	if (val)
 		return *val;
 
@@ -48,7 +48,7 @@ int_str_t *kv_put(map_t _store, const str* _key, const int_str_t* _val)
 	        !_val->is_str ? _val->i : -1);
 #endif
 
-	cur = (int_str_t **)map_get(_store, *_key);
+	cur = (int_str_t **)map_get(_store, _key);
 	if (!cur) {
 		LM_ERR("oom\n");
 		return NULL;
@@ -96,7 +96,7 @@ void kv_del(map_t _store, const str* _key)
 {
 	int_str_t *val;
 
-	val = (int_str_t *)map_remove(_store, *str2const(_key));
+	val = (int_str_t *)map_remove(_store, str2const(_key));
 	if (!val)
 		return;
 
@@ -104,7 +104,7 @@ void kv_del(map_t _store, const str* _key)
 		shm_free(val->s.s);
 }
 
-static int push_kv_to_json(void *param, str_const key, void *value)
+static int push_kv_to_json(void *param, const str_const *key, void *value)
 {
 	cJSON *flat_map = (cJSON *)param, *val_json;
 	int_str_t *val = (int_str_t *)value;
@@ -119,7 +119,7 @@ static int push_kv_to_json(void *param, str_const key, void *value)
 		return -1;
 	}
 
-	_cJSON_AddItemToObject(flat_map, &key, val_json);
+	_cJSON_AddItemToObject(flat_map, key, val_json);
 
 	return 0;
 }

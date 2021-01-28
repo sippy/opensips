@@ -129,7 +129,7 @@ void restore_urecord_kv_store(urecord_t *_r, ucontact_t *_c)
 {
 	int_str_t **urec_kv_store;
 
-	urec_kv_store = (int_str_t **)map_find(_c->kv_storage, urec_store_key);
+	urec_kv_store = (int_str_t **)map_find(_c->kv_storage, &urec_store_key);
 	if (urec_kv_store) {
 		store_destroy(_r->kv_storage);
 		_r->kv_storage = store_deserialize(&(*urec_kv_store)->s);
@@ -213,7 +213,7 @@ void mem_remove_ucontact(urecord_t* _r, ucontact_t* _c)
 	}
 
 	if (sql_wmode != SQL_NO_WRITE) {
-		rstore = (int_str_t **)map_find(_c->kv_storage, urec_store_key);
+		rstore = (int_str_t **)map_find(_c->kv_storage, &urec_store_key);
 		if (rstore && _r->contacts) {
 			if (!put_ucontact_key(_r->contacts, &urec_store_key, *rstore))
 				LM_ERR("oom\n");
@@ -1110,7 +1110,7 @@ int persist_urecord_kv_store(urecord_t* _r)
 	}
 
 	for (c = _r->contacts; c; c = c->next) {
-		if (map_find(c->kv_storage, urec_store_key))
+		if (map_find(c->kv_storage, &urec_store_key))
 			goto have_contact;
 	}
 

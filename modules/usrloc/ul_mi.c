@@ -622,13 +622,13 @@ error:
 	return 0;
 }
 
-static int mi_process_sync(void *param, str_const key, void *value)
+static int mi_process_sync(void *param, const str_const *key, void *value)
 {
 	struct ucontact* c;
 	struct urecord* rec = (struct urecord *)value;
 
 	if (!rec) {
-		LM_ERR("invalid record value for key '%.*s'\n", key.len, key.s);
+		LM_ERR("invalid record value for key '%.*s'\n", key->len, key->s);
 		return -1;
 	}
 
@@ -687,7 +687,7 @@ static mi_response_t *mi_sync_aor(udomain_t *dom, const str *aor)
 		goto error;
 	}
 
-	if (mi_process_sync(dom, *str2const(aor), rec))
+	if (mi_process_sync(dom, str2const(aor), rec))
 		goto error;
 
 	unlock_udomain( dom, aor);

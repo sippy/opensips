@@ -23,17 +23,17 @@
 #define __LIB_STR2CONST_H__
 
 #if defined(HAVE_GENERICS)
-#define map_find(map, _s) _Generic((_s), \
+#define map_find(map, _s) _Generic(*(_s), \
 	str:_map_find, \
 	str_const:_map_find_C \
     )(map, _s)
 
-#define map_get(map, _s) _Generic((_s), \
+#define map_get(map, _s) _Generic(*(_s), \
 	str:_map_get, \
 	str_const:_map_get_C \
     )(map, _s)
 
-#define map_put(map, _s, _p) _Generic((_s), \
+#define map_put(map, _s, _p) _Generic(*(_s), \
 	str:_map_put, \
 	str_const:_map_put_C \
     )(map, _s, _p)
@@ -121,9 +121,9 @@
     )(packet, info)
 #else /* !HAVE_GENERICS */
 #define str2const(_sp) ((str_const *)(void *)(_sp))
-#define map_find(map, _s) _map_find_C(map, *str2const(&(_s)))
-#define map_get(map, _s) _map_get_C(map, *str2const(&(_s)))
-#define map_put(map, _s, _p) _map_put_C(map, *str2const(&(_s)), _p)
+#define map_find(map, _s) _map_find_C(map, str2const(_s))
+#define map_get(map, _s) _map_get_C(map, str2const(_s))
+#define map_put(map, _s, _p) _map_put_C(map, str2const(_s), _p)
 #define escape_user(sin, sout) _escape_user(str2const(sin), sout)
 #define unescape_user(sin, sout) _unescape_user(str2const(sin), sout)
 #define escape_param(sin, sout) _escape_param(str2const(sin), sout)
