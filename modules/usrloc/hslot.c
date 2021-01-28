@@ -168,6 +168,6 @@ int slot_add(hslot_t* _s, struct urecord* _r)
 void slot_rem(hslot_t* _s, struct urecord* _r)
 {
 
-	map_remove( _s->records, _r->aor );
+	map_remove( _s->records, *str2const(&_r->aor) );
 	_r->slot = 0;
 }

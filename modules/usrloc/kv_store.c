@@ -96,7 +96,7 @@ void kv_del(map_t _store, const str* _key)
 {
 	int_str_t *val;
 
-	val = (int_str_t *)map_remove(_store, *_key);
+	val = (int_str_t *)map_remove(_store, *str2const(_key));
 	if (!val)
 		return;
 

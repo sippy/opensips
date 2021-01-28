@@ -153,7 +153,7 @@ void* _map_put_C ( map_t, str_const, void *);
  *
  */
 
-void* map_remove ( map_t, str);
+void* map_remove ( map_t, str_const);
 
 /*
  * Returns the size of the map.

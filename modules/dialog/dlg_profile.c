@@ -659,7 +659,7 @@ static void destroy_linker(struct dlg_profile_link *l, struct dlg_cell *dlg,
 					if (l->profile->repl_type==REPL_PROTOBIN)
 						repl_remove = 1;
 
-					map_remove(entry,l->value );
+					map_remove(entry,*str2const(&l->value) );
 				}
 			}
 		}

@@ -79,7 +79,7 @@ void hash_destroy(gen_hash_t *hash, hash_destroy_func destroy);
 /* removes a value from the hash
  * - the existing value is returned, so it can be released */
 #define hash_remove(_h, _e, _k) \
-	map_remove((_h)->entries[(_e)], _k)
+	map_remove((_h)->entries[(_e)], *str2const(&_k))
 
 /* same as above, but compute entry fron key */
 #define hash_remove_key(_h, _k) \

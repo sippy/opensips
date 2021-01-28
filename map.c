@@ -479,7 +479,7 @@ void * delete_node(map_t tree, struct avl_node * p)
 
 /* Deletes from |tree| and returns an item matching |item|.
    Returns a null pointer if no matching item found. */
-void * map_remove( map_t tree, str key)
+void * map_remove( map_t tree, str_const key)
 {
 	struct avl_node *p; /* Traverses tree to find node to delete. */
 	int dir; /* Side of |q| on which |p| is linked. */
@@ -489,7 +489,7 @@ void * map_remove( map_t tree, str key)
 
 	p = tree->avl_root;
 	for (;;) {
-		int cmp = str_cmp(str2const(&key), &p->key);
+		int cmp = str_cmp(&key, &p->key);
 		if (cmp == 0)
 			break;
 
