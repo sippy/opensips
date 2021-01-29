@@ -59,17 +59,12 @@ static unsigned long count_running_processes(void *x)
 }
 
 
-int init_multi_proc_support(void)
+int init_multi_proc_support(int extra_mp)
 {
 	int i;
 	/* at this point we know exactly the possible number of processes, since
 	 * all the other modules already adjusted their extra numbers */
-	counted_max_processes = count_child_processes();
-
-#ifdef UNIT_TESTS
-#include "mem/test/test_malloc.h"
-	counted_max_processes += TEST_MALLOC_PROCS - 1;
-#endif
+	counted_max_processes = count_child_processes() + extra_mp;
 
 	/* allocate the PID table to accomodate the maximum possible number of
 	 * process we may have during runtime (covering extra procs created 

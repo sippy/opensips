@@ -37,12 +37,7 @@
  */
 typedef void (*mod_tests_f) (void);
 
-#ifdef UNIT_TESTS
 void init_unit_tests(void);
 int run_unit_tests(void);
-#else
-#define init_unit_tests()
-#define run_unit_tests() ({0;})
-#endif
 
 #endif /* __UNIT_TESTS_H__ */

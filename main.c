@@ -145,7 +145,10 @@
 #include "cachedb/cachedb.h"
 #include "net/trans.h"
 
+#ifdef UNIT_TESTS
 #include "test/unit_tests.h"
+#include "mem/test/test_malloc.h"
+#endif
 
 #include "ssl_tweaks.h"
 
@@ -199,7 +202,6 @@ static int main_loop(void)
 	static int chd_rank;
 	int* startup_done = NULL;
 	utime_t last_check = 0;
-	int rc;
 
 	chd_rank=0;
 
@@ -263,6 +265,7 @@ static int main_loop(void)
 	set_proc_attrs("attendant");
 	pt[process_no].flags |= OSS_PROC_NO_IPC|OSS_PROC_NO_LOAD;
 
+#ifdef UNIT_TESTS
 	if (testing_framework) {
 		if (init_child(1) < 0) {
 			LM_ERR("error in init_child for First Worker\n");
@@ -270,9 +273,10 @@ static int main_loop(void)
 			goto error;
 		}
 
-		rc = run_unit_tests();
+		int rc = run_unit_tests();
 		shutdown_opensips(rc);
 	}
+#endif
 
 	report_conditional_status( (!no_daemon_mode), 0);
 
@@ -849,6 +853,11 @@ try_again:
 		goto error;
 	}
 
+#ifdef UNIT_TESTS
+	if (testing_framework)
+		init_unit_tests();
+#endif
+
 	/* init modules */
 	if (init_modules() != 0) {
 		LM_ERR("error while initializing modules\n");
@@ -874,7 +883,11 @@ try_again:
 	}
 
 	/* init multi processes support */
-	if (init_multi_proc_support()!=0) {
+	int ep = 0;
+#ifdef UNIT_TESTS
+	ep = TEST_MALLOC_PROCS - 1;
+#endif
+	if (init_multi_proc_support(ep)!=0) {
 		LM_ERR("failed to init multi-proc support\n");
 		goto error;
 	}

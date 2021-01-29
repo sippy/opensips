@@ -58,8 +58,6 @@
 #include "net/proto_udp/proto_udp_handler.h"
 #include "net/proto_tcp/proto_tcp_handler.h"
 
-#include "test/unit_tests.h"
-
 struct sr_module* modules=0;
 
 #ifdef STATIC_EXEC
@@ -689,9 +687,6 @@ int init_modules(void)
 {
 	struct sr_module *currentMod;
 	int ret;
-
-	if (testing_framework)
-		init_unit_tests();
 
 	/* pre-initialize all modules */
 	for (currentMod=modules; currentMod; currentMod=currentMod->next) {

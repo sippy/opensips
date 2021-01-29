@@ -37,11 +37,6 @@
 #include "../sr_module.h"
 #include "../sr_module_deps.h"
 
-#if !defined(UNIT_TESTS)
-#define UNIT_TESTS
-#define ENABLE_MAIN
-#endif
-
 #include "test_pvar.h"
 #include "unit_tests.h"
 
@@ -113,24 +108,3 @@ int run_unit_tests(void)
 
 	done_testing();
 }
-
-#if defined(ENABLE_MAIN)
-int main(void)
-{
-
-	testing_module = "core";
-	if (init_pkg_mallocs() == -1) {
-		LM_ERR("init_pkg_mallocs() failed\n");
-		return -1;
-	}
-	if (init_shm_mallocs() == -1) {
-		LM_ERR("init_shm_mallocs() failed\n");
-		return -1;
-	}
-	if (init_stats_collector() < 0) {
-		LM_ERR("init_stats_collector() failed\n");
-		return -1;
-	}
-	return run_unit_tests();
-}
-#endif

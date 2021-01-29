@@ -96,7 +96,7 @@ extern struct process_table *pt;
 extern unsigned int counted_max_processes;
 extern int _termination_in_progress;
 
-int   init_multi_proc_support();
+int   init_multi_proc_support(int);
 void  set_proc_attrs( char *fmt, ...);
 int   count_init_child_processes(void);
 int   count_child_processes(void);
