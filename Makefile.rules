@@ -46,8 +46,18 @@ else
 	$(Q)$(LD) $(LDFLAGS) $(objs) $(extra_objs) $(misclibs) $(LIBS) $(TWEAK_LIBS) -o $(NAME)
 endif
 
-$(NAME)_test: $(NAME) $(test_objs)
+deeptests_main.o: main.c $(ALLDEP)
+ifeq (,$(FASTER))
+	@echo "Compiling $<"
+endif
+	$(Q)$(CC) -DUNIT_TESTS $(CFLAGS) $(DEFS) -c $< -o $@
+
+$(NAME)_unittests: $(NAME) $(test_objs)
 	$(LD) $(LDFLAGS) $(test_objs) lib$(NAME).a $(LIBS) $(TWEAK_LIBS) -ltap -o $@
+
+deeptests_objs=$(filter-out %/unit_tests_main.o, $(test_objs))
+$(NAME)_deeptests: $(NAME) $(deeptests_objs) deeptests_main.o
+	$(LD) $(LDFLAGS) deeptests_main.o $(deeptests_objs) lib$(NAME).a $(misclibs) $(LIBS) $(TWEAK_LIBS) -ltap -o $@
 
 main.o: main.c $(ALLDEP) $(NEWREVISION)
 ifeq (,$(FASTER))

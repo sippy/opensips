@@ -2,4 +2,4 @@
 
 set -e
 
-exec ./opensips_test 2>opensips_test.elog
+exec ./opensips_unittests 2>opensips_test.elog
