@@ -4802,7 +4802,7 @@ int pv_get_avp_name(struct sip_msg* msg, pv_param_p ip, int *avp_name,
 		tv.rs.s = int2str(tv.ri, &tv.rs.len);
 
 	/* search the name here */
-	*avp_name = get_avp_id(str2const(&tv.rs));
+	*avp_name = get_avp_id(&tv.rs);
 	if (*avp_name == 0) {
 		LM_ERR("cannot find avp %.*s\n", tv.rs.len, tv.rs.s);
 		return -1;
