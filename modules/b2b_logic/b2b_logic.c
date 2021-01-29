@@ -81,8 +81,8 @@ int b2b_init_request(struct sip_msg *msg, str *id, struct b2b_params *init_param
 	void *req_routeid, void *reply_routeid, str *init_body, str *init_body_type);
 int b2bl_server_new(struct sip_msg *msg, str *id,
 	pv_spec_t *hnames, pv_spec_t *hvals);
-int b2bl_client_new(struct sip_msg *msg, str *id, str *dest_uri,
-	pv_spec_t *hnames, pv_spec_t *hvals, str *from_dname);
+int b2bl_client_new(struct sip_msg *msg, str *id, str *dest_uri, str *proxy,
+	 str *from_dname, pv_spec_t *hnames, pv_spec_t *hvals);
 int b2b_handle_reply(struct sip_msg* msg);
 int b2b_pass_request(struct sip_msg *msg);
 int b2b_delete_entity(struct sip_msg *msg);
@@ -187,6 +187,7 @@ static cmd_export_t cmds[]=
 	{"b2b_client_new", (cmd_function)b2bl_client_new, {
 		{CMD_PARAM_STR,0,0},
 		{CMD_PARAM_STR,0,0},
+		{CMD_PARAM_STR|CMD_PARAM_OPT, 0, 0},
 		{CMD_PARAM_STR|CMD_PARAM_OPT, 0, 0},
 		{CMD_PARAM_VAR|CMD_PARAM_OPT, fixup_check_avp, 0},
 		{CMD_PARAM_VAR|CMD_PARAM_OPT, fixup_check_avp, 0}, {0,0,0}},
@@ -954,6 +955,12 @@ end:
 
 int  b2b_bridge_request(struct sip_msg* msg, str *key, int *entity_no)
 {
+	if (cur_route_ctx.flags & (B2BL_RT_REQ_CTX|B2BL_RT_RPL_CTX)) {
+		LM_ERR("The 'b2b_bridge_request' function cannot be used from the "
+			"b2b_logic dedicated routes\n");
+		return -1;
+	}
+
 	return b2bl_bridge_msg(msg, key, *entity_no);
 }
 
@@ -1013,7 +1020,7 @@ static mi_response_t *mi_b2b_bridge(const mi_params_t *params,
 			return init_mi_error(404, MI_SSTR("Bad 'prov_media_uri' parameter"));
 		}
 		prov_entity = b2bl_create_new_entity(B2B_CLIENT,
-						0, prov_media, 0, 0, 0, 0, 0);
+						0, prov_media, 0, 0, 0, 0, 0, 0);
 		if (!prov_entity) {
 			LM_ERR("Failed to create new b2b entity\n");
 			goto free;
@@ -1032,7 +1039,7 @@ static mi_response_t *mi_b2b_bridge(const mi_params_t *params,
 		goto free;
 	}
 
-	entity = b2bl_create_new_entity(B2B_CLIENT, 0, &new_dest, 0, 0, 0, 0, 0);
+	entity = b2bl_create_new_entity(B2B_CLIENT, 0, &new_dest, 0, 0, 0, 0, 0, 0);
 	if(entity == NULL)
 	{
 		LM_ERR("Failed to create new b2b entity\n");
@@ -1500,11 +1507,11 @@ int pv_parse_entity_name(pv_spec_p sp, const str *in)
 		return 0;
 	}
 
-	if (!str_strcmp(in, _str("key")))
+	if (!str_strcmp(in, const_str("key")))
 		sp->pvp.pvn.u.isname.name.n = PV_ENTITY_KEY;
-	else if (!str_strcmp(in, _str("callid")))
+	else if (!str_strcmp(in, const_str("callid")))
 		sp->pvp.pvn.u.isname.name.n = PV_ENTITY_CALLID;
-	else if (!str_strcmp(in, _str("id")))
+	else if (!str_strcmp(in, const_str("id")))
 		sp->pvp.pvn.u.isname.name.n = PV_ENTITY_ID;
 	else {
 		LM_ERR("Bad subname for $b2b_logic.entity\n");

@@ -150,7 +150,7 @@ get_static_urecord(const udomain_t* _d, const str* _aor, struct urecord** _r)
 
 	r.aor = *_aor;
 	r.domain = _d->name;
-	r.aorhash = core_hash(_aor, 0, DB_AOR_HASH_MASK);
+	r.aorhash = core_hash(_aor, NULL, DB_AOR_HASH_MASK);
 	r.is_static = 1;
 
 	*_r = &r;
@@ -190,7 +190,7 @@ cdb_ctdict2info(const cdb_dict_t *ct_fields, str *contact)
 				ci.callid = &callid;
 				break;
 			case 'f':
-				ci.cflags = flag_list_to_bitmask(&pair->val.val.st,
+				ci.cflags = flag_list_to_bitmask(str2const(&pair->val.val.st),
 				                                 FLAG_TYPE_BRANCH, FLAG_DELIM);
 				break;
 			case 'o':
@@ -271,7 +271,7 @@ static inline ucontact_info_t* dbrow2info(db_val_t *vals, str *contact)
 {
 	static ucontact_info_t ci;
 	static str callid, ua, received, host, path, instance;
-	static str attr, packed_kv, flags;
+	static str attr, packed_kv;
 	int port, proto;
 	char *p;
 
@@ -323,7 +323,8 @@ static inline ucontact_info_t* dbrow2info(db_val_t *vals, str *contact)
 	ci.flags  = VAL_BITMAP(vals+6);
 
 	if (!VAL_NULL(vals+7)) {
-		flags.s   = (char *)VAL_STRING(vals+7);
+		str_const flags;
+		flags.s   = VAL_STRING(vals+7);
 		flags.len = strlen(flags.s);
 		LM_DBG("flag str: '%.*s'\n", flags.len, flags.s);
 
@@ -1221,7 +1222,7 @@ void lock_udomain(udomain_t* _d, str* _aor)
 	unsigned int sl;
 	if (have_mem_storage())
 	{
-		sl = core_hash(_aor, 0, _d->size);
+		sl = core_hash(_aor, NULL, _d->size);
 
 #ifdef GEN_LOCK_T_PREFERED
 		lock_get(_d->table[sl].lock);
@@ -1240,7 +1241,7 @@ void unlock_udomain(udomain_t* _d, str* _aor)
 	unsigned int sl;
 	if (have_mem_storage())
 	{
-		sl = core_hash(_aor, 0, _d->size);
+		sl = core_hash(_aor, NULL, _d->size);
 #ifdef GEN_LOCK_T_PREFERED
 		lock_release(_d->table[sl].lock);
 #else
@@ -1389,7 +1390,7 @@ static inline urecord_t *find_mem_urecord(udomain_t *_d, const str *_aor)
 	unsigned int sl, aorhash;
 	urecord_t **r;
 
-	aorhash = core_hash(_aor, 0, 0);
+	aorhash = core_hash(_aor, NULL, 0);
 	sl = aorhash & (_d->size - 1);
 
 	r = (urecord_t **)map_find(_d->table[sl].records, *_aor);

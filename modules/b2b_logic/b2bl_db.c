@@ -302,7 +302,7 @@ static int b2bl_add_tuple(b2bl_tuple_t* tuple)
 
 		/* TODO: store headers in database */
 		entity= b2bl_create_new_entity(tuple->bridge_entities[i]->type,
-			&tuple->bridge_entities[i]->key,&tuple->bridge_entities[i]->to_uri,
+			&tuple->bridge_entities[i]->key,&tuple->bridge_entities[i]->to_uri, 0,
 			&tuple->bridge_entities[i]->from_uri, 0, &tuple->bridge_entities[i]->scenario_id,0, 0);
 		if(client_id)
 			pkg_free(client_id);
@@ -414,7 +414,7 @@ int b2b_logic_restore(void)
 				scenario_id.s = (char*)row_vals[1].val.string_val;
 				scenario_id.len = strlen(scenario_id.s);
 
-				if (!str_strcmp(&scenario_id, _str(B2B_TOP_HIDING_SCENARY)))
+				if (!str_strcmp(&scenario_id, const_str(B2B_TOP_HIDING_SCENARY)))
 					tuple.scenario_id = B2B_TOP_HIDING_ID_PTR;
 				else
 					tuple.scenario_id = &scenario_id;

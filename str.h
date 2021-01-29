@@ -22,6 +22,7 @@
 #define str_h
 
 #include <string.h>
+#include "lib/str2const.h"
 
 /**
  * \file
@@ -70,7 +71,9 @@ typedef struct __str_const str_const;
 #define STR_NULL_const (str_const){NULL, 0}
 #define str_init(_string)  (str){_string, sizeof(_string) - 1}
 #define str_const_init(_string)  (str_const){_string, sizeof(_string) - 1}
-#define str2const(_sp) &(str_const){(_sp)->s, (_sp)->len}
+
+static inline const str_const *_cs2cc(const str *_sp) {return (const str_const *)(const void *)(_sp);}
+static inline str_const *_s2c(str *_sp) {return (str_const *)(void *)(_sp);}
 
 static inline void init_str(str *dest, const char *src)
 {
@@ -94,16 +97,23 @@ static inline str *str_cpy(str *dest, const str *src)
 /**
  * Handy function for writing unit tests which compare str's
  *
- * WARNING: _only_ use when passing (str *) to _basic_ functions,
- *          since it is not re-entrant and may cause ugly bugs!
+ * WARNING: _only_ use when passing (const str *) to _basic_
+ *          functions, since while poiter is stable for the
+ *          lifetime of the application its value is mutable
+ *          and bad code messing it around may cause ugly bugs!
  */
-static inline str *_str(const char *s)
-{
-	static str st;
+#define _str(s) ( \
+{ \
+	static str _st; \
+	init_str(&_st, s); \
+	/* return */ (const str *)&_st; \
+})
 
-	init_str(&st, s);
-	return &st;
-}
+/**
+ * Initialize private static str_const given the static buffer
+ * and return const pointer to it.
+ */
+#define const_str(sbuf) ({static const str_const _stc = str_const_init(sbuf); &_stc;})
 
 static inline int str_bcmp(const str *a, const str *b)
 {
