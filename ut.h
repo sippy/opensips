@@ -947,6 +947,7 @@ static inline int pkg_str_extend(str *in, int size)
 	return 0;
 }
 
+
 /*
  * test if two str's are equal
  */
