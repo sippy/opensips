@@ -53,9 +53,9 @@ include ../../Makefile.sources
 ifneq (,$(wildcard test/*.c))
 test_sources=$(wildcard test/*.c)
 test_objs=$(test_sources:.c=.o)
-ALLDEP += $(MOD_NAME)_test.so
+ALLDEP += $(MOD_NAME)_unittests.so
 
-$(MOD_NAME)_test.so: $(NAME) $(objs) $(test_objs)
+$(MOD_NAME)_unittests.so: $(NAME) $(objs) $(test_objs)
 	$(LD) $(LDFLAGS) $(objs) $(test_objs) $(extra_objs) $(misclibs) $(LIBS) $(TWEAK_LIBS) -o $@
 endif
 
