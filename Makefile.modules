@@ -49,12 +49,15 @@ REGENERATE_MEM_STATS=remove-mem-stats
 endif
 endif
 
-# if unit tests are enabled, build any module test code into the module .so
-ifneq (,$(findstring UNIT_TESTS,$(DEFS)))
-extra_sources+=$(wildcard test/*.c)
-endif
-
 include ../../Makefile.sources
+ifneq (,$(wildcard test/*.c))
+test_sources=$(wildcard test/*.c)
+test_objs=$(test_sources:.c=.o)
+ALLDEP += $(MOD_NAME)_test.so
+
+$(MOD_NAME)_test.so: $(NAME) $(objs) $(test_objs)
+	$(LD) $(LDFLAGS) $(objs) $(test_objs) $(extra_objs) $(misclibs) $(LIBS) $(TWEAK_LIBS) -o $@
+endif
 
 ifeq (,$(filter $(MOD_NAME), $(static_modules)))
 CFLAGS:=$(MOD_CFLAGS)
