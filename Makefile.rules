@@ -54,7 +54,8 @@ endif
 	$(Q)$(CC) -DUNIT_TESTS $(CFLAGS) $(DEFS) -c $< -o $@
 
 $(NAME)_unittests: $(NAME) $(test_objs)
-	$(LD) $(LDFLAGS) $(test_objs) $(base_objs) $(LIBS) $(TWEAK_LIBS) -ltap -o $@
+	$(TOP_SRCDIR)/scripts/build/linkstatic.sh $(filter-out main.o, $(objs)) $(extra_objs) -o lib$(NAME).a
+	$(LD) $(LDFLAGS) $(test_objs) lib$(NAME).a $(LIBS) $(TWEAK_LIBS) -ltap -o $@
 
 deeptests_objs=$(filter-out %/unit_tests_main.o, $(test_objs))
 $(NAME)_deeptests: $(NAME) $(deeptests_objs) deeptests_main.o
