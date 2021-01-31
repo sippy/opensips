@@ -28,6 +28,8 @@ ifeq (,$(FASTER))
 endif
 	$(Q)$(CC) $(CFLAGS) $(DEFS) -c $< -o $@
 
+base_objs=$(filter-out main.o, $(objs)) $(extra_objs)
+
 %.d: %.c $(ALLDEP)
 	@set -e; $(MKDEP) $(DEFS) $< \
 	|  sed 's#\(\($*D)\)\?$(*F)\)\.o[ :]*#$*.o $@ : #g' > $@; \
@@ -40,8 +42,7 @@ ifeq (,$(FASTER))
 	@echo "Linking $(NAME)"
 endif
 ifneq (,$(filter main.o,$(objs)))
-	$(TOP_SRCDIR)/scripts/build/linkstatic.sh $(filter-out main.o, $(objs)) $(extra_objs) -o lib$(NAME).a
-	$(LD) $(LDFLAGS) main.o lib$(NAME).a $(misclibs) $(LIBS) $(TWEAK_LIBS) -o $(NAME)
+	$(LD) $(LDFLAGS) main.o $(base_objs) $(misclibs) $(LIBS) $(TWEAK_LIBS) -o $(NAME)
 else
 	$(Q)$(LD) $(LDFLAGS) $(objs) $(extra_objs) $(misclibs) $(LIBS) $(TWEAK_LIBS) -o $(NAME)
 endif
@@ -53,11 +54,11 @@ endif
 	$(Q)$(CC) -DUNIT_TESTS $(CFLAGS) $(DEFS) -c $< -o $@
 
 $(NAME)_unittests: $(NAME) $(test_objs)
-	$(LD) $(LDFLAGS) $(test_objs) lib$(NAME).a $(LIBS) $(TWEAK_LIBS) -ltap -o $@
+	$(LD) $(LDFLAGS) $(test_objs) $(base_objs) $(LIBS) $(TWEAK_LIBS) -ltap -o $@
 
 deeptests_objs=$(filter-out %/unit_tests_main.o, $(test_objs))
 $(NAME)_deeptests: $(NAME) $(deeptests_objs) deeptests_main.o
-	$(LD) $(LDFLAGS) deeptests_main.o $(deeptests_objs) lib$(NAME).a $(misclibs) $(LIBS) $(TWEAK_LIBS) -ltap -o $@
+	$(LD) $(LDFLAGS) deeptests_main.o $(deeptests_objs) $(base_objs) $(misclibs) $(LIBS) $(TWEAK_LIBS) -ltap -o $@
 
 main.o: main.c $(ALLDEP) $(NEWREVISION)
 ifeq (,$(FASTER))
