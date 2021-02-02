@@ -20,6 +20,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
  */
 
+#include <inttypes.h>
+
 #include "../../lib/csv.h"
 #include "../../parser/parse_uri.h"
 #include "../../parser/parse_fcaps.h"
@@ -924,7 +926,7 @@ char *pn_purr_pack(ucontact_id ct_id)
 {
 	static char purr_buf[OPENSIPS_PURR_LEN + 1];
 
-	sprintf(purr_buf, "%016lx", (unsigned long)ct_id);
+	sprintf(purr_buf, "%016" PRIx64 "", ct_id);
 
 	memmove(purr_buf + 4, purr_buf + 3, 13);
 	purr_buf[3] = '.';
