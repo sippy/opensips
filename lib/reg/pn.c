@@ -155,7 +155,7 @@ int pn_init(void)
 
 		if (++nprov > PN_MAX_PROVIDERS) {
 			LM_ERR("max number of PN providers exceeded (%lu)\n",
-			       PN_MAX_PROVIDERS);
+			       (unsigned long)PN_MAX_PROVIDERS);
 			return -1;
 		}
 
@@ -833,7 +833,7 @@ have_purr:
 	c = ul.get_ucontact_from_id(d, id, &r);
 	if (!c) {
 		LM_DBG("recognized pn-purr: '%.*s', ctid: %lu, but ct not found!\n",
-		       purr->len, purr->s, id);
+		       purr->len, purr->s, (unsigned long)id);
 		return 2;
 	}
 
@@ -924,7 +924,7 @@ char *pn_purr_pack(ucontact_id ct_id)
 {
 	static char purr_buf[OPENSIPS_PURR_LEN + 1];
 
-	sprintf(purr_buf, "%016lx", ct_id);
+	sprintf(purr_buf, "%016lx", (unsigned long)ct_id);
 
 	memmove(purr_buf + 4, purr_buf + 3, 13);
 	purr_buf[3] = '.';
