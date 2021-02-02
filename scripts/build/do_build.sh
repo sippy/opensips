@@ -13,6 +13,12 @@ CC_EXTRA_OPTS="${CC_EXTRA_OPTS}" FASTER=1 NICER=0 make \
   LD_EXTRA_OPTS=-Ldist/libtap exclude_modules="db_oracle osp sngtc cachedb_cassandra cachedb_couchbase \
   cachedb_mongodb auth_jwt" ${MAKE_TGT}
 
+if [ ! -e lib/reg/libreg.a ]
+then
+  CC_EXTRA_OPTS="${CC_EXTRA_OPTS}" FASTER=1 NICER=0 make \
+    LD_EXTRA_OPTS=-Ldist/libtap -C lib/reg
+fi
+
 for mmfile in modules/*/Makefile
 do
   mod_name=`echo ${mmfile} | awk -F / '{print $2}'`
