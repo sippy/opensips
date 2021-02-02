@@ -960,7 +960,7 @@ int pn_purr_unpack(const str *purr, ucontact_id *ct_id)
 	}
 
 	purr_buf[16] = '\0';
-	*ct_id = strtoul(purr_buf, NULL, 16);
+	*ct_id = strtoull(purr_buf, NULL, 16);
 	return 0;
 
 unknown_fmt:
