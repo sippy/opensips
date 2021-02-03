@@ -21,6 +21,7 @@
 #include <tap.h>
 
 #include "../str.h"
+#include "../ut.h"
 #include "../mem/mem.h"
 #include "../pvar.h"
 
@@ -52,7 +53,7 @@ void test_pvar(struct sip_msg *tmsg, const struct pvar_tts *tset)
        str res = {.s = buf, .len = sizeof(buf)};
        ok(pv_print_spec(tmsg, nsp, buf, &res.len) == 0, "pv_print_spec(\"%.*s\") == 0",
          tset[i].vname.len, tset[i].vname.s);
-       ok(!str_bcmp(&res, &tset[i].rval), "pv_print_spec(\"%.*s\") -> \"%s\" == \"%.*s\"",
+       ok(str_match(&res, &tset[i].rval), "pv_print_spec(\"%.*s\") -> \"%s\" == \"%.*s\"",
          tset[i].vname.len, tset[i].vname.s, buf, tset[i].rval.len, tset[i].rval.s);
    }
    pv_spec_free(nsp);

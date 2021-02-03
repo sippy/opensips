@@ -22,7 +22,7 @@ struct sip_msg;
 
 struct pvar_tts {
     str vname;
-    str rval;
+    str_const rval;
 };
 
 void test_pvar(struct sip_msg *tmsg, const struct pvar_tts[]);

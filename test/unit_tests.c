@@ -63,14 +63,15 @@ static const str sip_msg = str_init(
     "Content-Length: 100500\r\n\r\n"
 );
 static const struct pvar_tts pvar_tset[] = {
-    {.vname = str_init("$ci"), .rval = str_init("i%lu5JEz[9[1?Kfd6%.Oq]d%U_}MlFl.@'SPnm3PI9oPVdJC~")},
-    {.vname = str_init("$cl"), .rval = str_init("100500")},
-    {.vname = str_init("$cs"), .rval = str_init("200")},
-    {.vname = str_init("$fd"), .rval = str_init("127.0.0.1")},
-    {.vname = str_init("$fn"), .rval = str_init("\"Alice Smith\"")},
-    {.vname = str_init("$ft"), .rval = str_init("JZ8sHU.`'u.HOVzs01Xpk`w*4M!*Msr%")},
-    {.vname = str_init("$fu"), .rval = str_init("sip:alice_3_ipv4@127.0.0.1")},
-    {.vname = STR_NULL, .rval = STR_NULL}
+    {.vname = str_init("$ci"), .rval = str_const_init("i%lu5JEz[9[1?Kfd6%.Oq]d%U_}MlFl.@'SPnm3PI9oPVdJC~")},
+    {.vname = str_init("$cl"), .rval = str_const_init("100500")},
+    {.vname = str_init("$cs"), .rval = str_const_init("200")},
+    {.vname = str_init("$fd"), .rval = str_const_init("127.0.0.1")},
+    {.vname = str_init("$fn"), .rval = str_const_init("\"Alice Smith\"")},
+    {.vname = str_init("$ft"), .rval = str_const_init("JZ8sHU.`'u.HOVzs01Xpk`w*4M!*Msr%")},
+    {.vname = str_init("$fu"), .rval = str_const_init("sip:alice_3_ipv4@127.0.0.1")},
+    {.vname = str_init("$rm"), .rval = str_const_init("INVITE")},
+    {.vname = STR_NULL, .rval = STR_NULL_const}
 };
 
 int run_unit_tests(void)
