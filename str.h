@@ -115,9 +115,4 @@ static inline str *str_cpy(str *dest, const str *src)
  */
 #define const_str(sbuf) ({static const str_const _stc = str_const_init(sbuf); &_stc;})
 
-static inline int str_bcmp(const str *a, const str *b)
-{
-
-	return (a->len != b->len || memcmp(a->s, b->s, a->len) != 0);
-}
 #endif
