@@ -283,7 +283,7 @@ b2bl_tuple_t* b2bl_insert_new(struct sip_msg* msg, unsigned int hash_index,
 	LM_DBG("hash index [%d]:\n", hash_index);
 	for(it = b2bl_htable[hash_index].first; it; it=it->next)
 	{
-		LM_DBG("id [%d]", it->id);
+		LM_DBG("id [%d]\n", it->id);
 	}
 
 	b2bl_key = b2bl_generate_key(hash_index, tuple->id);
@@ -494,6 +494,9 @@ void b2bl_delete_entity(b2bl_entity_id_t* entity, b2bl_tuple_t* tuple,
 	for(i = 0; i< MAX_BRIDGE_ENT; i++)
 		if(tuple->bridge_entities[i] == entity)
 			tuple->bridge_entities[i] = NULL;
+
+	if (tuple->bridge_initiator == entity)
+		tuple->bridge_initiator = NULL;
 
 /*	if(entity->peer && entity->peer->peer==entity)
 		entity->peer->peer = NULL;

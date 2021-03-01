@@ -54,7 +54,8 @@ ALL_MODPKG_LIST := \
 	GEOIP REGEX IDENTITY B2BUA DBHTTP DIALPLAN MEMCACHED JSON \
 	REDIS RABBITMQ HTTP COMPRESSION EMERGENCY \
 	PROTO_TLS PROTO_WSS TLS_MGM REST_CLIENT LUA \
-	SQLITE CGRATES XML SIPREC PYTHON UUID STIR_SHAKEN
+	SQLITE CGRATES XML SIPREC PYTHON UUID STIR_SHAKEN \
+	PROMETHEUS KAFKA
 # add SCTP only on linux systems
 ifeq ($(DEB_HOST_ARCH_OS),linux)
 	ALL_MODPKG_LIST += PROTO_SCTP
@@ -165,6 +166,9 @@ CASSANDRA_MOD_PATH=$(addprefix modules/, $(CASSANDRA_MODULES))
 RABBITMQ_PKGNAME = opensips-rabbitmq-modules
 RABBITMQ_MODULES = event_rabbitmq rabbitmq rabbitmq_consumer
 RABBITMQ_MOD_PATH=$(addprefix modules/, $(RABBITMQ_MODULES))
+KAFKA_PKGNAME = opensips-kafka-module
+KAFKA_MODULES = event_kafka
+KAFKA_MOD_PATH=$(addprefix modules/, $(KAFKA_MODULES))
 LUA_PKGNAME = opensips-lua-module
 LUA_MODULES = lua
 LUA_MOD_PATH=$(addprefix modules/, $(LUA_MODULES))
@@ -216,6 +220,9 @@ STIR_SHAKEN_MOD_PATH=$(addprefix modules/, $(STIR_SHAKEN_MODULES))
 UUID_PKGNAME = opensips-uuid-module
 UUID_MODULES = uuid
 UUID_MOD_PATH=$(addprefix modules/, $(UUID_MODULES))
+PROMETHEUS_PKGNAME = opensips-prometheus-module
+PROMETHEUS_MODULES = prometheus
+PROMETHEUS_MOD_PATH=$(addprefix modules/, $(PROMETHEUS_MODULES))
 
 
 # Need this per-package variables available in environment so accessible

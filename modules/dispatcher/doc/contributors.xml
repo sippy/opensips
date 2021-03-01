@@ -29,10 +29,10 @@
 	<row>
 		<entry>2. </entry>
 		<entry>Liviu Chircu (<ulink url="https://github.com/liviuchircu">@liviuchircu</ulink>)</entry>
-		<entry align="center">102</entry>
-		<entry align="center">64</entry>
-		<entry align="center">1647</entry>
-		<entry align="center">1424</entry>
+		<entry align="center">103</entry>
+		<entry align="center">65</entry>
+		<entry align="center">1660</entry>
+		<entry align="center">1426</entry>
 	</row>
 	<row>
 		<entry>3. </entry>
@@ -61,10 +61,10 @@
 	<row>
 		<entry>6. </entry>
 		<entry>Razvan Crainea (<ulink url="https://github.com/razvancrainea">@razvancrainea</ulink>)</entry>
-		<entry align="center">36</entry>
-		<entry align="center">30</entry>
-		<entry align="center">453</entry>
-		<entry align="center">95</entry>
+		<entry align="center">37</entry>
+		<entry align="center">31</entry>
+		<entry align="center">454</entry>
+		<entry align="center">96</entry>
 	</row>
 	<row>
 		<entry>7. </entry>
@@ -101,7 +101,7 @@
 	</tbody>
 	</tgroup>
 	</table>
-	<para><emphasis role='bold'>All remaining contributors</emphasis>: Carsten Bock, Ionel Cerghit (<ulink url="https://github.com/ionel-cerghit">@ionel-cerghit</ulink>), Elena-Ramona Modroiu, Klaus Darilion, Anca Vamanu, Jarrod Baumann (<ulink url="https://github.com/jarrodb">@jarrodb</ulink>), Walter Doekes (<ulink url="https://github.com/wdoekes">@wdoekes</ulink>), Nick Altmann (<ulink url="https://github.com/nikbyte">@nikbyte</ulink>), Jan Janak (<ulink url="https://github.com/janakj">@janakj</ulink>), Andrei Pelinescu-Onciul, Peter Lemenkov (<ulink url="https://github.com/lemenkov">@lemenkov</ulink>), Stanislaw Pitucha, Federico Cabiddu, Konstantin Bokarius, Andreas Granig, John Riordan, Aron Podrigal (<ulink url="https://github.com/ar45">@ar45</ulink>), Julián Moreno Patiño, Kevin McAllister, Roman Sevko, UnixDev, David Sanders, Edson Gellert Schubert.</para>
+<para><emphasis role='bold'>All remaining contributors</emphasis>: Carsten Bock, Ionel Cerghit (<ulink url="https://github.com/ionel-cerghit">@ionel-cerghit</ulink>), Elena-Ramona Modroiu, Klaus Darilion, Anca Vamanu, Jarrod Baumann (<ulink url="https://github.com/jarrodb">@jarrodb</ulink>), Walter Doekes (<ulink url="https://github.com/wdoekes">@wdoekes</ulink>), Nick Altmann (<ulink url="https://github.com/nikbyte">@nikbyte</ulink>), Jan Janak (<ulink url="https://github.com/janakj">@janakj</ulink>), Andrei Pelinescu-Onciul, Peter Lemenkov (<ulink url="https://github.com/lemenkov">@lemenkov</ulink>), Stanislaw Pitucha, Federico Cabiddu, Konstantin Bokarius, Andreas Granig, John Riordan, Aron Podrigal (<ulink url="https://github.com/ar45">@ar45</ulink>), Julián Moreno Patiño, Kevin McAllister, Roman Sevko, UnixDev, David Sanders, Edson Gellert Schubert.</para>
 	<para>
 	    <emphasis>(1) DevScore = author_commits + author_lines_added / (project_lines_added / project_commits) + author_lines_deleted / (project_lines_deleted / project_commits)</emphasis>
 	</para>
@@ -128,13 +128,13 @@
 	<tbody>
 	<row>
 		<entry>1. </entry>
-		<entry>Razvan Crainea (<ulink url="https://github.com/razvancrainea">@razvancrainea</ulink>)</entry>
-		<entry align="center">May 2011 - Jan 2021</entry>
+		<entry>Liviu Chircu (<ulink url="https://github.com/liviuchircu">@liviuchircu</ulink>)</entry>
+		<entry align="center">Aug 2012 - Feb 2021</entry>
 	</row>
 	<row>
 		<entry>2. </entry>
-		<entry>Liviu Chircu (<ulink url="https://github.com/liviuchircu">@liviuchircu</ulink>)</entry>
-		<entry align="center">Aug 2012 - Nov 2020</entry>
+		<entry>Razvan Crainea (<ulink url="https://github.com/razvancrainea">@razvancrainea</ulink>)</entry>
+		<entry align="center">May 2011 - Jan 2021</entry>
 	</row>
 	<row>
 		<entry>3. </entry>
@@ -179,7 +179,7 @@
 	</tbody>
 	</tgroup>
 	</table>
-	<para><emphasis role='bold'>All remaining contributors</emphasis>: Julián Moreno Patiño, Jarrod Baumann (<ulink url="https://github.com/jarrodb">@jarrodb</ulink>), Ovidiu Sas (<ulink url="https://github.com/ovidiusas">@ovidiusas</ulink>), David Sanders, Aron Podrigal (<ulink url="https://github.com/ar45">@ar45</ulink>), Andrei Datcu (<ulink url="https://github.com/andrei-datcu">@andrei-datcu</ulink>), Walter Doekes (<ulink url="https://github.com/wdoekes">@wdoekes</ulink>), Stanislaw Pitucha, Anca Vamanu, John Riordan, UnixDev, Kevin McAllister, Klaus Darilion, Carsten Bock, Daniel-Constantin Mierla (<ulink url="https://github.com/miconda">@miconda</ulink>), Henning Westerholt (<ulink url="https://github.com/henningw">@henningw</ulink>), Konstantin Bokarius, Edson Gellert Schubert, Federico Cabiddu, Elena-Ramona Modroiu, Andreas Granig, Andrei Pelinescu-Onciul, Jan Janak (<ulink url="https://github.com/janakj">@janakj</ulink>).</para>
+<para><emphasis role='bold'>All remaining contributors</emphasis>: Julián Moreno Patiño, Jarrod Baumann (<ulink url="https://github.com/jarrodb">@jarrodb</ulink>), Ovidiu Sas (<ulink url="https://github.com/ovidiusas">@ovidiusas</ulink>), David Sanders, Aron Podrigal (<ulink url="https://github.com/ar45">@ar45</ulink>), Andrei Datcu (<ulink url="https://github.com/andrei-datcu">@andrei-datcu</ulink>), Walter Doekes (<ulink url="https://github.com/wdoekes">@wdoekes</ulink>), Stanislaw Pitucha, Anca Vamanu, John Riordan, UnixDev, Kevin McAllister, Klaus Darilion, Carsten Bock, Daniel-Constantin Mierla (<ulink url="https://github.com/miconda">@miconda</ulink>), Henning Westerholt (<ulink url="https://github.com/henningw">@henningw</ulink>), Konstantin Bokarius, Edson Gellert Schubert, Federico Cabiddu, Elena-Ramona Modroiu, Andreas Granig, Andrei Pelinescu-Onciul, Jan Janak (<ulink url="https://github.com/janakj">@janakj</ulink>).</para>
 	<para>
 	    <emphasis>(1) including any documentation-related commits, excluding merge commits</emphasis>
 	</para>

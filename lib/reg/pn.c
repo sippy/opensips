@@ -20,6 +20,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
  */
 
+#include <inttypes.h>
+
 #include "../../lib/csv.h"
 #include "../../parser/parse_uri.h"
 #include "../../parser/parse_fcaps.h"
@@ -155,7 +157,7 @@ int pn_init(void)
 
 		if (++nprov > PN_MAX_PROVIDERS) {
 			LM_ERR("max number of PN providers exceeded (%lu)\n",
-			       PN_MAX_PROVIDERS);
+			       (unsigned long)PN_MAX_PROVIDERS);
 			return -1;
 		}
 
@@ -545,7 +547,7 @@ static struct usr_avp *pn_trim_pn_params(evi_params_t *params)
 		}
 
 		/* the Contact URI is the only EVI param we're interested in */
-		if (str_match(&p->name, _str(UL_EV_PARAM_CT_URI)) &&
+		if (str_match(&p->name, const_str(UL_EV_PARAM_CT_URI)) &&
               pn_has_uri_params(&p->val.s, &puri)) {
 			if (pn_remove_uri_params(&puri, p->val.s.len, &_sval) != 0) {
 				LM_ERR("failed to remove PN params from Contact '%.*s'\n",
@@ -833,7 +835,7 @@ have_purr:
 	c = ul.get_ucontact_from_id(d, id, &r);
 	if (!c) {
 		LM_DBG("recognized pn-purr: '%.*s', ctid: %lu, but ct not found!\n",
-		       purr->len, purr->s, id);
+		       purr->len, purr->s, (unsigned long)id);
 		return 2;
 	}
 
@@ -924,7 +926,7 @@ char *pn_purr_pack(ucontact_id ct_id)
 {
 	static char purr_buf[OPENSIPS_PURR_LEN + 1];
 
-	sprintf(purr_buf, "%016lx", ct_id);
+	sprintf(purr_buf, "%016" PRIx64 "", ct_id);
 
 	memmove(purr_buf + 4, purr_buf + 3, 13);
 	purr_buf[3] = '.';
@@ -958,7 +960,7 @@ int pn_purr_unpack(const str *purr, ucontact_id *ct_id)
 	}
 
 	purr_buf[16] = '\0';
-	*ct_id = strtoul(purr_buf, NULL, 16);
+	*ct_id = strtoull(purr_buf, NULL, 16);
 	return 0;
 
 unknown_fmt:

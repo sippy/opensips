@@ -33,7 +33,7 @@
 
 Summary:  Very fast and configurable SIP server
 Name:     opensips
-Version:  3.1.0
+Version:  3.2.0
 Release:  1%{?dist}
 License:  GPLv2+
 Group:    System Environment/Daemons
@@ -372,6 +372,22 @@ serialization and de-serialization from JSON format. The script variable
 provides ways to access (from script) objects and arrays to add,replace or
 delete values from the script.
 
+%package  kafka-modules
+Summary:  Implementation of an Apache Kafka producer
+Group:    System Environment/Daemons
+Requires: %{name} = %{version}-%{release}
+BuildRequires: librdkafka-devel
+
+%description  kafka-modules
+OpenSIPS is a very fast and flexible SIP (RFC3261)
+server. Written entirely in C, OpenSIPS can handle thousands calls
+per second even on low-budget hardware.
+.
+This module is an implementation of an Apache Kafka producer.
+It serves as a transport backend for the Event Interface and
+also provides a stand-alone connector to be used from the
+OpenSIPS script in order to publish messages to Kafka brokers.
+
 %package  ldap-modules
 Summary:  LDAP modules for OpenSIPS
 Group:    System Environment/Daemons
@@ -525,6 +541,20 @@ per second even on low-budget hardware.
 This package provides several OpenSIPS modules for implementing presence
 server and presence user agent for RICH presence, registrar-based presence,
 external triggered presence and XCAP support.
+
+%package  prometheus-module
+Summary:  Prometheus Monitoring support for OpenSIPS
+Group:    System Environment/Daemons
+Requires: %{name} = %{version}-%{release}
+Requires: %{name}-http-modules
+
+%description  prometheus-module
+OpenSIPS is a very fast and flexible SIP (RFC3261)
+server. Written entirely in C, OpenSIPS can handle thousands calls
+per second even on low-budget hardware.
+.
+This module provides support in OpenSIPS for the Prometheus
+(https://prometheus.io/) monitoring tool.
 
 %package  python-module
 Summary:  Python scripting support
@@ -1230,6 +1260,10 @@ fi
 %{_libdir}/opensips/modules/json.so
 %doc docdir/README.json
 
+%files kafka-module
+%{_libdir}/opensips/modules/event_kafka.so
+%doc docdir/README.event_kafka
+
 %files ldap-modules
 %{_libdir}/opensips/modules/h350.so
 %doc docdir/README.h350
@@ -1344,8 +1378,13 @@ fi
 %{_libdir}/opensips/modules/xcap_client.so
 %doc docdir/README.xcap_client
 
+%files prometheus-module
+%{_libdir}/opensips/modules/prometheus.so
+%doc docdir/README.prometheus
+
 %files python-module
 %{_libdir}/opensips/modules/python.so
+%doc docdir/README.python
 
 %files rabbitmq-modules
 %{_libdir}/opensips/modules/event_rabbitmq.so
@@ -1448,6 +1487,16 @@ fi
 
 
 %changelog
+* Sat Feb 27 2021 Nick Altmann <nick@altmann.pro> - 3.2.0-1
+- Specification updated for opensips 3.2
+- New modules: b2b_logic, event_kafka, prometeus
+- New package: kafka-module, prometeus-module
+- Obsoleted modules: b2b_logic_xml
+- Renamed: b2b_logic -> b2b_logic_xml
+
+* Fri Feb 26 2021 Razvan Crainea <razvan@opensips.org> - 3.2.0-1
+- New modules: prometheus
+
 * Tue Feb 11 2020 Nick Altmann <nick.altmann@gmail.com> - 3.1.0-1
 - Specification updated for opensips 3.1
 - New modules: b2b_logic_xml, callops, media_exchange, presence_dfks,

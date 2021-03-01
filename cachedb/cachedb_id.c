@@ -286,6 +286,14 @@ static int parse_cachedb_url(struct cachedb_id* id, const str* url)
 		}
 	}
 
+	if (st == ST_PORT) {
+		if (url->s + i - begin == 0)
+			goto err;
+
+		id->port = str2s(begin, url->s + i - begin, 0);
+		return 0;
+	}
+
 	if (st == ST_DB) {
 		if (begin < url->s + len &&
 				dupl_string(&id->database, begin, url->s + len) < 0) goto err;
@@ -311,7 +319,9 @@ static int parse_cachedb_url(struct cachedb_id* id, const str* url)
 	if (id && id->host) pkg_free(id->host);
 	if (id && id->database) pkg_free(id->database);
 	if (id && id->extra_options) pkg_free(id->extra_options);
-	if (prev_token) pkg_free(prev_token);
+	if (prev_token && prev_token != id->host && prev_token != id->username)
+		pkg_free(prev_token);
+
 	return -1;
 }
 
@@ -338,7 +348,8 @@ struct cachedb_id* new_cachedb_id(const str* url)
 	memset(ptr, 0, sizeof(struct cachedb_id));
 
 	if (parse_cachedb_url(ptr, url) < 0) {
-		LM_ERR("error while parsing database URL: '%.*s' \n", url->len, url->s);
+		LM_ERR("error while parsing database URL: '%s'\n",
+				db_url_escape(url));
 		goto err;
 	}
 

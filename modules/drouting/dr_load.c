@@ -44,7 +44,7 @@
 
 #define check_val2( _col, _val, _type1, _type2, _not_null, _is_empty_str) \
 	do{\
-		if ((_val)->type!=_type1 && (_val)->type!=_type2) { \
+		if ((_val)->type!=(_type1) && (_val)->type!=(_type2)) { \
 			LM_ERR("column %.*s has a bad type [%d], accepting only [%d,%d]\n",\
 				_col.len, _col.s, (_val)->type, _type1, _type2); \
 			goto error;\
@@ -61,7 +61,7 @@
 
 #define check_val( _col, _val, _type, _not_null, _is_empty_str) \
 	do{\
-		if ((_val)->type!=_type) { \
+		if ((_val)->type!=(_type)) { \
 			LM_ERR("column %.*s has a bad type [%d], accepting only [%d]\n",\
 				_col.len, _col.s, (_val)->type, _type); \
 			goto error;\
@@ -513,10 +513,12 @@ rt_data_t* dr_load_routing_info(struct head_db *current_partition,
 							ROW_VALUES(row)+3);
 				}
 				/* GWLIST column */
-				check_val( gwlist_drc_col, ROW_VALUES(row)+4, DB_STRING, 1, 1);
+				check_val( gwlist_drc_col, ROW_VALUES(row)+4,
+					ROW_VALUES(row)[4].type == DB_BLOB ? DB_BLOB : DB_STRING, 1, 1);
 				str_vals[STR_VALS_GWLIST_DRC_COL] = (char*)VAL_STRING(ROW_VALUES(row)+4);
 				/* ATTRS column */
-				check_val( attrs_drc_col, ROW_VALUES(row)+5, DB_STRING, 0, 0);
+				check_val( attrs_drc_col, ROW_VALUES(row)+5,
+					ROW_VALUES(row)[5].type == DB_BLOB ? DB_BLOB : DB_STRING, 0, 0);
 				str_vals[STR_VALS_ATTRS_DRC_COL] = (char*)VAL_STRING(ROW_VALUES(row)+5);
 				/* STATE column */
 				if (persistent_state) {
@@ -620,14 +622,15 @@ rt_data_t* dr_load_routing_info(struct head_db *current_partition,
 				tmp.len = strlen(str_vals[STR_VALS_PREFIX_DRR_COL]);
 			}
 			/* TIME column */
-			check_val( time_drr_col, ROW_VALUES(row)+3, DB_STRING, 0, 0);
+			check_val( time_drr_col, ROW_VALUES(row)+3,
+				ROW_VALUES(row)[3].type == DB_BLOB ? DB_BLOB : DB_STRING, 0, 0);
 			/* PRIORITY column */
 			check_val2( priority_drr_col, ROW_VALUES(row)+4, DB_INT, DB_BIGINT, 1, 0);
 			int_vals[INT_VALS_PRIORITY_DRR_COL] = VAL_INT(ROW_VALUES(row)+4);
 			/* ROUTE_ID column */
 			check_val( routeid_drr_col, ROW_VALUES(row)+5, DB_STRING, 0, 0);
 			/* DSTLIST column */
-			check_val( dstlist_drr_col, ROW_VALUES(row)+6, DB_STRING, 1, 1);
+			check_val( dstlist_drr_col, ROW_VALUES(row)+6, DB_STRING, 0, 1);
 			str_vals[STR_VALS_DSTLIST_DRR_COL] =
 				(char*)VAL_STRING(ROW_VALUES(row)+6);
 			/* SORT_ALG column */
