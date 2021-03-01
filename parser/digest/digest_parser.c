@@ -29,7 +29,7 @@
 #include "digest_parser.h"
 #include "../../lib/dassert.h"
 #include "../../trim.h"    /* trim_leading */
-#include "../../lib/turbocompare.h" /* turbo_casebcmp */
+#include "../../lib/turbocompare.h" /* turbo_casematch */
 #include "param_parser.h"  /* Digest parameter name parser */
 #include "../../ut.h"      /* q_memchr */
 
@@ -226,7 +226,7 @@ static inline void parse_qop(struct qp* _q)
 
 #define CASE_ALG(alg, sptr) \
 	case ALG_##alg##_STR_LEN: \
-		if (!turbo_casebcmp((sptr)->s, ALG_##alg##_STR, (sptr)->len)) \
+		if (turbo_casematch((sptr)->s, ALG_##alg##_STR, (sptr)->len)) \
 			return ALG_##alg; \
 		break;
 
@@ -346,7 +346,7 @@ int parse_digest_cred(str* _s, dig_cred_t* _c)
 	     /* Now test, if it is digest scheme, since it is the only
 	      * scheme we are able to parse here
 	      */
-	if (!turbo_casebcmp(tmp.s, DIGEST_SCHEME, DIG_LEN) &&
+	if (turbo_casematch(tmp.s, DIGEST_SCHEME, DIG_LEN) &&
 	    /* Test for one of LWS chars + ',' */
 	    (is_ws(tmp.s[DIG_LEN]) || (tmp.s[DIG_LEN] == ','))) {
 		     /* Scheme is Digest */

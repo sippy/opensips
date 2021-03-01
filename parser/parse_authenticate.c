@@ -77,10 +77,10 @@
 #define OPAQUE_STATE     6
 #define ALGORITHM_STATE  7
 
-#define TRB_SCASEMATCH(cp, S) (!turbo_casebcmp(cp, (S), (sizeof(S) - 1)))
+#define TRB_SCASEMATCH(cp, S) (turbo_casematch(cp, (S), (sizeof(S) - 1)))
 #define TRB_STRCASEMATCH(sarg, S) (turbo_strcasematch(sarg, (S), (sizeof(S) - 1)))
 #define TRB_STRCASESTARTS(sarg, S) ((sarg)->len >= (sizeof(S) - 1) && \
-  !turbo_casebcmp((sarg)->s, (S), (sizeof(S) - 1)))
+  turbo_casematch((sarg)->s, (S), (sizeof(S) - 1)))
 
 #define STR_ADVANCE_BY(sptr, incr) {int _t = (incr); (sptr)->s += _t; (sptr)->len -= _t;}
 #define STR_ADVANCE(sptr) STR_ADVANCE_BY(sptr, 1)
@@ -88,7 +88,7 @@
 
 static int str_advance_if_starts(str *val, const char *sval, size_t slen)
 {
-	if (val->len < slen || turbo_casebcmp(val->s, sval, slen))
+	if (val->len < slen || !turbo_casematch(val->s, sval, slen))
 		return 0;
 	STR_ADVANCE_BY(val, slen);
 	return 1;

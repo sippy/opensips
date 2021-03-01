@@ -55,13 +55,13 @@ TOLOWER_FUNC(int);
 TOLOWER_FUNC(short);
 TOLOWER_FUNC(char);
 
-#define FASTCASEBCMP_LOOP(itype) \
+#define FASTCASEMATCH_LOOP(itype) \
     while (len >= sizeof(unsigned itype)) { \
         if (turbo_tolower_##itype(us1.itype##_p) != turbo_tolower_##itype(us2.itype##_p)) \
-            return 1; \
+            return 0; \
         len -= sizeof(unsigned itype); \
         if (len == 0) \
-            return 0; \
+            return 1; \
 	if (len < sizeof(unsigned itype)) { \
 	    us1.char_p -= sizeof(unsigned itype) - len; \
 	    us2.char_p -= sizeof(unsigned itype) - len; \
@@ -72,15 +72,15 @@ TOLOWER_FUNC(char);
     }
 
 /*
- * The turbo_casebcmp() function compares ASCII byte strings s1 against s2,
- * ignoring case and returning zero if they are identical, non-zero otherwise.
+ * The turbo_casematch() function compares ASCII byte strings s1 against s2,
+ * ignoring case and returning non-zero if they are identical, zero otherwise.
  * Both strings are assumed to be len bytes long. Zero-length strings are always
  * identical. No special treatment for \0 is performed, the comparison will
  * continue if both strings are matching until len bytes are compared, i.e.
- * turbo_casebcmp("1234\05678", "1234\05679", 9) will return 1 (i.e. mismatch).
+ * turbo_casematch("1234\05678", "1234\05679", 9) will return 0 (i.e. mismatch).
  */
 static inline int
-turbo_casebcmp(const char *s1, const char *s2, unsigned int len)
+turbo_casematch(const char *s1, const char *s2, unsigned int len)
 {
     union {
         const char *char_p;
@@ -90,11 +90,11 @@ turbo_casebcmp(const char *s1, const char *s2, unsigned int len)
     } us1, us2;
     us1.char_p = s1;
     us2.char_p = s2;
-    FASTCASEBCMP_LOOP(long);
-    FASTCASEBCMP_LOOP(int);
-    FASTCASEBCMP_LOOP(short);
-    FASTCASEBCMP_LOOP(char);
-    return 0;
+    FASTCASEMATCH_LOOP(long);
+    FASTCASEMATCH_LOOP(int);
+    FASTCASEMATCH_LOOP(short);
+    FASTCASEMATCH_LOOP(char);
+    return 1;
 }
 
 /*
@@ -102,6 +102,6 @@ turbo_casebcmp(const char *s1, const char *s2, unsigned int len)
  * string S matches sarg->s (ignoring the case in both).
  */
 #define turbo_strcasematch(sarg, S, Slen) ((sarg)->len == (Slen) && \
-  !turbo_casebcmp((sarg)->s, (S), (Slen)))
+  turbo_casematch((sarg)->s, (S), (Slen)))
 
 #endif
