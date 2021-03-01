@@ -21,7 +21,6 @@
 #ifndef str_h
 #define str_h
 
-#include <assert.h>
 #include <string.h>
 #include "lib/str2const.h"
 
