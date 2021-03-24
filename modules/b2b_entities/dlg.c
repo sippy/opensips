@@ -1759,8 +1759,7 @@ void b2b_entity_delete(enum b2b_entity_type et, str* b2b_key,
 	lock_get(&table[hash_index].lock);
 	if(dlginfo)
 		dlg = b2b_search_htable_dlg(table, hash_index, local_index,
-		dlginfo->totag.s?&dlginfo->totag:NULL,
-		dlginfo->fromtag.s?&dlginfo->fromtag:NULL, &dlginfo->callid);
+		&dlginfo->totag, &dlginfo->fromtag, &dlginfo->callid);
 	else
 		dlg = b2b_search_htable(table, hash_index, local_index);
 
@@ -2017,7 +2016,7 @@ int b2b_send_request(b2b_req_data_t* req_data)
 	else
 	{
 		dlg = b2b_search_htable_dlg(table, hash_index, local_index,
-		totag.s?&totag:NULL, fromtag.s?&fromtag:NULL, &dlginfo->callid);
+				&totag, &fromtag, &dlginfo->callid);
 	}
 	if(dlg== NULL)
 	{
@@ -2374,7 +2373,7 @@ int b2b_send_req(b2b_dlg_t* dlg, enum b2b_entity_type etype,
 	result= tmb.t_request_within
 		(method,            /* method*/
 		extra_headers,      /* extra headers*/
-		NULL,               /* body*/
+		body,               /* body*/
 		td,                 /* dialog structure*/
 		NULL,               /* callback function*/
 		NULL,               /* callback parameter*/
@@ -2506,6 +2505,7 @@ void b2b_tm_cback(struct cell *t, b2b_table htable, struct tmcb_params *ps)
 	struct digest_auth_response response;
 	str *new_hdr;
 	char status_buf[INT2STR_MAX_LEN];
+	static str sdp_ct = str_init("Content-Type: application/sdp\r\n");
 	int old_route_type;
 	bin_packet_t storage;
 	int b2b_ev = -1;
@@ -2725,7 +2725,8 @@ void b2b_tm_cback(struct cell *t, b2b_table htable, struct tmcb_params *ps)
 				}
 				if(dlg->callid.s==0 || dlg->callid.len==0)
 					dlg->callid = msg->callid->body;
-				if(b2b_send_req(dlg, etype, leg, &ack, 0,
+				if(b2b_send_req(dlg, etype, leg, &ack,
+							(dlg->ack_sdp.s?&sdp_ct:0),
 							(dlg->ack_sdp.s?&dlg->ack_sdp:0)) < 0)
 				{
 					LM_ERR("Failed to send ACK request\n");
@@ -3130,7 +3131,8 @@ dummy_reply:
 					if(dlg->callid.s==0 || dlg->callid.len==0)
 						dlg->callid = msg->callid->body;
 					/* send an ACK followed by BYE */
-					if(b2b_send_req(dlg, etype, dlg->legs, &ack, 0,
+					if(b2b_send_req(dlg, etype, dlg->legs, &ack,
+								(dlg->ack_sdp.s?&sdp_ct:0),
 								dlg->ack_sdp.s?&dlg->ack_sdp:0) < 0)
 					{
 						LM_ERR("Failed to send ACK request\n");
