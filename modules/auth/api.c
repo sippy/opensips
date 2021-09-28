@@ -142,6 +142,10 @@ static inline int find_credentials(struct sip_msg* _m, str* _realm,
     return 1;
 }
 
+struct eresp {
+	int code;
+	const str txt;
+};
 
 /*
  * Purpose of this function is to find credentials with given realm,
@@ -152,10 +156,12 @@ static inline int find_credentials(struct sip_msg* _m, str* _realm,
 auth_result_t pre_auth(struct sip_msg* _m, str* _realm, hdr_types_t _hftype,
 													struct hdr_field** _h)
 {
-	int ret, ecode;
+	int ret;
 	auth_body_t* c;
 	struct sip_uri *uri;
-	const str *emsg;
+	const struct eresp *emsg;
+	const struct eresp er400 = {.code = 400, .txt = str_init(MESSAGE_400)};
+	const struct eresp er500 = {.code = 500, .txt = str_init(MESSAGE_500)};
 
 	/* ACK and CANCEL must be always authorized, there is
 	 * no way how to challenge ACK and CANCEL cannot be
@@ -169,8 +175,7 @@ auth_result_t pre_auth(struct sip_msg* _m, str* _realm, hdr_types_t _hftype,
 	if (_realm->len == 0) {
 		if (get_realm(_m, _hftype, &uri) < 0) {
 			LM_ERR("failed to extract realm\n");
-			emsg = str_static(MESSAGE_400);
-			ecode = 400;
+			emsg = &er400;
 			goto ereply;
 		}
 
@@ -186,11 +191,9 @@ auth_result_t pre_auth(struct sip_msg* _m, str* _realm, hdr_types_t _hftype,
 	if (ret < 0) {
 		LM_ERR("failed to find credentials\n");
 		if (ret == -2) {
-			emsg = str_static(MESSAGE_500);
-			ecode = 500;
+			emsg = &er500;
 		} else {
-			emsg = str_static(MESSAGE_400);
-			ecode = 400;
+			emsg = &er400;
 		}
 		goto ereply;
 	} else if (ret > 0) {
@@ -205,15 +208,13 @@ auth_result_t pre_auth(struct sip_msg* _m, str* _realm, hdr_types_t _hftype,
 	/* Check credentials correctness here */
 	if (check_dig_cred(dcp) != E_DIG_OK) {
 		LM_DBG("received credentials are not filled properly\n");
-		emsg = str_static(MESSAGE_400);
-		ecode = 400;
+		emsg = &er400;
 		goto ereply;
 	}
 
 	if (mark_authorized_cred(_m, *_h) < 0) {
 		LM_ERR("failed to mark parsed credentials\n");
-		emsg = str_static(MESSAGE_400);
-		ecode = 500;
+		emsg = &er500;
 		goto ereply;
 	}
 
@@ -253,8 +254,8 @@ auth_result_t pre_auth(struct sip_msg* _m, str* _realm, hdr_types_t _hftype,
 
 	return DO_AUTHORIZATION;
 ereply:
-	if (send_resp(_m, ecode, emsg, 0, 0) == -1) {
-		LM_ERR("failed to send %d reply\n", ecode);
+	if (send_resp(_m, emsg->code, &emsg->txt, 0, 0) == -1) {
+		LM_ERR("failed to send %d reply\n", emsg->code);
 	}
 	return ERROR;
 stalenonce:
