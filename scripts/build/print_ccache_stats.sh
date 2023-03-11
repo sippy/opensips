@@ -6,4 +6,4 @@ set -e
 
 . $(dirname $0)/build.conf.sub
 
-ccache --show-stats
+ccache --show-stats --show-compression
