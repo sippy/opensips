@@ -16,7 +16,7 @@ jobs:
       uses: sobomax/oss-fuzz/infra/cifuzz/actions/run_fuzzers@opensips
       with:
         oss-fuzz-project-name: 'opensips'
-        fuzz-seconds: 600
+        fuzz-seconds: 3600
         dry-run: false
     - name: Upload Crash
       uses: actions/upload-artifact@v1
