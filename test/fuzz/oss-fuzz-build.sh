@@ -60,3 +60,7 @@ do
     cp test/fuzz/fuzz_${fuzn}.dict $OUT
   fi
 done
+if [ "${OUT}" != "`pwd`" ]
+then
+  cp -Rp ${OUT} build-out
+fi
