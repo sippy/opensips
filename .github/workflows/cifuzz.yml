@@ -4,15 +4,16 @@ jobs:
   Fuzzing:
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v3
     - name: Build Fuzzers
       id: build
-      uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@master
+      uses: sobomax/oss-fuzz/infra/cifuzz/actions/build_fuzzers@opensips
       with:
         oss-fuzz-project-name: 'opensips'
         dry-run: false
         language: c
     - name: Run Fuzzers
-      uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@master
+      uses: sobomax/oss-fuzz/infra/cifuzz/actions/run_fuzzers@opensips
       with:
         oss-fuzz-project-name: 'opensips'
         fuzz-seconds: 600
