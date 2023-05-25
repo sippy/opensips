@@ -21,8 +21,9 @@
 
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <unistd.h>
+#include <sched.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include "lib/dbg/profiling.h"
 #include "mem/shm_mem.h"
