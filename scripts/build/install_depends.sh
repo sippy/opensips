@@ -25,7 +25,8 @@ then
 fi
 
 ${SUDO} apt-get update -y
-${SUDO} apt-get -y remove libmemcached11 libpq5
+${SUDO} apt-mark auto $(apt-mark showmanual)
+${SUDO} apt-mark manual sudo bash apt systemd
 ${SUDO} apt-get -y autoremove
 ${SUDO} apt-get -y --allow-downgrades install ${PKGS}
 
