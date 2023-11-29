@@ -57,7 +57,8 @@ static int mod_init(void);
 static void mod_destroy(void);
 
 /* openssl conn ops */
-int openssl_tls_conn_init(struct tcp_connection* c, struct tls_domain *tls_dom);
+int openssl_tls_conn_init(struct tcp_connection* c, struct tls_domain *tls_dom,
+	const struct host_sock_info *hu);
 void openssl_tls_conn_clean(struct tcp_connection *c,
 	struct tls_domain **tls_dom);
 int openssl_tls_update_fd(struct tcp_connection *c, int fd);

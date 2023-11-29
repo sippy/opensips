@@ -170,7 +170,7 @@ static int run_local_route( struct cell *new_cell, char **buf, int *buf_len,
 	int backup_route_type;
 	struct retr_buf *request;
 	struct proxy_l *new_proxy = NULL;
-	union sockaddr_union new_to_su;
+	struct host_sock_info new_to_hu;
 	const struct socket_info *new_send_sock;
 	unsigned short dst_changed;
 	char *buf1=NULL, *sipmsg_buf;
@@ -235,7 +235,7 @@ static int run_local_route( struct cell *new_cell, char **buf, int *buf_len,
 			if (new_proxy==0)
 				goto skip_update;
 			/* use the first address */
-			hostent2su( &new_to_su,
+			hostent2hu( &new_to_hu,
 				&new_proxy->host, new_proxy->addr_idx,
 				new_proxy->port ? new_proxy->port:SIP_PORT);
 			/* get the send socket */
@@ -245,7 +245,7 @@ static int run_local_route( struct cell *new_cell, char **buf, int *buf_len,
 			dialog->pref_sock->proto==new_proxy->proto) {
 				new_send_sock = dialog->pref_sock;
 			} else {
-				new_send_sock = get_send_socket( req, &new_to_su,
+				new_send_sock = get_send_socket( req, &new_to_hu.su,
 					new_proxy->proto);
 				if (new_send_sock==NULL) {
 					free_proxy( new_proxy );
@@ -337,7 +337,7 @@ static int run_local_route( struct cell *new_cell, char **buf, int *buf_len,
 			request->dst.proto_reserved1 = 0;
 		}
 		if (new_proxy) {
-			request->dst.to = new_to_su;
+			hu_dup(&new_to_hu, &request->dst.to);
 			/* for DNS based failover, copy the DNS proxy into transaction */
 			if (!disable_dns_failover) {
 				new_cell->uac[0].proxy = shm_clone_proxy( new_proxy,
@@ -410,7 +410,7 @@ skip_update:
 int t_uac(str* method, str* headers, str* body, dlg_t* dialog,
 				transaction_cb cb, void* cbp,release_tmcb_param release_func)
 {
-	union sockaddr_union to_su;
+	struct host_sock_info to_hu;
 	struct cell *new_cell;
 	struct retr_buf *request;
 	struct sip_msg *req = NULL;
@@ -446,7 +446,7 @@ int t_uac(str* method, str* headers, str* body, dlg_t* dialog,
 		goto error_out;
 	}
 	/* use the first address */
-	hostent2su( &to_su,
+	hostent2hu( &to_hu,
 		&proxy->host, proxy->addr_idx, proxy->port ? proxy->port:SIP_PORT);
 
 	/* check/discover the send socket */
@@ -461,11 +461,11 @@ int t_uac(str* method, str* headers, str* body, dlg_t* dialog,
 			dialog->send_sock = dialog->pref_sock;
 		} else {
 			/* get the send socket */
-			dialog->send_sock = get_send_socket(NULL/*msg*/, &to_su,
+			dialog->send_sock = get_send_socket(NULL/*msg*/, &to_hu.su,
 				proxy->proto);
 			if (!dialog->send_sock) {
 				LM_ERR("no corresponding socket for af %d\n",
-					to_su.s.sa_family);
+					to_hu.su.s.sa_family);
 				ser_error = E_NO_SOCKET;
 				goto error3;
 			}
@@ -511,10 +511,10 @@ int t_uac(str* method, str* headers, str* body, dlg_t* dialog,
 	new_cell->flags |= T_IS_LOCAL_FLAG;
 
 	request = &new_cell->uac[0].request;
-	if (dialog->forced_to_su.s.sa_family == AF_UNSPEC)
-		request->dst.to = to_su;
+	if (dialog->forced_to_hu.su.s.sa_family == AF_UNSPEC)
+		hu_dup(&to_hu, &request->dst.to);
 	else
-		request->dst.to = dialog->forced_to_su;
+		hu_dup(&dialog->forced_to_hu, &request->dst.to);
 	request->dst.send_sock = dialog->send_sock;
 	request->dst.proto = dialog->send_sock->proto;
 	request->dst.proto_reserved1 = 0;

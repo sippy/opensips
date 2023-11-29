@@ -791,7 +791,7 @@ int send_outbind(smpp_session_t *session)
 static struct tcp_connection *smpp_connect(smpp_session_t *session, int *fd)
 {
 	union sockaddr_union to;
-	union sockaddr_union server;
+	struct host_sock_info server = {0};
 	const struct socket_info *send_socket;
 	struct tcp_conn_profile prof;
 
@@ -799,7 +799,7 @@ static struct tcp_connection *smpp_connect(smpp_session_t *session, int *fd)
 		LM_ERR("error creating su from ipaddr and port\n");
 		return NULL;
 	}
-	if (init_su(&server, &session->ip, session->port)) {
+	if (init_su(&server.su, &session->ip, session->port)) {
 		LM_ERR("error creating su from ipaddr and port\n");
 		return NULL;
 	}
@@ -809,7 +809,7 @@ static struct tcp_connection *smpp_connect(smpp_session_t *session, int *fd)
 		return NULL;
 	}
 
-	tcp_con_get_profile(&server, &send_socket->su, PROTO_SMPP, &prof);
+	tcp_con_get_profile(&server.su, &send_socket->su, PROTO_SMPP, &prof);
 
 	return tcp_sync_connect(send_socket, &server, &prof, fd, 1);
 }

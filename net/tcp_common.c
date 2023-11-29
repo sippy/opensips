@@ -23,6 +23,7 @@
 #include "net_tcp.h"
 #include "tcp_common.h"
 #include "tcp_conn_profile.h"
+#include "host_sock_info.h"
 #include "../tsend.h"
 
 /*! \brief blocking connect on a non-blocking fd; it will timeout after
@@ -140,12 +141,13 @@ int tcp_connect_blocking(int fd, const struct sockaddr *servaddr,
 			tcp_connect_timeout);
 }
 
-int tcp_sync_connect_fd(const union sockaddr_union* src, const union sockaddr_union* dst,
+int tcp_sync_connect_fd(const union sockaddr_union* src,  const struct host_sock_info* hup,
                  enum sip_protos proto, const struct tcp_conn_profile *prof, enum si_flags flags)
 {
 	int s;
 	union sockaddr_union my_name;
 	socklen_t my_name_len;
+	const union sockaddr_union *dst = &hup->su;
 
 	s=socket(AF2PF(dst->s.sa_family), SOCK_STREAM, 0);
 	if (s==-1){
@@ -182,7 +184,7 @@ error:
 }
 
 struct tcp_connection* tcp_sync_connect(const struct socket_info* send_sock,
-               const union sockaddr_union* server, struct tcp_conn_profile *prof,
+               const struct host_sock_info * server, struct tcp_conn_profile *prof,
                int *fd, int send2main)
 {
 	struct tcp_connection* con;
@@ -203,10 +205,11 @@ struct tcp_connection* tcp_sync_connect(const struct socket_info* send_sock,
 }
 
 int tcp_async_connect(const struct socket_info* send_sock,
-            const union sockaddr_union* server, struct tcp_conn_profile *prof,
+            const struct host_sock_info* server_hu, struct tcp_conn_profile *prof,
             int timeout, struct tcp_connection** c, int *ret_fd, int send2main)
 {
 	int fd, n;
+	const union sockaddr_union *server = &server_hu->su;
 	union sockaddr_union my_name;
 	socklen_t my_name_len;
 	struct tcp_connection* con;
@@ -330,7 +333,7 @@ again:
 async_connect:
 	LM_DBG("Create connection for async connect\n");
 	/* create a new dummy connection */
-	con=tcp_conn_create(fd, server, send_sock,
+	con=tcp_conn_create(fd, server_hu, send_sock,
 	                    prof, S_CONN_CONNECTING, send2main);
 	if (con==NULL) {
 		LM_ERR("tcp_conn_create failed\n");
@@ -341,7 +344,7 @@ async_connect:
 	return 0;
 
 local_connect:
-	con=tcp_conn_create(fd, server, send_sock, prof, S_CONN_OK, send2main);
+	con=tcp_conn_create(fd, server_hu, send_sock, prof, S_CONN_OK, send2main);
 	if (con==NULL) {
 		LM_ERR("tcp_conn_create failed, closing the socket\n");
 		goto error;

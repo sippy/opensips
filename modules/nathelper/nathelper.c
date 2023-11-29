@@ -1423,7 +1423,8 @@ nh_timer(unsigned int ticks, void *timer_idx)
 			if ((flags & sipping_flag) &&
 			    (opt.s = build_sipping(d, &c, send_sock, &path, &opt.len,
 			                         ct_coords, flags))) {
-				if (msg_send(send_sock, next_hop.proto, &to, 0, opt.s, opt.len, NULL) < 0) {
+				struct host_sock_info to_hu = {.su = to};
+				if (msg_send(send_sock, next_hop.proto, &to_hu, 0, opt.s, opt.len, NULL) < 0) {
 					LM_ERR("sip msg_send failed\n");
 				}
 			} else if (raw_ip && next_hop.proto == PROTO_UDP) {
@@ -1431,7 +1432,8 @@ nh_timer(unsigned int ticks, void *timer_idx)
 					LM_ERR("send_raw failed\n");
 				}
 			} else {
-				if (msg_send(send_sock, next_hop.proto, &to, 0,
+				struct host_sock_info to_hu = {.su = to};
+				if (msg_send(send_sock, next_hop.proto, &to_hu, 0,
 				             (char *)sbuf, sizeof(sbuf), NULL) < 0) {
 					LM_ERR("sip msg_send failed!\n");
 				}

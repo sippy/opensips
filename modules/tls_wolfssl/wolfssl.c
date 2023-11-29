@@ -58,7 +58,8 @@ static int load_tls_wolfssl(struct wolfssl_binds *binds);
 static int mod_init(void);
 static void mod_destroy(void);
 
-int _wolfssl_tls_conn_init(struct tcp_connection* c, struct tls_domain *tls_dom);
+int _wolfssl_tls_conn_init(struct tcp_connection* c, struct tls_domain *tls_dom,
+	const struct host_sock_info *hu);
 void _wolfssl_tls_conn_clean(struct tcp_connection *c,
 	struct tls_domain **tls_dom);
 int _wolfssl_tls_update_fd(struct tcp_connection *c, int fd);

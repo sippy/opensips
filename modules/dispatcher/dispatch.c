@@ -186,7 +186,7 @@ int add_dest2list(int id, str uri, const struct socket_info *sock, str *comsock,
 
 	/* For DNS-Lookups */
 	struct proxy_l *proxy;
-	union sockaddr_union sau;
+	struct host_sock_info sau;
 
 	/* check uri */
 	if(parse_uri(uri.s, uri.len, &puri)!=0 || puri.host.len>254)
@@ -327,8 +327,8 @@ int add_dest2list(int id, str uri, const struct socket_info *sock, str *comsock,
 	LM_DBG("first gw ip addr [%s]:%d\n",
 		ip_addr2a(&dp->ips[0]), dp->ports[0]);
 	/* get the next available IPs from DNS */
-	while (dp->ips_cnt<DS_MAX_IPS && (get_next_su( proxy, &sau, 0)==0) ) {
-		su2ip_addr( &dp->ips[dp->ips_cnt], &sau);
+	while (dp->ips_cnt<DS_MAX_IPS && (get_next_hu( proxy, &sau, 0)==0) ) {
+		su2ip_addr( &dp->ips[dp->ips_cnt], &sau.su);
 		dp->ports[dp->ips_cnt] = proxy->port;
 		dp->protos[dp->ips_cnt] = proxy->proto;
 		LM_DBG("additional gw ip addr [%s]:%d, proto %d\n",

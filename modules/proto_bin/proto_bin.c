@@ -33,6 +33,7 @@
 #include "../../net/api_proto.h"
 #include "../../net/api_proto_net.h"
 #include "../../net/net_tcp.h"
+#include "../../net/host_sock_info.h"
 #include "../../net/tcp_common.h"
 #include "../../socket_info.h"
 #include "../../tsend.h"
@@ -47,7 +48,7 @@ static int mod_init(void);
 static int proto_bin_init(struct proto_info *pi);
 static int proto_bin_init_listener(struct socket_info *si);
 static int proto_bin_send(const struct socket_info* send_sock,
-		char* buf, unsigned int len, const union sockaddr_union* to,
+		char* buf, unsigned int len, const struct host_sock_info* to,
 		unsigned int id);
 static int bin_read_req(struct tcp_connection* con, int* bytes_read);
 
@@ -142,13 +143,14 @@ static int proto_bin_init_listener(struct socket_info *si)
 }
 
 static int proto_bin_send(const struct socket_info* send_sock,
-		char* buf, unsigned int len, const union sockaddr_union* to,
+		char* buf, unsigned int len, const struct host_sock_info *to_hu,
 		unsigned int id)
 {
 	struct tcp_connection *c;
 	struct ip_addr ip;
 	int port;
 	int fd, n;
+	const union sockaddr_union *to = to_hu ? &to_hu->su : NULL;
 
 	port=0;
 
@@ -184,7 +186,7 @@ static int proto_bin_send(const struct socket_info* send_sock,
 		LM_DBG("no open tcp connection found, opening new one, async = %d\n",bin_async);
 		/* create tcp connection */
 		if (bin_async) {
-			n = tcp_async_connect(send_sock, to, &prof,
+			n = tcp_async_connect(send_sock, to_hu, &prof,
 					bin_async_local_connect_timeout, &c, &fd, 1);
 			if ( n<0 ) {
 				LM_ERR("async TCP connect failed\n");
@@ -211,7 +213,7 @@ static int proto_bin_send(const struct socket_info* send_sock,
 				return len;
 			}
 			/* our first connect attempt succeeded - go ahead as normal */
-		} else if ((c=tcp_sync_connect(send_sock, to, &prof, &fd, 1))==0) {
+		} else if ((c=tcp_sync_connect(send_sock, to_hu, &prof, &fd, 1))==0) {
 			LM_ERR("connect failed\n");
 			return -1;
 		}

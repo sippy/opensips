@@ -86,7 +86,7 @@ void msrp_brief_parse_msg(struct msrp_req *r);
 
 int proto_msrp_send(const struct socket_info* send_sock,
 		char* buf, unsigned int len,
-		const union sockaddr_union* to, unsigned int id);
+		const struct host_sock_info* to, unsigned int id);
 
 int msrp_read_req(struct tcp_connection* con, int* bytes_read);
 

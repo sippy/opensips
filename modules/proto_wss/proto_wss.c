@@ -44,6 +44,7 @@
 #include "../../net/proto_tcp/tcp_common_defs.h"
 #include "../../net/trans_trace.h"
 #include "../../net/net_tcp_report.h"
+#include "../../net/host_sock_info.h"
 #include "../proto_ws/proto_ws.h"
 #include "proto_wss.h"
 #include "../proto_ws/ws_common_defs.h"
@@ -108,10 +109,10 @@ static int mod_init(void);
 static int proto_wss_init(struct proto_info *pi);
 static int proto_wss_init_listener(struct socket_info *si);
 static int proto_wss_send(const struct socket_info* send_sock,
-		char* buf, unsigned int len, const union sockaddr_union* to,
+		char* buf, unsigned int len, const struct host_sock_info* to,
 		unsigned int id);
 static int wss_read_req(struct tcp_connection* con, int* bytes_read);
-static int wss_conn_init(struct tcp_connection* c);
+static int wss_conn_init(struct tcp_connection* c, const struct host_sock_info *);
 static void ws_conn_clean(struct tcp_connection* c);
 static void wss_report(int type, unsigned long long conn_id, int conn_flags,
 		void *extra);
@@ -262,7 +263,7 @@ static int mod_init(void)
 	return 0;
 }
 
-static int wss_conn_init(struct tcp_connection* c)
+static int wss_conn_init(struct tcp_connection* c, const struct host_sock_info *hu)
 {
 	struct ws_data *d;
 	struct tls_domain *dom;
@@ -306,7 +307,7 @@ static int wss_conn_init(struct tcp_connection* c)
 		return -1;
 	}
 
-	ret = tls_mgm_api.tls_conn_init(c, dom);
+	ret = tls_mgm_api.tls_conn_init(c, dom, hu);
 	if (ret < 0) {
 		c->proto_data = NULL;
 		LM_ERR("Cannot initiate the conn\n");
@@ -389,7 +390,7 @@ static void wss_report(int type, unsigned long long conn_id, int conn_flags,
 
 /*! \brief Finds a tcpconn & sends on it */
 static int proto_wss_send(const struct socket_info* send_sock,
-		char* buf, unsigned int len, const union sockaddr_union* to,
+		char* buf, unsigned int len, const struct host_sock_info* to_hu,
 		unsigned int id)
 {
 	struct tcp_connection *c;
@@ -399,6 +400,7 @@ static int proto_wss_send(const struct socket_info* send_sock,
 	struct ip_addr ip;
 	int port = 0, fd, n, matched;
 	struct ws_data* d;
+	const union sockaddr_union *to = to_hu ? &to_hu->su : NULL;
 
 	matched = tcp_con_get_profile(to, &send_sock->su, send_sock->proto, &prof);
 
@@ -439,7 +441,7 @@ static int proto_wss_send(const struct socket_info* send_sock,
 		}
 		LM_DBG("no open tcp connection found, opening new one\n");
 		/* create tcp connection */
-		if ((c=ws_connect(send_sock, to, &prof, &fd))==0) {
+		if ((c=ws_connect(send_sock, to_hu, &prof, &fd))==0) {
 			LM_ERR("connect failed\n");
 			return -1;
 		}

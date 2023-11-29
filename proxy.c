@@ -58,27 +58,29 @@ int disable_dns_failover=0;
 int hostent_shm_cpy(struct hostent *dst, struct hostent* src)
 {
 	unsigned int len;
-	int  i;
+	int  hal_len;
 	char *p;
+	size_t alen;
 
-	len = strlen(src->h_name)+1;
-	dst->h_name = (char*)shm_malloc(sizeof(char) * len);
-	if (dst->h_name) strncpy(dst->h_name, src->h_name, len);
-	else return -1;
+	len = strlen(src->h_name) + 1;
 
-	for( i=0 ; src->h_addr_list[i] ; i++ );
+	for( hal_len=0 ; src->h_addr_list[hal_len] ; hal_len++ ) {};
 
-	dst->h_addr_list = (char**)shm_malloc
-		(i * (src->h_length + sizeof(char*)) + sizeof(char*));
+	alen = hal_len * (src->h_length + sizeof(char*));
+	alen += sizeof(void*);
+
+	dst->h_addr_list = (char**)shm_malloc(alen + alen);
 	if (dst->h_addr_list==NULL) {
-		shm_free(dst->h_name);
 		return -1;
 	}
 
-	p = ((char*)dst->h_addr_list) + (i+1)*sizeof(char*);
-	dst->h_addr_list[i] = 0;
+	dst->h_name = ((char *)dst->h_addr_list) + len;
+	memcpy(dst->h_name, src->h_name, len);
 
-	for( i-- ; i>=0 ; i-- ) {
+	p = ((char*)dst->h_addr_list) + (hal_len+1)*sizeof(char*);
+	dst->h_addr_list[hal_len] = NULL;
+
+	for( int i = hal_len - 1 ; i>=0 ; i-- ) {
 		dst->h_addr_list[i] = p;
 		memcpy( dst->h_addr_list[i], src->h_addr_list[i], src->h_length );
 		p += src->h_length;
@@ -93,8 +95,6 @@ int hostent_shm_cpy(struct hostent *dst, struct hostent* src)
 
 void free_shm_hostent(struct hostent *dst)
 {
-	if (dst->h_name)
-		shm_free(dst->h_name);
 	if (dst->h_addr_list)
 		shm_free(dst->h_addr_list);
 }

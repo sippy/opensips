@@ -4252,7 +4252,7 @@ static int w_hep_relay(struct sip_msg *msg)
 
 	const struct socket_info* send_sock;
 
-	union sockaddr_union to;
+	struct host_sock_info to;
 
 	str* uri_s;
 	str  buf_s;
@@ -4316,14 +4316,14 @@ static int w_hep_relay(struct sip_msg *msg)
 		return 0;
 	}
 
-	hostent2su( &to, &proxy->host, proxy->addr_idx,
+	hostent2hu( &to, &proxy->host, proxy->addr_idx,
 				(proxy->port)?proxy->port:SIP_PORT);
 
 	/* FIXME */
-	send_sock=get_send_socket(0, &to, hep_proto);
+	send_sock=get_send_socket(0, &to.su, hep_proto);
 	if (send_sock==0){
 		LM_ERR("cannot forward to af %d, proto %d no corresponding"
-			"listening socket\n", to.s.sa_family, proxy->proto);
+			"listening socket\n", to.su.s.sa_family, proxy->proto);
 		return -1;
 	}
 
@@ -4334,7 +4334,7 @@ static int w_hep_relay(struct sip_msg *msg)
 		}
 
 		break;
-	} while( get_next_su( proxy, &to, 0)==0 );
+	} while( get_next_hu( proxy, &to, 0)==0 );
 
 	free_proxy(proxy);
 	pkg_free(proxy);

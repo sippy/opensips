@@ -144,7 +144,7 @@ static inline void update_sl_reply_stat(int code)
 int sl_send_reply_helper(struct sip_msg *msg ,int code, const str *text)
 {
 	str buf;
-	union sockaddr_union to;
+	struct host_sock_info to;
 	char *dset;
 	int dset_len;
 	struct bookmark dummy_bm;

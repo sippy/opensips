@@ -1684,7 +1684,7 @@ int send_hep_message(trace_message message, trace_dest dest, const struct socket
 	char* buf=0;
 
 	struct proxy_l* p;
-	union sockaddr_union* to;
+	struct host_sock_info* to;
 
 	hid_list_p hep_dest = (hid_list_p) dest;
 
@@ -1715,7 +1715,7 @@ int send_hep_message(trace_message message, trace_dest dest, const struct socket
 		goto end;
 	}
 
-	to=(union sockaddr_union *)pkg_malloc(sizeof(union sockaddr_union));
+	to=(struct host_sock_info *)pkg_malloc(sizeof(*to));
 	if (to == 0) {
 		LM_ERR("no more pkg mem!\n");
 		pkg_free(buf);
@@ -1724,7 +1724,7 @@ int send_hep_message(trace_message message, trace_dest dest, const struct socket
 		goto end;
 	}
 
-	hostent2su(to, &p->host, p->addr_idx, p->port?p->port:HEP_PORT);
+	hostent2hu(to, &p->host, p->addr_idx, p->port?p->port:HEP_PORT);
 
 	do {
 		if (msg_send(send_sock, hep_dest->transport, to, 0, buf, len, NULL) < 0) {
@@ -1733,7 +1733,7 @@ int send_hep_message(trace_message message, trace_dest dest, const struct socket
 		}
 		ret=0;
 		break;
-	} while ( get_next_su( p, to, 0)==0);
+	} while ( get_next_hu( p, to, 0)==0);
 
 	free_proxy(p);
 	pkg_free(p);

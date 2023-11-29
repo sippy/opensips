@@ -43,7 +43,9 @@
 #include "mem/mem.h"
 #include "mem/shm_mem.h"
 #include "net/trans.h"
+#include "net/host_sock_info.h"
 #include "resolve.h"
+#include "proxy.h"
 #include "dprint.h"
 #include "ut.h"
 #include "ip_addr.h"
@@ -2011,7 +2013,7 @@ void free_dns_res( struct proxy_l *p )
 
 
 
-int get_next_su(struct proxy_l *p, union sockaddr_union* su, int add_to_bl)
+int get_next_hu(struct proxy_l *p, struct host_sock_info* hu, int add_to_bl)
 {
 	struct hostent *he;
 	struct bl_rule *list;
@@ -2035,7 +2037,7 @@ int get_next_su(struct proxy_l *p, union sockaddr_union* su, int add_to_bl)
 	/* any more available IPs in he ? */
 	if ( p->host.h_addr_list[++p->addr_idx] ) {
 		/* yes -> return the IP*/
-		hostent2su( su, &p->host, p->addr_idx, (p->port)?p->port:SIP_PORT);
+		hostent2hu( hu, &p->host, p->addr_idx, (p->port)?p->port:SIP_PORT);
 		return 0;
 	}
 
@@ -2057,7 +2059,7 @@ int get_next_su(struct proxy_l *p, union sockaddr_union* su, int add_to_bl)
 		return -1;
 	}
 
-	hostent2su( su, &p->host, 0, (p->port)?p->port:SIP_PORT);
+	hostent2hu( hu, &p->host, 0, (p->port)?p->port:SIP_PORT);
 	p->addr_idx = 0;
 	return 0;
 }

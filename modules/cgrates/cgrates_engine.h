@@ -29,7 +29,7 @@ struct cgr_engine {
 	str host;
 
 	int is_fqdn;
-	union sockaddr_union su;
+	struct host_sock_info hu;
 	time_t disable_time;
 
 	struct cgr_conn *default_con;

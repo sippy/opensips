@@ -190,8 +190,9 @@ int msrp_send_reply( void *hdl, struct msrp_msg *req, int code, str* reason,
 	}
 
 	/* now, send it out*/
+	struct host_sock_info to = {.su = req->rcv.src_su};
 	i = msg_send( req->rcv.bind_address, PROTO_MSRP,
-			&req->rcv.src_su, req->rcv.proto_reserved1,
+			&to, req->rcv.proto_reserved1,
 			buf, len, NULL);
 	if (i<0) {
 		/* sending failed, FIXME - close the connection */
@@ -425,7 +426,8 @@ redo_ident:
 	}
 
 	/* now, send it out*/
-	i = msg_send( sock, sock->proto, to_su , 0 /*conn-id*/, buf, len, NULL);
+	struct host_sock_info to_hu = {.su = *to_su};
+	i = msg_send( sock, sock->proto, &to_hu , 0 /*conn-id*/, buf, len, NULL);
 	if (i<0) {
 		/* sending failed, TODO - close the connection */
 		LM_ERR("failed to fwd MSRP request\n");
@@ -790,8 +792,9 @@ int msrp_send_report(void *hdl, str *status,
 				&cell->recv.to, cell->recv.proto_reserved1,
 				buf, len, NULL);
 	} else {
+		struct host_sock_info to = {.su = req->rcv.src_su};
 		i = msg_send( req->rcv.bind_address, PROTO_MSRP,
-				&req->rcv.src_su, req->rcv.proto_reserved1,
+				&to, req->rcv.proto_reserved1,
 				buf, len, NULL);
 	}
 	if (i<0) {
@@ -1056,7 +1059,8 @@ redo_ident:
 	}
 
 	/* now, send it out*/
-	i = msg_send( sock, sock->proto, to_su, 0 /*conn-id*/, buf, len, NULL);
+	struct host_sock_info to_hu = {.su = *to_su};
+	i = msg_send( sock, sock->proto, &to_hu, 0 /*conn-id*/, buf, len, NULL);
 	if (i<0) {
 		/* sending failed, TODO - close the connection */
 		LM_ERR("failed to fwd MSRP request\n");
@@ -1282,7 +1286,8 @@ static struct msrp_cell* _build_transaction(struct msrp_msg *req, int hash,
 				req->failure_report->body.len);
 		}
 
-		init_su( &cell->recv.to, &req->rcv.src_ip, req->rcv.src_port);
+		cell->recv.to = (struct host_sock_info){0};
+		init_su( &cell->recv.to.su, &req->rcv.src_ip, req->rcv.src_port);
 		cell->recv.proto = req->rcv.proto;
 		cell->recv.proto_reserved1 = req->rcv.proto_reserved1;
 		cell->recv.send_sock = req->rcv.bind_address;

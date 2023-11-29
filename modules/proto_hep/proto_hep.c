@@ -37,6 +37,7 @@
 #include "../../net/tcp_common.h"
 #include "../../net/net_tcp.h"
 #include "../../net/net_udp.h"
+#include "../../net/host_sock_info.h"
 #include "../../socket_info.h"
 #include "../../receive.h"
 #include "../../net/proto_tcp/tcp_common_defs.h"
@@ -61,20 +62,20 @@ static int hep_tcp_or_tls_read_req(struct tcp_connection* con, int* bytes_read,
 		unsigned int is_tls);
 static int hep_udp_read_req(const struct socket_info* si, int* bytes_read);
 static int hep_udp_send(const struct socket_info* send_sock,
-		char* buf, unsigned int len, const union sockaddr_union* to,
+		char* buf, unsigned int len, const struct host_sock_info* to,
 		unsigned int id);
 static int hep_tcp_or_tls_send(const struct socket_info* send_sock,
-		char* buf, unsigned int len, const union sockaddr_union* to,
+		char* buf, unsigned int len, const struct host_sock_info* to,
 		unsigned int id, unsigned int is_tls);
 static int hep_tcp_send(const struct socket_info* send_sock,
-		char* buf, unsigned int len, const union sockaddr_union* to,
+		char* buf, unsigned int len, const struct host_sock_info* to,
 		unsigned int id);
 static int hep_tls_send(const struct socket_info* send_sock,
-		char* buf, unsigned int len, const union sockaddr_union* to,
+		char* buf, unsigned int len, const struct host_sock_info* to,
 		unsigned int id);
 static void update_recv_info(struct receive_info* ri, struct hep_desc* h);
 void free_hep_context(void* ptr);
-static int proto_hep_tls_conn_init(struct tcp_connection* c);
+static int proto_hep_tls_conn_init(struct tcp_connection* c, const struct host_sock_info *hu);
 static void proto_hep_tls_conn_clean(struct tcp_connection* c);
 static int hep_tls_write_on_socket(struct tcp_connection* c, int fd, char* buf, int len);
 
@@ -345,10 +346,11 @@ static int proto_hep_init_udp_listener(struct socket_info* si)
 }
 
 static int hep_udp_send(const struct socket_info* send_sock,
-		char* buf, unsigned int len, const union sockaddr_union* to,
+		char* buf, unsigned int len, const struct host_sock_info* to_hu,
 		unsigned int id)
 {
 	int n, tolen;
+	const union sockaddr_union *to = &to_hu->su;
 	tolen = sockaddru_len(*to);
 
 again:
@@ -367,27 +369,28 @@ again:
 }
 
 static int hep_tcp_send(const struct socket_info* send_sock,
-		char* buf, unsigned int len, const union sockaddr_union* to,
+		char* buf, unsigned int len, const struct host_sock_info* to,
 		unsigned int id)
 {
 	return hep_tcp_or_tls_send(send_sock, buf, len, to, id, 0);
 }
 
 static int hep_tls_send(const struct socket_info* send_sock,
-		char* buf, unsigned int len, const union sockaddr_union* to,
+		char* buf, unsigned int len, const struct host_sock_info* to,
 		unsigned int id)
 {
 	return hep_tcp_or_tls_send(send_sock, buf, len, to, id, 1);
 }
 
 static int hep_tcp_or_tls_send(const struct socket_info* send_sock,
-		char* buf, unsigned int len, const union sockaddr_union* to,
+		char* buf, unsigned int len, const struct host_sock_info* to_hu,
 		unsigned int id, unsigned int is_tls)
 {
 	struct tcp_connection* c;
 	int port = 0;
 	struct ip_addr ip;
 	int fd, n;
+	const union sockaddr_union* to = to_hu ? &to_hu->su : NULL;
 
 	if (to) {
 		su2ip_addr(&ip, to);
@@ -421,7 +424,7 @@ static int hep_tcp_or_tls_send(const struct socket_info* send_sock,
 		LM_DBG("no open tcp connection found, opening new one, async = %d\n", hep_async);
 		/* create tcp connection */
 		if (hep_async) {
-			n = tcp_async_connect(send_sock, to, &prof,
+			n = tcp_async_connect(send_sock, to_hu, &prof,
 					hep_async_local_connect_timeout, &c, &fd, 1);
 			if (n < 0) {
 				LM_ERR("async TCP connect failed\n");
@@ -479,7 +482,7 @@ static int hep_tcp_or_tls_send(const struct socket_info* send_sock,
 				LM_DBG("first TLS handshake attempt succeeded in less than %dms, "
 					"proceed to writing \n", hep_tls_async_handshake_connect_timeout);
 			}
-		} else if ((c = tcp_sync_connect(send_sock, to, &prof, &fd, 1)) == 0) {
+		} else if ((c = tcp_sync_connect(send_sock, to_hu, &prof, &fd, 1)) == 0) {
 			LM_ERR("connect failed\n");
 			return -1;
 		}
@@ -1184,7 +1187,7 @@ static void update_recv_info(struct receive_info* ri, struct hep_desc* h)
 	ri->dst_port = dport;
 }
 
-static int proto_hep_tls_conn_init(struct tcp_connection* c)
+static int proto_hep_tls_conn_init(struct tcp_connection* c, const struct host_sock_info *hu)
 {
 	struct tls_domain* dom;
 
@@ -1203,7 +1206,7 @@ static int proto_hep_tls_conn_init(struct tcp_connection* c)
 		return -1;
 	}
 
-	return tls_mgm_api.tls_conn_init(c, dom);
+	return tls_mgm_api.tls_conn_init(c, dom, hu);
 }
 
 static void proto_hep_tls_conn_clean(struct tcp_connection* c)

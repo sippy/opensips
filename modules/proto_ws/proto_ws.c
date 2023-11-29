@@ -37,6 +37,7 @@
 #include "../../net/api_proto_net.h"
 #include "../../net/net_tcp_report.h"
 #include "../../net/tcp_common.h"
+#include "../../net/host_sock_info.h"
 #include "../../socket_info.h"
 #include "../../tsend.h"
 #include "../../receive.h"
@@ -95,10 +96,10 @@ static int mod_init(void);
 static int proto_ws_init(struct proto_info *pi);
 static int proto_ws_init_listener(struct socket_info *si);
 static int proto_ws_send(const struct socket_info* send_sock,
-		char* buf, unsigned int len, const union sockaddr_union* to,
+		char* buf, unsigned int len, const struct host_sock_info* to,
 		unsigned int id);
 static int ws_read_req(struct tcp_connection* con, int* bytes_read);
-static int ws_conn_init(struct tcp_connection* c);
+static int ws_conn_init(struct tcp_connection* c, const struct host_sock_info *hu);
 static void ws_conn_clean(struct tcp_connection* c);
 static void ws_report(int type, unsigned long long conn_id, int conn_flags,
 		void *extra);
@@ -239,7 +240,7 @@ static int mod_init(void)
 }
 
 
-static int ws_conn_init(struct tcp_connection* c)
+static int ws_conn_init(struct tcp_connection* c, const struct host_sock_info *hu)
 {
 	struct ws_data *d;
 
@@ -328,7 +329,7 @@ static void ws_report(int type, unsigned long long conn_id, int conn_flags,
 
 /*! \brief Finds a tcpconn & sends on it */
 static int proto_ws_send(const struct socket_info* send_sock,
-		char* buf, unsigned int len, const union sockaddr_union* to,
+		char* buf, unsigned int len, const struct host_sock_info* to_hu,
 		unsigned int id)
 {
 	struct tcp_connection *c;
@@ -337,6 +338,7 @@ static int proto_ws_send(const struct socket_info* send_sock,
 	struct ip_addr ip;
 	struct ws_data* d;
 	int port = 0, fd, n, matched;
+	const union sockaddr_union *to = to_hu ? &to_hu->su : NULL;
 
 	matched = tcp_con_get_profile(to, &send_sock->su, send_sock->proto, &prof);
 
@@ -373,7 +375,7 @@ static int proto_ws_send(const struct socket_info* send_sock,
 		}
 		LM_DBG("no open tcp connection found, opening new one\n");
 		/* create tcp connection */
-		if ((c=ws_connect(send_sock, to, &prof, &fd))==0) {
+		if ((c=ws_connect(send_sock, to_hu, &prof, &fd))==0) {
 			LM_ERR("connect failed\n");
 			return -1;
 		}

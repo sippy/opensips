@@ -46,19 +46,21 @@
 #include "sl_cb.h"
 #include "net/trans.h"
 #include "socket_info.h"
+#include "net/host_sock_info.h"
 
 const struct socket_info* get_send_socket(struct sip_msg* msg,
 									const union sockaddr_union* su, int proto);
 const struct socket_info* get_out_socket(const union sockaddr_union* to, int proto);
 int check_self(str* host, unsigned short port, unsigned short proto);
 int forward_request( struct sip_msg* msg,  struct proxy_l* p);
-int update_sock_struct_from_via( union sockaddr_union* to,
+int update_sock_struct_from_via( struct host_sock_info* to,
 								 struct sip_msg* msg,
 								 struct via_body* via );
 
 /*! \brief use src_ip, port=src_port if rport, via port if via port, 5060 otherwise */
 #define update_sock_struct_from_ip(  to, msg ) \
-	init_su((to), &(msg)->rcv.src_ip, \
+	*(to) = (struct host_sock_info){0}; \
+	init_su(&((to)->su), &(msg)->rcv.src_ip, \
 			((!msg->via1)||((msg)->via1->rport)||((msg)->msg_flags&FL_FORCE_RPORT))? \
 							(msg)->rcv.src_port: \
 							((msg)->via1->port)?(msg)->via1->port: SIP_PORT )
@@ -82,12 +84,13 @@ int forward_reply( struct sip_msg* msg);
  * \return 0 if ok, -1 on error
  */
 static inline int msg_send( const struct socket_info* send_sock, int proto,
-							union sockaddr_union* to, unsigned int id,
+							const struct host_sock_info* to_hu, unsigned int id,
 							char* buf, int len, struct sip_msg* msg)
 {
 	str out_buff;
 	unsigned short port;
 	char *ip;
+	const union sockaddr_union *to = &to_hu->su;
 
 	if (proto<=PROTO_NONE || proto>=PROTO_OTHER) {
 		LM_BUG("bogus proto %s/%d received!\n",proto2a(proto),proto);
@@ -120,7 +123,7 @@ static inline int msg_send( const struct socket_info* send_sock, int proto,
 	/* update the length for further processing */
 	len = out_buff.len;
 
-	if (protos[proto].tran.send(send_sock, out_buff.s, out_buff.len, to,id)<0){
+	if (protos[proto].tran.send(send_sock, out_buff.s, out_buff.len, to_hu,id)<0){
 		get_su_info(to, ip, port);
 		LM_ERR("send() to %s:%hu for proto %s/%d failed\n",
 				ip, port, proto2a(proto),proto);

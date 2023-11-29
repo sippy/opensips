@@ -536,7 +536,7 @@ add_dst(
 #define GWABUF_MAX_SIZE	512
 	char gwabuf[GWABUF_MAX_SIZE];
 	char *p;
-	union sockaddr_union sau;
+	struct host_sock_info sau;
 	struct proxy_l *proxy;
 	unsigned int sip_prefix;
 	str gwas;
@@ -678,8 +678,8 @@ add_dst(
 
 	pgw->ips_no = 1;
 
-	while (pgw->ips_no<DR_MAX_IPS && (get_next_su( proxy, &sau, 0)==0) ) {
-		su2ip_addr( &pgw->ips[pgw->ips_no], &sau);
+	while (pgw->ips_no<DR_MAX_IPS && (get_next_hu( proxy, &sau, 0)==0) ) {
+		su2ip_addr( &pgw->ips[pgw->ips_no], &sau.su);
 		pgw->ports[pgw->ips_no] = proxy->port;
 		pgw->protos[pgw->ips_no] = proxy->proto;
 		LM_DBG("additional gw ip addr [%s]\n",

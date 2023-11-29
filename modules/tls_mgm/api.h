@@ -42,6 +42,8 @@
 
 #include "tls_helper.h"
 
+struct host_sock_info;
+
 typedef struct tls_domain * (*tls_find_server_domain_f) (struct ip_addr *, unsigned short);
 typedef struct tls_domain * (*tls_find_client_domain_f) (struct ip_addr *, unsigned short);
 typedef struct tls_domain * (*tls_find_client_domain_name_f) (str *);
@@ -49,7 +51,7 @@ typedef void (*tls_release_domain_f) (struct tls_domain *);
 
 /* TLS conn ops */
 typedef int (*tls_conn_init_f)(struct tcp_connection *c,
-    struct tls_domain *tls_dom);
+    struct tls_domain *tls_dom, const struct host_sock_info *hu);
 typedef void (*tls_conn_clean_f)(struct tcp_connection* c,
     struct tls_domain **tls_dom);
 typedef int (*tls_update_fd_f)(struct tcp_connection* c, int fd);

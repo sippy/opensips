@@ -636,12 +636,13 @@ static void ws_close(struct tcp_connection *c)
 }
 
 static struct tcp_connection* ws_sync_connect(const struct socket_info* send_sock,
-		const union sockaddr_union* server, struct tcp_conn_profile *prof)
+		const struct host_sock_info* server_hu, struct tcp_conn_profile *prof)
 {
 	int s;
 	union sockaddr_union my_name;
 	socklen_t my_name_len;
 	struct tcp_connection* con;
+	const union sockaddr_union *server = &server_hu->su;
 
 	s=socket(AF2PF(server->s.sa_family), SOCK_STREAM, 0);
 	if (s==-1){
@@ -667,7 +668,7 @@ static struct tcp_connection* ws_sync_connect(const struct socket_info* send_soc
 		LM_ERR("tcp_blocking_connect failed\n");
 		goto error;
 	}
-	con=tcp_conn_create(s, server, send_sock, prof, S_CONN_OK, 0);
+	con=tcp_conn_create(s, server_hu, send_sock, prof, S_CONN_OK, 0);
 	if (con==NULL){
 		LM_ERR("tcp_conn_create failed, closing the socket\n");
 		goto error;
@@ -684,7 +685,7 @@ error:
 
 
 static struct tcp_connection* ws_connect(const struct socket_info* send_sock,
-		const union sockaddr_union* to, struct tcp_conn_profile *prof, int *fd)
+		const struct host_sock_info* to, struct tcp_conn_profile *prof, int *fd)
 {
 	struct tcp_connection *c;
 

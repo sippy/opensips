@@ -122,8 +122,8 @@ struct cgr_conn *cgr_get_free_conn(struct cgr_engine *e)
 		c = list_entry(l, struct cgr_conn, list);
 		if (c->state == CGRC_CLOSED) {
 			if (c->disable_time + cgre_retry_tout < now) {
-				if (tcp_connect_blocking_timeout(c->fd, &c->engine->su.s,
-				        sockaddru_len(c->engine->su), c->connect_timeout)<0){
+				if (tcp_connect_blocking_timeout(c->fd, &c->engine->hu.su.s,
+				        sockaddru_len(c->engine->hu.su), c->connect_timeout)<0){
 					LM_INFO("cannot connect to %.*s:%d\n", c->engine->host.len,
 							c->engine->host.s, c->engine->port);
 					c->disable_time = now;
@@ -252,7 +252,7 @@ static int cgrc_conn(struct cgr_conn *c)
 
 	if (c->engine->is_fqdn) {
 		he = resolvehost(c->engine->host.s, 1);
-		if (!he || hostent2su(&c->engine->su, he, 0, c->engine->port) < 0) {
+		if (!he || hostent2hu(&c->engine->hu, he, 0, c->engine->port) < 0) {
 			LM_ERR("cannot resolve %.*s:%d\n", c->engine->host.len,
 					c->engine->host.s, c->engine->port);
 			return -1;
@@ -268,9 +268,9 @@ static int cgrc_conn(struct cgr_conn *c)
 		src_su = &_src_su;
 	}
 
-	tcp_con_get_profile(&c->engine->su, src_su, PROTO_TCP, &prof);
+	tcp_con_get_profile(&c->engine->hu.su, src_su, PROTO_TCP, &prof);
 
-	s = tcp_sync_connect_fd(src_su, &c->engine->su, PROTO_TCP, &prof, 0);
+	s = tcp_sync_connect_fd(src_su, &c->engine->hu, PROTO_TCP, &prof, 0);
 	if (s < 0) {
 		LM_ERR("cannot connect to %.*s:%d\n", c->engine->host.len,
 				c->engine->host.s, c->engine->port);

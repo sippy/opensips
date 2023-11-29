@@ -1189,7 +1189,7 @@ __dialog_destroy(struct dlg_cell *dlg, int type, struct dlg_cb_params *_params)
 //
 static void
 __sl_reply_out(struct sip_msg* request, str *buffer, int rpl_code,
-                const union sockaddr_union *dst, const struct socket_info *sock, int proto)
+                const struct host_sock_info *dst, const struct socket_info *sock, int proto)
 {
     struct sip_msg reply;
     time_t expire;

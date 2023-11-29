@@ -33,6 +33,7 @@
 
 #include "../../net/tcp_conn_defs.h"
 #include "../../net/proto_tcp/tcp_common_defs.h"
+#include "../../net/host_sock_info.h"
 #include "../tls_mgm/tls_helper.h"
 
 #include "wolfssl_trace.h"
@@ -173,7 +174,7 @@ int _wolfssl_tls_update_fd(struct tcp_connection *c, int fd)
 }
 
 int _wolfssl_tls_conn_init(struct tcp_connection* c,
-	struct tls_domain *tls_dom)
+	struct tls_domain *tls_dom, const struct host_sock_info *hu)
 {
 	/*
 	* new connection within a single process, no lock necessary

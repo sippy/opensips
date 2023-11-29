@@ -24,6 +24,7 @@
 #ifndef _PROTO_MSRP_MSRP_SIGNALING_H_
 #define _PROTO_MSRP_MSRP_SIGNALING_H_
 
+#include "../../net/dest_info.h"
 #include "msrp_parser.h"
 
 

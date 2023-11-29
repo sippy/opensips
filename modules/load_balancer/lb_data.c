@@ -30,6 +30,7 @@
 #include "../../mem/shm_mem.h"
 #include "../../evi/evi.h"
 #include "../../rw_locking.h"
+#include "../../net/host_sock_info.h"
 #include "lb_parser.h"
 #include "lb_data.h"
 #include "lb_clustering.h"
@@ -227,7 +228,7 @@ int add_lb_dsturi( struct lb_data *data, int id, int group, char *uri,
 	struct lb_resource *res;
 	struct sip_uri puri;
 	struct proxy_l *proxy;
-	union sockaddr_union sau;
+	struct host_sock_info sau;
 	int uri_len, attrs_len;
 	int i;
 	str fs_url = { NULL, 0 };
@@ -327,8 +328,8 @@ int add_lb_dsturi( struct lb_data *data, int id, int group, char *uri,
 	LM_DBG("first dst ip addr [%s]:%d\n",
 		ip_addr2a(&dst->ips[0]), dst->ports[0]);
 	/* get the next available IPs from DNS */
-	while (dst->ips_cnt<LB_MAX_IPS && (get_next_su( proxy, &sau, 0)==0) ) {
-		su2ip_addr( &dst->ips[dst->ips_cnt], &sau);
+	while (dst->ips_cnt<LB_MAX_IPS && (get_next_hu( proxy, &sau, 0)==0) ) {
+		su2ip_addr( &dst->ips[dst->ips_cnt], &sau.su);
 		dst->ports[dst->ips_cnt] = proxy->port;
 		dst->protos[dst->ips_cnt] = proxy->proto;
 		LM_DBG("additional dst ip addr [%s]:%d, proto %d\n",

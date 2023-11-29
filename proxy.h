@@ -74,5 +74,46 @@ struct proxy_l* clone_proxy(struct proxy_l *sp);
 
 #include "resolve.h"
 
-#endif
+static inline struct proxy_l* shm_clone_proxy(struct proxy_l *sp,
+													unsigned int move_dn)
+{
+	struct proxy_l *dp;
 
+	dp = (struct proxy_l*)shm_malloc(sizeof(struct proxy_l));
+	if (dp==NULL) {
+		LM_ERR("no more shm memory\n");
+		return 0;
+	}
+	memset( dp , 0 , sizeof(struct proxy_l));
+
+	dp->port = sp->port;
+	dp->proto = sp->proto;
+	dp->addr_idx = sp->addr_idx;
+	dp->flags = PROXY_SHM_FLAG;
+
+	/* clone the hostent */
+	if (hostent_shm_cpy( &dp->host, &sp->host)!=0)
+		goto error0;
+
+	/* clone the dns resolver */
+	if (sp->dn) {
+		if (move_dn) {
+			dp->dn = sp->dn;
+			sp->dn = 0;
+		} else {
+			dp->dn = dns_res_copy(sp->dn);
+			if (dp->dn==NULL)
+				goto error1;
+		}
+	}
+
+	return dp;
+error1:
+	free_shm_hostent(&dp->host);
+error0:
+	shm_free(dp);
+	return 0;
+}
+
+
+#endif

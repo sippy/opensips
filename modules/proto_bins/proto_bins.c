@@ -27,6 +27,7 @@
 #include "../../net/net_tcp.h"
 #include "../../net/tcp_common.h"
 #include "../../net/net_tcp_report.h"
+#include "../../net/host_sock_info.h"
 #include "../../socket_info.h"
 #include "../../tsend.h"
 #include "../../net/proto_tcp/tcp_common_defs.h"
@@ -46,11 +47,11 @@ static int mod_init(void);
 static int proto_bins_init(struct proto_info *pi);
 static int proto_bins_init_listener(struct socket_info *si);
 static int proto_bins_send(const struct socket_info* send_sock,
-		char* buf, unsigned int len, const union sockaddr_union* to,
+		char* buf, unsigned int len, const struct host_sock_info* to,
 		unsigned int id);
 static int bins_read_req(struct tcp_connection* con, int* bytes_read);
 static int bins_async_write(struct tcp_connection* con,int fd);
-static int proto_bins_conn_init(struct tcp_connection* c);
+static int proto_bins_conn_init(struct tcp_connection* c, const struct host_sock_info *hu);
 static void proto_bins_conn_clean(struct tcp_connection* c);
 static void bins_report(int type, unsigned long long conn_id, int conn_flags,
 																void *extra);
@@ -225,7 +226,7 @@ static int proto_bins_init_listener(struct socket_info *si)
 	return tcp_init_listener(si);
 }
 
-static int proto_bins_conn_init(struct tcp_connection* c)
+static int proto_bins_conn_init(struct tcp_connection* c, const struct host_sock_info *hu)
 {
 	struct tls_domain *dom;
 	struct tls_data* data;
@@ -264,7 +265,7 @@ out:
 		return -1;
 	}
 
-	return tls_mgm_api.tls_conn_init(c, dom);
+	return tls_mgm_api.tls_conn_init(c, dom, hu);
 }
 
 static void proto_bins_conn_clean(struct tcp_connection* c)
@@ -337,7 +338,7 @@ release:
 }
 
 static int proto_bins_send(const struct socket_info* send_sock,
-		char* buf, unsigned int len, const union sockaddr_union* to,
+		char* buf, unsigned int len, const struct host_sock_info* to_hu,
 		unsigned int id)
 {
 	struct tcp_connection *c;
@@ -345,6 +346,7 @@ static int proto_bins_send(const struct socket_info* send_sock,
 	int port;
 	int fd, n;
 	int send2main = 0;
+	const union sockaddr_union *to = to_hu ? &to_hu->su : NULL;
 
 	port=0;
 
@@ -381,7 +383,7 @@ static int proto_bins_send(const struct socket_info* send_sock,
 			bins_async);
 		/* create tcp connection */
 		if (bins_async) {
-			n = tcp_async_connect(send_sock, to, &prof,
+			n = tcp_async_connect(send_sock, to_hu, &prof,
 					bins_async_local_connect_timeout, &c, &fd, 1);
 			if ( n<0 ) {
 				LM_ERR("async TCP connect failed\n");
@@ -438,7 +440,7 @@ static int proto_bins_send(const struct socket_info* send_sock,
 			LM_DBG("First TLS handshake attempt succeeded in less than %dms, "
 				"proceed to writing \n",bins_async_handshake_connect_timeout);
 		} else {
-			if ((c=tcp_sync_connect(send_sock, to, &prof, &fd, 0))==0) {
+			if ((c=tcp_sync_connect(send_sock, to_hu, &prof, &fd, 0))==0) {
 				LM_ERR("connect failed\n");
 				return -1;
 			}

@@ -383,9 +383,9 @@ int run_reg_tm_cback(void *e_data, void *data, void *r_data)
 	reg_print_record(rec);
 
 	if (ps->rpl==FAKED_REPLY)
-		memset(&rec->td.forced_to_su, 0, sizeof(union sockaddr_union));
-	else if (rec->td.forced_to_su.s.sa_family == AF_UNSPEC)
-		rec->td.forced_to_su = t->uac[0].request.dst.to;
+		memset(&rec->td.forced_to_hu, 0, sizeof(rec->td.forced_to_hu));
+	else if (rec->td.forced_to_hu.su.s.sa_family == AF_UNSPEC)
+		hu_dup(&t->uac[0].request.dst.to, &rec->td.forced_to_hu);
 
 	statuscode = ps->code;
 	switch(statuscode) {
@@ -1130,15 +1130,15 @@ int run_mi_reg_list(void *e_data, void *data, void *r_data)
 			rec->td.obp.s, rec->td.obp.len) < 0)
 			goto error;
 
-	switch(rec->td.forced_to_su.s.sa_family) {
+	switch(rec->td.forced_to_hu.su.s.sa_family) {
 	case AF_UNSPEC:
 		break;
 	case AF_INET:
 	case AF_INET6:
 		if (add_mi_string(record_item, MI_SSTR("dst_IP"),
-			(rec->td.forced_to_su.s.sa_family==AF_INET)?"IPv4":"IPv6", 4) < 0)
+			(rec->td.forced_to_hu.su.s.sa_family==AF_INET)?"IPv4":"IPv6", 4) < 0)
 			goto error;
-		sockaddr2ip_addr(&addr, &rec->td.forced_to_su.s);
+		sockaddr2ip_addr(&addr, &rec->td.forced_to_hu.su.s);
 		p = ip_addr2a(&addr);
 		if (p == NULL) goto error;
 		len = strlen(p);
@@ -1146,12 +1146,12 @@ int run_mi_reg_list(void *e_data, void *data, void *r_data)
 			goto error;
 		break;
 	default:
-		LM_ERR("unexpected sa_family [%d]\n", rec->td.forced_to_su.s.sa_family);
+		LM_ERR("unexpected sa_family [%d]\n", rec->td.forced_to_hu.su.s.sa_family);
 		if (add_mi_string(record_item, MI_SSTR("dst_IP"), "Error", 5) < 0)
 			goto error;
 
 		if (add_mi_number(record_item, MI_SSTR("sa_family"),
-			rec->td.forced_to_su.s.sa_family) < 0)
+			rec->td.forced_to_hu.su.s.sa_family) < 0)
 			goto error;
 	}
 

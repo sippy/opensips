@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 - OpenSIPS Solutions
+ * Copyright (C) 2001-2003 FhG Fokus
  *
  * This file is part of opensips, a free SIP server.
  *
@@ -15,24 +15,16 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- *
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-#ifndef _PROTO_MSRP_MSRP_TLS_H_
-#define _PROTO_MSRP_MSRP_TLS_H_
+#pragma once
 
+#include "host_sock_info.h"
 
-int msrps_conn_extra_match(struct tcp_connection *c, void *id);
-
-int proto_msrps_conn_init(struct tcp_connection* c, const struct host_sock_info *hu);
-
-void proto_msrps_conn_clean(struct tcp_connection* c);
-
-void msrps_report(int type, unsigned long long conn_id, int conn_flags,
-		void *extra);
-
-int msrps_write_on_socket(struct tcp_connection *c, int fd,
-		char *buf, int len, int handshake_timeout, int send_timeout);
-
-#endif
+struct dest_info {
+        int proto;
+        unsigned int proto_reserved1; /*!< tcp stores the connection id here */
+        struct host_sock_info to;
+        const struct socket_info* send_sock;
+};

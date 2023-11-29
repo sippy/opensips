@@ -1348,12 +1348,12 @@ error:
 	return NULL;
 }
 
-int tls_conn_init(struct tcp_connection *c, struct tls_domain *tls_dom)
+int tls_conn_init(struct tcp_connection *c, struct tls_domain *tls_dom, const struct host_sock_info *hu)
 {
 	if (tls_library == TLS_LIB_OPENSSL)
-		return openssl_api.tls_conn_init(c, tls_dom);
+		return openssl_api.tls_conn_init(c, tls_dom, hu);
 	else if (tls_library == TLS_LIB_WOLFSSL)
-		return wolfssl_api.tls_conn_init(c, tls_dom);
+		return wolfssl_api.tls_conn_init(c, tls_dom, hu);
 	else {
 		LM_CRIT("No TLS library module loaded\n");
 		return -1;

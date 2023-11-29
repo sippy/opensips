@@ -30,13 +30,14 @@
 #include "ip_addr.h"
 #include "parser/msg_parser.h"
 
+struct host_sock_info;
 
 enum sl_cb_type {SLCB_REPLY_OUT=0, SLCB_ACK_IN, SLCB_REQUEST_OUT,
 	SLCB_LAST };
 
 /* callback function prototype */
 typedef void (sl_cb_t) (struct sip_msg* req, str *buffer, int rpl_code,
-		const union sockaddr_union *dst, const struct socket_info *sock, int proto);
+		const struct host_sock_info *dst, const struct socket_info *sock, int proto);
 
 /* register callback function prototype */
 typedef int (*register_slcb_t)(enum sl_cb_type, unsigned int fmask, sl_cb_t f);
@@ -51,10 +52,10 @@ int register_slcb(enum sl_cb_type, unsigned int fmask, sl_cb_t f);
 
 /* run SL callbacks for a given type */
 void slcb_run_reply_out(struct sip_msg *req, str *buffer,
-		union sockaddr_union *dst, int rpl_code);
+		const struct host_sock_info *dst, int rpl_code);
 void slcb_run_ack_in(struct sip_msg *req);
 void slcb_run_req_out(struct sip_msg *req, str *buffer,
-		const union sockaddr_union *dst, const struct socket_info *sock, int proto);
+		const struct host_sock_info *dst, const struct socket_info *sock, int proto);
 
 #endif
 
