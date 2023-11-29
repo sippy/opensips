@@ -60,11 +60,11 @@ static int child_init(int rank);
 static int smpp_init(struct proto_info *pi);
 static int smpp_init_listener(struct socket_info *si);
 static int smpp_send(const struct socket_info* send_sock,
-		char* buf, unsigned int len, const union sockaddr_union* to,
+		char* buf, unsigned int len, const struct host_sock_info* to,
 		unsigned int id);
 static int smpp_read_req(struct tcp_connection* conn, int* bytes_read);
 static int smpp_write_async_req(struct tcp_connection* con,int fd);
-static int smpp_conn_init(struct tcp_connection* c);
+static int smpp_conn_init(struct tcp_connection* c, const struct host_sock_info *hu);
 static void smpp_conn_clean(struct tcp_connection* c);
 static int send_smpp_msg(struct sip_msg* msg, str *name, str *from,
 		str *to, str *body, int *utf16, int *delivery_confirmation);
@@ -211,7 +211,7 @@ static int child_init(int rank)
 	return 0;
 }
 
-static int smpp_conn_init(struct tcp_connection* c)
+static int smpp_conn_init(struct tcp_connection* c, const struct host_sock_info *hu)
 {
 	LM_INFO("smpp_conn_init called\n");
 	return 0;
@@ -230,7 +230,7 @@ static int smpp_init_listener(struct socket_info *si)
 }
 
 static int smpp_send(const struct socket_info* send_sock,
-		char* buf, unsigned int len, const union sockaddr_union* to,
+		char* buf, unsigned int len, const struct host_sock_info* to,
 		unsigned int id)
 {
 	LM_INFO("smpp_send called\n");

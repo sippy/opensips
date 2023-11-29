@@ -341,7 +341,7 @@ static int cgrates_set_engine(modparam_t type, void * val)
 	e->port = port;
 
 	if ((ip = str2ip(&host)) || (ip = str2ip6(&host)))
-		init_su(&e->su, ip, port);
+		init_su(&e->hu.su, ip, port);
 	else
 		e->is_fqdn = 1;
 

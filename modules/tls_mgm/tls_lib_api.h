@@ -27,9 +27,11 @@
 #include "../../trace_api.h"
 #include "tls_helper.h"
 
+struct host_sock_info;
+
 /* TLS library specific conn ops */
 typedef int (*tls_lib_conn_init_f)(struct tcp_connection *c,
-	struct tls_domain *tls_dom);
+	struct tls_domain *tls_dom, const struct host_sock_info *);
 typedef void (*tls_lib_conn_clean_f)(struct tcp_connection* c,
 	struct tls_domain **tls_dom);
 typedef int (*tls_lib_update_fd_f)(struct tcp_connection* c, int fd);

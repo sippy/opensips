@@ -32,6 +32,7 @@
 #include "../../str.h"
 #include "../../parser/parse_rr.h"
 #include "../../parser/msg_parser.h"
+#include "../../net/dest_info.h"
 #include "h_table.h"
 
 
@@ -97,7 +98,7 @@ typedef struct dlg {
 	str loc_uri;            /* Local URI */
 	str rem_uri;            /* Remote URI */
 	str obp;                /* Outbound proxy */
-	union sockaddr_union forced_to_su;	/* Forced remote sockaddr */
+	struct host_sock_info forced_to_hu;	/* Forced remote sockaddr */
 	str rem_target;         /* Remote target URI */
 	str loc_dname;			/* Local Display Name */
 	str rem_dname;			/* Remote Display Name */

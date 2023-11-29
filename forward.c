@@ -306,7 +306,7 @@ found:
 
 int forward_request( struct sip_msg* msg, struct proxy_l * p)
 {
-	union sockaddr_union to;
+	struct host_sock_info to;
 	str buf;
 	const struct socket_info* send_sock;
 	const struct socket_info* last_sock;
@@ -327,17 +327,17 @@ int forward_request( struct sip_msg* msg, struct proxy_l * p)
 
 	msg_callback_process(msg, REQ_PRE_FORWARD, (void *)p);
 
-	hostent2su( &to, &p->host, p->addr_idx, (p->port)?p->port:SIP_PORT);
+	hostent2hu( &to, &p->host, p->addr_idx, (p->port)?p->port:SIP_PORT);
 	last_sock = 0;
 
 	if (getb0flags(msg) & tcp_no_new_conn_bflag)
 		tcp_no_new_conn = 1;
 
 	do {
-		send_sock=get_send_socket( msg, &to, p->proto);
+		send_sock=get_send_socket( msg, &to.su, p->proto);
 		if (send_sock==0){
 			LM_ERR("cannot forward to af %d, proto %d no corresponding"
-				"listening socket\n", to.s.sa_family, p->proto);
+				"listening socket\n", to.su.s.sa_family, p->proto);
 			ser_error=E_NO_SOCKET;
 			continue;
 		}
@@ -358,7 +358,7 @@ int forward_request( struct sip_msg* msg, struct proxy_l * p)
 			last_sock = send_sock;
 		}
 
-		if (check_blacklists( p->proto, &to, buf.s, buf.len)) {
+		if (check_blacklists( p->proto, &to.su, buf.s, buf.len)) {
 			LM_DBG("blocked by blacklists\n");
 			ser_error=E_IP_BLOCKED;
 			continue;
@@ -379,7 +379,7 @@ int forward_request( struct sip_msg* msg, struct proxy_l * p)
 		ser_error = 0;
 		break;
 
-	}while( get_next_su( p, &to, (ser_error==E_IP_BLOCKED)?0:1)==0 );
+	}while( get_next_hu( p, &to, (ser_error==E_IP_BLOCKED)?0:1)==0 );
 
 	tcp_no_new_conn = 0;
 
@@ -402,7 +402,7 @@ error:
 
 
 
-int update_sock_struct_from_via( union sockaddr_union* to,
+int update_sock_struct_from_via( struct host_sock_info* to,
 								 struct sip_msg* msg,
 								 struct via_body* via )
 {
@@ -458,7 +458,7 @@ int update_sock_struct_from_via( union sockaddr_union* to,
 		return -1;
 	}
 
-	hostent2su( to, he, 0, port);
+	hostent2hu( to, he, 0, port);
 	return 1;
 }
 
@@ -468,7 +468,7 @@ int update_sock_struct_from_via( union sockaddr_union* to,
 int forward_reply(struct sip_msg* msg)
 {
 	char* new_buf;
-	union sockaddr_union* to;
+	struct host_sock_info *to;
 	unsigned int new_len;
 	struct sr_module *mod;
 	int proto;
@@ -517,7 +517,7 @@ int forward_reply(struct sip_msg* msg)
 		goto error;
 	}
 
-	to=(union sockaddr_union*)pkg_malloc(sizeof(union sockaddr_union));
+	to=(struct host_sock_info *)pkg_malloc(sizeof(*to));
 	if (to==0){
 		LM_ERR("out of pkg memory\n");
 		goto error;
@@ -536,7 +536,7 @@ int forward_reply(struct sip_msg* msg)
 		}
 	}
 
-	send_sock = get_send_socket(msg, to, proto);
+	send_sock = get_send_socket(msg, &to->su, proto);
 
 	new_buf = build_res_buf_from_sip_res( msg, &new_len, send_sock,0);
 	if (!new_buf){

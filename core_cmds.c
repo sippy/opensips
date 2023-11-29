@@ -26,6 +26,7 @@
 #include "action.h"
 #include "dprint.h"
 #include "proxy.h"
+#include "net/host_sock_info.h"
 #include "forward.h"
 #include "parser/msg_parser.h"
 #include "parser/parse_uri.h"
@@ -746,13 +747,13 @@ static int w_forward(struct sip_msg *msg, struct proxy_l *dest)
 static int w_send(struct sip_msg *msg, struct proxy_l *dest, str *headers)
 {
 	int ret;
-	union sockaddr_union* to;
+	struct host_sock_info* to;
 	struct proxy_l* p;
 	int len;
 	char* tmp;
 
-	to=(union sockaddr_union*)
-			pkg_malloc(sizeof(union sockaddr_union));
+	to=(struct host_sock_info*)
+			pkg_malloc(sizeof(*to));
 	if (to==0){
 		LM_ERR("memory allocation failure\n");
 		return E_OUT_OF_MEM;
@@ -761,7 +762,7 @@ static int w_send(struct sip_msg *msg, struct proxy_l *dest, str *headers)
 		LM_ERR("failed to clone proxy, dropping packet\n");
 		return E_OUT_OF_MEM;
 	}
-	ret=hostent2su(to, &p->host, p->addr_idx,
+	ret=hostent2hu(to, &p->host, p->addr_idx,
 				(p->port)?p->port:SIP_PORT );
 	if (ret==0){
 		if (headers) {

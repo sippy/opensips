@@ -32,6 +32,8 @@
 
 #define TCP_PARTITION_SIZE 32
 
+struct host_sock_info;
+
 extern int tcp_workers_max_no;
 
 /**************************** Control functions ******************************/
@@ -90,7 +92,7 @@ int tcp_conn_get(int unsigned id, struct ip_addr* ip, int port,
 		const struct socket_info* send_sock);
 
 /* creates a new tcp conn around a newly connected socket */
-struct tcp_connection* tcp_conn_create(int sock, const union sockaddr_union* su,
+struct tcp_connection* tcp_conn_create(int sock, const struct host_sock_info *su,
 		const struct socket_info* si, struct tcp_conn_profile *prof,
 		int state, int send2main);
 

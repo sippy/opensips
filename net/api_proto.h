@@ -30,9 +30,11 @@
 
 #define PROTO_PREFIX "proto_"
 
+struct host_sock_info;
+
 typedef int (*proto_init_listener_f)(struct socket_info *si);
 typedef int (*proto_send_f)(const struct socket_info *si, char* buf,unsigned int len,
-		const union sockaddr_union* to, int unsigned id);
+		const struct host_sock_info* to, int unsigned id);
 typedef int (*proto_dst_attr_f)(struct receive_info *rcv,
 		int attr, void *value);
 

@@ -80,19 +80,10 @@ struct net{
 	struct ip_addr mask;
 };
 
-union sockaddr_union_no_hostname{
-	struct sockaddr     s;
-	struct sockaddr_in  sin;
-	struct sockaddr_in6 sin6;
-};
 union sockaddr_union{
-	struct sockaddr     s;
-	struct sockaddr_in  sin;
-	struct sockaddr_in6 sin6;
-	struct {
-		union sockaddr_union_no_hostname _padding;
-		char hostname[256];
-	} h;
+		struct sockaddr     s;
+		struct sockaddr_in  sin;
+		struct sockaddr_in6 sin6;
 };
 
 
@@ -111,14 +102,6 @@ struct receive_info {
 	union sockaddr_union src_su; /*!< useful for replies*/
 	const struct socket_info* bind_address; /*!< sock_info structure on which the msg was received*/
 	/* no need for dst_su yet */
-};
-
-
-struct dest_info {
-	int proto;
-	unsigned int proto_reserved1; /*!< tcp stores the connection id here */
-	union sockaddr_union to;
-	const struct socket_info* send_sock;
 };
 
 
@@ -374,11 +357,6 @@ static inline int hostent2su( union sockaddr_union* su,
 								unsigned short   port )
 {
 	memset(su, 0, sizeof(union sockaddr_union)); /*needed on freebsd*/
-
-	/* copy the hostname into the sockaddr_union */
-	strncpy(su->h.hostname, he->h_name, sizeof(su->h.hostname)-1);
-	su->h.hostname[sizeof(su->h.hostname)-1] = 0;
-
 	su->s.sa_family=he->h_addrtype;
 	switch(he->h_addrtype){
 	case	AF_INET6:

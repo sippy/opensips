@@ -32,7 +32,7 @@ int msrps_conn_extra_match(struct tcp_connection *c, void *id)
 }
 
 
-int proto_msrps_conn_init(struct tcp_connection* c)
+int proto_msrps_conn_init(struct tcp_connection* c, const struct host_sock_info *hu)
 {
 	struct tls_domain *dom;
 
@@ -49,7 +49,7 @@ int proto_msrps_conn_init(struct tcp_connection* c)
 		return -1;
 	}
 
-	return tls_mgm_api.tls_conn_init(c, dom);
+	return tls_mgm_api.tls_conn_init(c, dom, hu);
 }
 
 

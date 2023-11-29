@@ -58,6 +58,7 @@ struct retr_buf;
 #include "t_reply.h"
 #include "t_hooks.h"
 #include "timer.h"
+#include "../../net/dest_info.h"
 
 #define LOCK_HASH(_h) lock_hash((_h))
 #define UNLOCK_HASH(_h) unlock_hash((_h))

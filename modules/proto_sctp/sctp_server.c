@@ -47,6 +47,7 @@
 #include "../../mem/shm_mem.h"
 #include "../../sr_module.h"
 #include "../../net/net_udp.h"
+#include "../../net/host_sock_info.h"
 #include "../../socket_info.h"
 #include "../../receive.h"
 #include "sctp_server.h"
@@ -190,13 +191,13 @@ int proto_sctp_read(const struct socket_info *si, int* bytes_read)
 
 /*! \brief which socket to use? main socket or new one? */
 int proto_sctp_send(const struct socket_info *source, char *buf, unsigned len,
-									const union sockaddr_union* to, unsigned int id)
+									const struct host_sock_info *to, unsigned int id)
 {
 	int n;
 	int tolen;
-	union sockaddr_union _to = *to; /* XXX Linux defines sctp_sendmsg without const */
+	union sockaddr_union _to = to->su; /* XXX Linux defines sctp_sendmsg without const */
 
-	tolen=sockaddru_len(*to);
+	tolen=sockaddru_len(to->su);
 again:
 	n=sctp_sendmsg(source->socket, buf, len, &_to.s, tolen, 0, 0, 0, 0, 0);
 #ifdef XL_DEBUG
@@ -204,7 +205,7 @@ again:
 #endif
 	if (n==-1){
 		LM_ERR("sctp_sendmsg(sock,%p,%d,%p,%d,0,0,0,0,0): %s(%d)\n",
-				buf,len,&to->s,tolen, strerror(errno),errno);
+				buf,len,&to->su.s,tolen, strerror(errno),errno);
 
 		if (errno==EINTR) goto again;
 		if (errno==EINVAL) {

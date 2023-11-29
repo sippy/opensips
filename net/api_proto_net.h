@@ -37,7 +37,7 @@ typedef int  (*proto_net_dgram_read_f)(const struct socket_info *si, int *len);
 
 typedef int  (*proto_net_stream_write_f)(struct tcp_connection *c, int fd);
 typedef int  (*proto_net_stream_read_f)(struct tcp_connection *c, int *len);
-typedef int  (*proto_net_stream_conn_init_f)(struct tcp_connection *c);
+typedef int  (*proto_net_stream_conn_init_f)(struct tcp_connection *c, const struct host_sock_info *hu);
 typedef void (*proto_net_stream_conn_clean_f)(struct tcp_connection *c);
 typedef int  (*proto_net_stream_extra_match_f)(struct tcp_connection *c, void *id);
 

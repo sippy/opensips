@@ -41,6 +41,7 @@
 #include "../../tsend.h"
 #include "../../trace_api.h"
 #include "../../net/net_tcp_dbg.h"
+#include "../../net/host_sock_info.h"
 
 #include "tcp_common_defs.h"
 #include "proto_tcp_handler.h"
@@ -53,7 +54,7 @@ static int mod_init(void);
 static int proto_tcp_init(struct proto_info *pi);
 static int proto_tcp_init_listener(struct socket_info *si);
 static int proto_tcp_send(const struct socket_info* send_sock,
-		char* buf, unsigned int len, const union sockaddr_union* to,
+		char* buf, unsigned int len, const struct host_sock_info* to,
 		unsigned int id);
 inline static int _tcp_write_on_socket(struct tcp_connection *c, int fd,
 		char *buf, int len);
@@ -362,7 +363,7 @@ inline static int _tcp_write_on_socket(struct tcp_connection *c, int fd,
 /*! \brief Finds a tcpconn & sends on it */
 static int proto_tcp_send(const struct socket_info* send_sock,
 									char* buf, unsigned int len,
-									const union sockaddr_union* to, unsigned int id)
+									const struct host_sock_info* to_hu, unsigned int id)
 {
 	struct tcp_connection *c;
 	struct tcp_conn_profile prof;
@@ -370,6 +371,7 @@ static int proto_tcp_send(const struct socket_info* send_sock,
 	struct timeval get,snd;
 	union sockaddr_union src_su, dst_su;
 	int port = 0, fd, n, matched;
+	const union sockaddr_union *to = (to_hu != NULL) ? &to_hu->su : NULL;
 
 	matched = tcp_con_get_profile(to, &send_sock->su, send_sock->proto, &prof);
 
@@ -408,7 +410,7 @@ static int proto_tcp_send(const struct socket_info* send_sock,
 			tcp_async);
 		/* create tcp connection */
 		if (tcp_async) {
-			n = tcp_async_connect(send_sock, to, &prof,
+			n = tcp_async_connect(send_sock, to_hu, &prof,
 					tcp_async_local_connect_timeout, &c, &fd, 1);
 			if ( n<0 ) {
 				LM_ERR("async TCP connect failed\n");
@@ -470,7 +472,7 @@ static int proto_tcp_send(const struct socket_info* send_sock,
 				}
 			}
 		} else {
-			if ((c=tcp_sync_connect(send_sock, to, &prof, &fd, 1))==0) {
+			if ((c=tcp_sync_connect(send_sock, to_hu, &prof, &fd, 1))==0) {
 				LM_ERR("connect failed\n");
 				get_time_difference(get,prof.send_threshold,tcp_timeout_con_get);
 				return -1;

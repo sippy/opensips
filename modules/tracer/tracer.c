@@ -163,9 +163,9 @@ static void siptrace_dlg_cancel(struct cell* t, int type, struct tmcb_params *pa
  * stateful transaction
  */
 static void trace_slreq_out(struct sip_msg* req, str *buffer,int rpl_code,
-				const union sockaddr_union *to, const struct socket_info *sock, int proto);
+				const struct host_sock_info *to, const struct socket_info *sock, int proto);
 static void trace_slreply_out(struct sip_msg* req, str *buffer,int rpl_code,
-				const union sockaddr_union *dst, const struct socket_info *sock, int proto);
+				const struct host_sock_info *dst, const struct socket_info *sock, int proto);
 
 #if 0
 static void trace_slack_in(struct sip_msg* req, str *buffer,int rpl_code,
@@ -1978,7 +1978,7 @@ static int sip_trace_handle(struct sip_msg *msg, tlist_elem_p el,
 			s.s = msg->buf;
 			s.len = msg->len;
 			trace_msg_out( msg, &s, msg->rcv.bind_address, msg->rcv.proto,
-				&tmb.t_gett()->uac[0].request.dst.to, info, TRACE_C_CALLEE);
+				&tmb.t_gett()->uac[0].request.dst.to.su, info, TRACE_C_CALLEE);
 		} else
 		/* otherwise trace only if per-message or not in local route
 		 * (UAC trans do not have IN msg) */
@@ -2292,7 +2292,7 @@ static void trace_onreq_out(struct cell* t, int type, struct tmcb_params *ps,
 		trace_msg_out( ps->req, (str*)ps->extra1,
 			dest->send_sock,
 			dest->proto,
-			&dest->to,
+			&dest->to.su,
 			&info,
 			leg_flag);
 	} else {
@@ -2304,9 +2304,10 @@ static void trace_onreq_out(struct cell* t, int type, struct tmcb_params *ps,
 }
 
 static void trace_slreq_out(struct sip_msg* req, str *buffer,int rpl_code,
-				const union sockaddr_union *to, const struct socket_info *sock, int proto)
+				const struct host_sock_info *to_hu, const struct socket_info *sock, int proto)
 {
 	trace_info_p info;
+	const union sockaddr_union *to = to_hu ? &to_hu->su : NULL;
 
 	info = GET_TRACER_CONTEXT;
 
@@ -2317,7 +2318,7 @@ static void trace_slreq_out(struct sip_msg* req, str *buffer,int rpl_code,
 }
 
 static void trace_slreply_out(struct sip_msg* req, str *buffer,int rpl_code,
-				const union sockaddr_union *dst, const struct socket_info *sock, int proto)
+				const struct host_sock_info *dst, const struct socket_info *sock, int proto)
 {
 	static char fromip_buff[IP_ADDR_MAX_STR_SIZE+12];
 	static char toip_buff[IP_ADDR_MAX_STR_SIZE+12];
@@ -2379,9 +2380,9 @@ static void trace_slreply_out(struct sip_msg* req, str *buffer,int rpl_code,
 	{
 		set_columns_to_any(db_vals[7], db_vals[8], db_vals[9]);
 	} else {
-		su2ip_addr(&to_ip, dst);
+		su2ip_addr(&to_ip, &dst->su);
 		set_sock_columns( db_vals[7], db_vals[8],db_vals[9], toip_buff, &to_ip,
-		(unsigned short)su_getport(dst), req->rcv.proto);
+		(unsigned short)su_getport(&dst->su), req->rcv.proto);
 	}
 
 	db_vals[10].val.time_val = time(NULL);
@@ -2818,11 +2819,11 @@ static void trace_onreply_out(struct cell* t, int type, struct tmcb_params *ps,
 		set_columns_to_any( db_vals[7], db_vals[8], db_vals[9]);
 	} else {
 		memset(&to_ip, 0, sizeof(struct ip_addr));
-		su2ip_addr(&to_ip, &dst->to);
+		su2ip_addr(&to_ip, &dst->to.su);
 		set_sock_columns( db_vals[7], db_vals[8], db_vals[9], toip_buff,
 			&to_ip,
 			(unsigned long)(dst->send_sock && dst->send_sock->last_real_ports->remote?
-				dst->send_sock->last_real_ports->remote:su_getport(&dst->to)),
+				dst->send_sock->last_real_ports->remote:su_getport(&dst->to.su)),
 			dst->proto);
 	}
 
@@ -3422,7 +3423,7 @@ static mi_response_t *sip_trace_mi_2(const mi_params_t *params,
 
 static int trace_send_duplicate(char *buf, int len, struct sip_uri *uri)
 {
-	union sockaddr_union* to;
+	struct host_sock_info* to;
 	const struct socket_info* send_sock;
 	struct proxy_l * p;
 	int proto;
@@ -3434,7 +3435,7 @@ static int trace_send_duplicate(char *buf, int len, struct sip_uri *uri)
 	if(uri==NULL)
 		return 0;
 
-	to=(union sockaddr_union*)pkg_malloc(sizeof(union sockaddr_union));
+	to=(struct host_sock_info*)pkg_malloc(sizeof(*to));
 	if (to==0){
 		LM_ERR("out of pkg memory\n");
 		return -1;
@@ -3450,16 +3451,16 @@ static int trace_send_duplicate(char *buf, int len, struct sip_uri *uri)
 		return -1;
 	}
 
-	hostent2su(to, &p->host, p->addr_idx,
+	hostent2hu(to, &p->host, p->addr_idx,
 				(p->port)?p->port:SIP_PORT);
 
 	ret = -1;
 
 	do {
-		send_sock=get_send_socket(0, to, proto);
+		send_sock=get_send_socket(0, &to->su, proto);
 		if (send_sock==0){
 			LM_ERR("can't forward to af %d, proto %d no corresponding listening socket\n",
-					to->s.sa_family,proto);
+					to->su.s.sa_family,proto);
 			continue;
 		}
 
@@ -3469,7 +3470,7 @@ static int trace_send_duplicate(char *buf, int len, struct sip_uri *uri)
 		}
 		ret = 0;
 		break;
-	}while( get_next_su( p, to, 0)==0 );
+	}while( get_next_hu( p, to, 0)==0 );
 
 	free_proxy(p); /* frees only p content, not p itself */
 	pkg_free(p);

@@ -520,7 +520,7 @@ static int _reply( struct cell *trans, struct sip_msg* p_msg,
 
 	/* check if the UAS retranmission port needs to be updated */
 	if ( (p_msg->msg_flags ^ trans->uas.request->msg_flags) & FL_FORCE_RPORT )
-		su_setport( &trans->uas.response.dst.to, p_msg->rcv.src_port );
+		su_setport( &trans->uas.response.dst.to.su, p_msg->rcv.src_port );
 
 	if (code>=180 && p_msg->to
 				&& (get_to(p_msg)->tag_value.s==0
@@ -681,7 +681,7 @@ static inline int do_dns_failover(struct cell *t)
 	uac = &t->uac[picked_branch];
 
 	/* check if the DNS resolver can get at least one new IP */
-	if ( get_next_su( uac->proxy, &uac->request.dst.to, 1)!=0 )
+	if ( get_next_hu( uac->proxy, &uac->request.dst.to, 1)!=0 )
 		return -1;
 
 	LM_DBG("new destination available\n");

@@ -248,7 +248,7 @@ again:
 
 			if (!(con->flags & F_CONN_INIT)) {
 				if (protos[con->type].net.stream.conn.init &&
-						protos[con->type].net.stream.conn.init(con) < 0) {
+						protos[con->type].net.stream.conn.init(con, NULL) < 0) {
 					LM_ERR("failed to do proto %d specific init for conn %p\n",
 							con->type, con);
 					goto con_error;

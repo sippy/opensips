@@ -44,7 +44,6 @@
 
 #include "mem/shm_mem.h"
 #include "ip_addr.h"
-#include "proxy.h"
 
 #ifndef MAXHOSTNAMELEN
 #define MAXHOSTNAMELEN 64
@@ -55,10 +54,13 @@
 #define ANS_SIZE       8192
 #define DNS_HDR_SIZE     12
 #define MAX_DNS_NAME 256
-#define MAX_DNS_STRING 255
+#define MAX_DNS_STRING (MAX_DNS_NAME-1)
 
 /*! \brief this is not official yet */
 #define T_EBL		65300
+
+struct proxy_l;
+struct host_sock_info;
 
 typedef void* (fetch_dns_cache_f)(char *name,int r_type,int name_len);
 typedef int (put_dns_cache_f)(char *name,int r_type,void *record,int rdata_len,
@@ -182,56 +184,12 @@ void free_dns_res( struct proxy_l *p );
 struct dns_node *dns_res_copy(struct dns_node *s);
 
 /*! \brief taked the next destination from a resolver state machine */
-int get_next_su(struct proxy_l *p, union sockaddr_union* su, int add_to_bl);
+int get_next_hu(struct proxy_l *p, struct host_sock_info* su, int add_to_bl);
 
 
 int resolv_init();
 
 int resolv_blacklist_init();
-
-
-
-static inline struct proxy_l* shm_clone_proxy(struct proxy_l *sp,
-													unsigned int move_dn)
-{
-	struct proxy_l *dp;
-
-	dp = (struct proxy_l*)shm_malloc(sizeof(struct proxy_l));
-	if (dp==NULL) {
-		LM_ERR("no more shm memory\n");
-		return 0;
-	}
-	memset( dp , 0 , sizeof(struct proxy_l));
-
-	dp->port = sp->port;
-	dp->proto = sp->proto;
-	dp->addr_idx = sp->addr_idx;
-	dp->flags = PROXY_SHM_FLAG;
-
-	/* clone the hostent */
-	if (hostent_shm_cpy( &dp->host, &sp->host)!=0)
-		goto error0;
-
-	/* clone the dns resolver */
-	if (sp->dn) {
-		if (move_dn) {
-			dp->dn = sp->dn;
-			sp->dn = 0;
-		} else {
-			dp->dn = dns_res_copy(sp->dn);
-			if (dp->dn==NULL)
-				goto error1;
-		}
-	}
-
-	return dp;
-error1:
-	free_shm_hostent(&dp->host);
-error0:
-	shm_free(dp);
-	return 0;
-}
-
 
 
 #endif

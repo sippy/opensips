@@ -33,6 +33,7 @@
 #include <netinet/tcp.h>
 
 #include "../../net/tcp_conn_defs.h"
+#include "../../net/host_sock_info.h"
 #include "../../net/proto_tcp/tcp_common_defs.h"
 #include "../tls_mgm/tls_helper.h"
 
@@ -198,7 +199,7 @@ int openssl_tls_update_fd(struct tcp_connection *c, int fd)
 	return 0;
 }
 
-int openssl_tls_conn_init(struct tcp_connection* c, struct tls_domain *tls_dom)
+int openssl_tls_conn_init(struct tcp_connection* c, struct tls_domain *tls_dom, const struct host_sock_info *hu)
 {
 	X509_VERIFY_PARAM *param = NULL;
 
@@ -222,9 +223,14 @@ int openssl_tls_conn_init(struct tcp_connection* c, struct tls_domain *tls_dom)
 	}
 
 	if (tls_dom->verify_hostname) {
+		const str_const hostinfo = hu_gethost(hu);
+		if (hostinfo.len == 0) {
+			LM_ERR("no hostinfo\n");
+			return -1;
+		}
 		param = SSL_get0_param(c->extra_data);
 		X509_VERIFY_PARAM_set_hostflags(param, X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
-		if (!X509_VERIFY_PARAM_set1_host(param, c->hostname, strlen(c->hostname))) {
+		if (!X509_VERIFY_PARAM_set1_host(param, hostinfo.s, hostinfo.len)) {
 			LM_ERR("failed to set hostname for SSL context\n");
 			return -1;
 		}

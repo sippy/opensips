@@ -60,6 +60,7 @@
 #include "tcp_conn_profile.h"
 #include "trans.h"
 #include "net_tcp_dbg.h"
+#include "host_sock_info.h"
 
 struct struct_hist_list *con_hist;
 
@@ -951,11 +952,12 @@ error0:
  * IMPORTANT - the function assumes you want to create a new TCP conn as
  * a result of a connect operation - the conn will be set as connect !!
  * Accepted connection are triggered internally only */
-struct tcp_connection* tcp_conn_create(int sock, const union sockaddr_union* su,
+struct tcp_connection* tcp_conn_create(int sock, const struct host_sock_info* hu,
 		const struct socket_info* si, struct tcp_conn_profile *prof,
 		int state, int send2main)
 {
 	struct tcp_connection *c;
+	const union sockaddr_union *su = &hu->su;
 
 	if (!prof)
 		tcp_con_get_profile(su, &si->su, si->proto, prof);
@@ -967,13 +969,8 @@ struct tcp_connection* tcp_conn_create(int sock, const union sockaddr_union* su,
 		return NULL;
 	}
 
-	/* copy peer hostname into the tcp_connection so that tls_openssl can verify
-	 * the certificate hostname */
-	strncpy(c->hostname, su->h.hostname, sizeof(c->hostname)-1);
-	c->hostname[sizeof(c->hostname)-1] = 0;
-
 	if (protos[c->type].net.stream.conn.init &&
-			protos[c->type].net.stream.conn.init(c) < 0) {
+			protos[c->type].net.stream.conn.init(c, hu) < 0) {
 		LM_ERR("failed to do proto %d specific init for conn %p\n",
 				c->type, c);
 		tcp_conn_destroy(c);

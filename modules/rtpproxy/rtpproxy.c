@@ -3287,7 +3287,7 @@ force_rtpproxy_body_part(struct sip_msg *msg, struct rtpp_args *args,
 {
 	int ret = 0;
 	struct rtpp_args *ap;
-	union sockaddr_union to;
+	struct host_sock_info to;
 	struct ip_addr ip;
 	struct cell *trans;
 
@@ -3349,7 +3349,7 @@ force_rtpproxy_body_part(struct sip_msg *msg, struct rtpp_args *args,
 				} else if (parse_headers(msg, HDR_VIA2_F, 0) != -1 &&
 				(msg->via2 != NULL) && (msg->via2->error == PARSE_OK) &&
 				update_sock_struct_from_via(&to, msg, msg->via2)!=-1) {
-					su2ip_addr(&ip, &to);
+					su2ip_addr(&ip, &to.su);
 					args->raddr.s = ip_addr2a(&ip);
 					args->raddr.len = strlen(args->raddr.s);
 				} else {

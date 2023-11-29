@@ -75,7 +75,7 @@ int register_slcb(enum sl_cb_type type, unsigned int fmask, sl_cb_t f)
 
 
 void slcb_run_reply_out(struct sip_msg *req, str *buffer,
-									union sockaddr_union *dst, int rpl_code)
+									const struct host_sock_info *dst, int rpl_code)
 {
 	struct sl_callback *cbp;
 
@@ -100,7 +100,7 @@ void slcb_run_ack_in(struct sip_msg *req)
 
 
 void slcb_run_req_out(struct sip_msg *req, str *buffer,
-			const union sockaddr_union *dst, const struct socket_info *sock, int proto)
+			const struct host_sock_info *dst, const struct socket_info *sock, int proto)
 {
 	struct sl_callback *cbp;
 

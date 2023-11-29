@@ -322,8 +322,9 @@ static int msg_send_retry(bin_packet_t *packet, node_info_t *dest,
 		}
 		bin_get_buffer(packet, &send_buffer);
 
+		struct host_sock_info to = {.su = chosen_dest->addr};
 		if (msg_send(chosen_dest->cluster->send_sock, chosen_dest->proto,
-			&chosen_dest->addr, 0, send_buffer.s, send_buffer.len, 0) < 0) {
+			&to, 0, send_buffer.s, send_buffer.len, 0) < 0) {
 			LM_ERR("msg_send() to node [%d] failed\n", chosen_dest->node_id);
 			retr_send = 1;
 
@@ -1474,15 +1475,17 @@ int send_single_cap_update(cluster_info_t *cluster, struct local_cap *cap,
 	bin_push_int(&packet, current_id);
 	bin_get_buffer(&packet, &bin_buffer);
 
-	for (i = 0; i < no_dests; i++)
+	for (i = 0; i < no_dests; i++) {
+		struct host_sock_info to = {.su = destinations[i]->addr};
 		if (msg_send(cluster->send_sock, destinations[i]->proto,
-			&destinations[i]->addr, 0, bin_buffer.s, bin_buffer.len, 0) < 0) {
+			&to, 0, bin_buffer.s, bin_buffer.len, 0) < 0) {
 			LM_ERR("Failed to send capability update to node [%d]\n",
 				destinations[i]->node_id);
 			set_link_w_neigh_adv(-1, LS_RESTART_PINGING, destinations[i]);
 		} else
 			LM_DBG("Sent capability update to node [%d]\n",
 				destinations[i]->node_id);
+	}
 
 	bin_free_packet(&packet);
 
@@ -1567,8 +1570,8 @@ int send_cap_update(node_info_t *dest_node, int require_reply)
 	bin_push_int(&packet, 1);	/* path length is 1, only current node at this point */
 	bin_push_int(&packet, current_id);
 	bin_get_buffer(&packet, &bin_buffer);
-
-	if (msg_send(dest_node->cluster->send_sock, dest_node->proto, &dest_node->addr,
+	struct host_sock_info to = {.su = dest_node->addr};
+	if (msg_send(dest_node->cluster->send_sock, dest_node->proto, &to,
 		0, bin_buffer.s, bin_buffer.len, 0) < 0) {
 		LM_ERR("Failed to send capability update to node [%d]\n", dest_node->node_id);
 		set_link_w_neigh_adv(-1, LS_RESTART_PINGING, dest_node);

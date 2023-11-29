@@ -558,7 +558,7 @@ error:
 /*! \brief Finds a tcpconn & sends on it */
 int proto_msrp_send(const struct socket_info* send_sock,
 		char* buf, unsigned int len,
-		const union sockaddr_union* to, unsigned int id)
+		const struct host_sock_info* to_hu, unsigned int id)
 {
 	struct tcp_connection *c;
 	struct tcp_conn_profile prof;
@@ -567,6 +567,7 @@ int proto_msrp_send(const struct socket_info* send_sock,
 	union sockaddr_union src_su, dst_su;
 	int port = 0, fd, n, matched;
 	struct tls_domain *dom;
+	const union sockaddr_union *to = to_hu ? &to_hu->su : NULL;
 
 	matched = tcp_con_get_profile(to, &send_sock->su, send_sock->proto, &prof);
 
@@ -607,7 +608,7 @@ int proto_msrp_send(const struct socket_info* send_sock,
 		}
 		LM_DBG("no open tcp connection found, opening new one\n");
 		/* create tcp connection */
-		if ((c=tcp_sync_connect(send_sock, to, &prof, &fd, 1))==0) {
+		if ((c=tcp_sync_connect(send_sock, to_hu, &prof, &fd, 1))==0) {
 			LM_ERR("connect failed\n");
 			get_time_difference(get,prof.send_threshold,tcp_timeout_con_get);
 			return -1;

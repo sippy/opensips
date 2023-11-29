@@ -50,6 +50,7 @@
 #include "../../net/net_tcp.h"
 #include "../../net/tcp_common.h"
 #include "../../net/net_tcp_report.h"
+#include "../../net/host_sock_info.h"
 #include "../../socket_info.h"
 #include "../../tsend.h"
 #include "../../timer.h"
@@ -123,7 +124,7 @@ static int  mod_init(void);
 static int proto_tls_init(struct proto_info *pi);
 static int proto_tls_init_listener(struct socket_info *si);
 static int proto_tls_send(const struct socket_info* send_sock,
-		char* buf, unsigned int len, const union sockaddr_union* to,
+		char* buf, unsigned int len, const struct host_sock_info* to,
 		unsigned int id);
 static void tls_report(int type, unsigned long long conn_id, int conn_flags,
 		void *extra);
@@ -207,7 +208,7 @@ static struct script_route_ref *trace_filter_route_ref = NULL;
 
 static int tls_read_req(struct tcp_connection* con, int* bytes_read);
 static int tls_async_write(struct tcp_connection* con,int fd);
-static int proto_tls_conn_init(struct tcp_connection* c);
+static int proto_tls_conn_init(struct tcp_connection* c, const struct host_sock_info *hu);
 static void proto_tls_conn_clean(struct tcp_connection* c);
 
 static const cmd_export_t cmds[] = {
@@ -388,7 +389,7 @@ error:
 }
 
 
-static int proto_tls_conn_init(struct tcp_connection* c)
+static int proto_tls_conn_init(struct tcp_connection* c, const struct host_sock_info *hu)
 {
 	struct tls_data* data;
 	struct tls_domain *dom;
@@ -429,7 +430,7 @@ out:
 		return -1;
 	}
 
-	return tls_mgm_api.tls_conn_init(c, dom);
+	return tls_mgm_api.tls_conn_init(c, dom, hu);
 }
 
 
@@ -474,7 +475,7 @@ static void tls_report(int type, unsigned long long conn_id, int conn_flags,
 }
 
 static int proto_tls_send(const struct socket_info* send_sock,
-		char* buf, unsigned int len, const union sockaddr_union* to,
+		char* buf, unsigned int len, const struct host_sock_info* to_hu,
 		unsigned int id)
 {
 	struct tcp_connection *c;
@@ -483,6 +484,7 @@ static int proto_tls_send(const struct socket_info* send_sock,
 	int port;
 	int fd, n;
 	int rlen;
+	const union sockaddr_union *to = to_hu ? &to_hu->su : NULL;
 
 	if (to){
 		su2ip_addr(&ip, to);
@@ -520,7 +522,7 @@ static int proto_tls_send(const struct socket_info* send_sock,
 		LM_DBG("no open tcp connection found, opening new one, async = %d\n",
 			tls_async);
 		if (tls_async) {
-			n = tcp_async_connect(send_sock, to, &prof,
+			n = tcp_async_connect(send_sock, to_hu, &prof,
 					tls_async_local_connect_timeout, &c, &fd, 1);
 			if (n<0) {
 				LM_ERR("async TCP connect failed\n");
@@ -573,7 +575,7 @@ static int proto_tls_send(const struct socket_info* send_sock,
 		} else {
 			/* it is safe to send the fd to the main, because it doesn't
 			 * matter which process completes the handshake */
-			if ((c=tcp_sync_connect(send_sock, to, &prof, &fd, 1))==0) {
+			if ((c=tcp_sync_connect(send_sock, to_hu, &prof, &fd, 1))==0) {
 				LM_ERR("connect failed\n");
 				return -1;
 			}

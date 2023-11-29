@@ -34,6 +34,7 @@
 #include "../../timer.h"
 #include "../../socket_info.h"
 #include "../../receive.h"
+#include "../../net/host_sock_info.h"
 #include "../api_proto.h"
 #include "../api_proto_net.h"
 #include "../net_udp.h"
@@ -44,7 +45,7 @@ static int mod_init(void);
 static int proto_udp_init(struct proto_info *pi);
 static int proto_udp_init_listener(struct socket_info *si);
 static int proto_udp_send(const struct socket_info* send_sock,
-		char* buf, unsigned int len, const union sockaddr_union* to,
+		char* buf, unsigned int len, const struct host_sock_info* to,
 		unsigned int id);
 
 static int udp_read_req(const struct socket_info *src, int* bytes_read);
@@ -199,10 +200,11 @@ static int udp_read_req(const struct socket_info *si, int* bytes_read)
  * \return -1 on error, the return value from sento on success
  */
 static int proto_udp_send(const struct socket_info* source,
-		char* buf, unsigned int len, const union sockaddr_union* to,
+		char* buf, unsigned int len, const struct host_sock_info* to_hu,
 		unsigned int id)
 {
 	int n, tolen;
+	const union sockaddr_union *to = &to_hu->su;
 
 	tolen=sockaddru_len(*to);
 again:

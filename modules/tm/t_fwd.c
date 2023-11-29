@@ -329,12 +329,12 @@ static inline int update_uac_dst( struct sip_msg *request,
 	char *shbuf;
 	unsigned int len;
 
-	send_sock = get_send_socket( request, &uac->request.dst.to ,
+	send_sock = get_send_socket( request, &uac->request.dst.to.su ,
 			uac->request.dst.proto );
 	if (send_sock==0) {
 		LM_ERR("failed to fwd to af %d, proto %d "
 			" (no corresponding listening socket)\n",
-			uac->request.dst.to.s.sa_family, uac->request.dst.proto );
+			uac->request.dst.to.su.s.sa_family, uac->request.dst.proto );
 		ser_error=E_NO_SOCKET;
 		return -1;
 	}
@@ -455,7 +455,7 @@ static int add_uac( struct cell *t, struct sip_msg *request, const str *uri,
 	}
 
 	/* use the first address */
-	hostent2su( &t->uac[branch].request.dst.to,
+	hostent2hu( &t->uac[branch].request.dst.to,
 		&proxy->host, proxy->addr_idx, proxy->port ? proxy->port:SIP_PORT);
 	t->uac[branch].request.dst.proto = proxy->proto;
 
@@ -747,7 +747,7 @@ int t_forward_nonack( struct cell *t, struct sip_msg* p_msg ,
 
 	/* check if the UAS retranmission port needs to be updated */
 	if ( (p_msg->msg_flags ^ t->uas.request->msg_flags) & FL_FORCE_RPORT )
-		su_setport( &t->uas.response.dst.to, p_msg->rcv.src_port );
+		su_setport( &t->uas.response.dst.to.su, p_msg->rcv.src_port );
 
 	/* if no more specific error code is known, use this */
 	lowest_ret=E_BUG;
@@ -832,7 +832,7 @@ int t_forward_nonack( struct cell *t, struct sip_msg* p_msg ,
 
 			do {
 				if (check_blacklists( t->uac[i].request.dst.proto,
-				&t->uac[i].request.dst.to,
+				&t->uac[i].request.dst.to.su,
 				t->uac[i].request.buffer.s,
 				t->uac[i].request.buffer.len)) {
 					LM_DBG("blocked by blacklists\n");
@@ -855,7 +855,7 @@ int t_forward_nonack( struct cell *t, struct sip_msg* p_msg ,
 				}
 				/* get next dns entry */
 				if ( t->uac[i].proxy==0 ||
-				get_next_su( t->uac[i].proxy, &t->uac[i].request.dst.to,
+				get_next_hu( t->uac[i].proxy, &t->uac[i].request.dst.to,
 				(ser_error==E_IP_BLOCKED)?0:1)!=0 )
 					break;
 				t->uac[i].request.dst.proto = t->uac[i].proxy->proto;

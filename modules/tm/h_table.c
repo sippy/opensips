@@ -153,8 +153,6 @@ void free_cell( struct cell* dead_cell )
 			free_cloned_msg_unsafe( rpl );
 		}
 		if ( (p=dead_cell->uac[i].proxy)!=NULL ) {
-			if ( p->host.h_name )
-				shm_free_bulk( p->host.h_name );
 			if ( p->host.h_addr_list )
 				shm_free_bulk( p->host.h_addr_list );
 			if ( p->dn ) {
