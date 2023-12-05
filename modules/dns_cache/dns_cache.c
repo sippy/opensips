@@ -44,9 +44,9 @@ static int mod_init(void);
 static int child_init(int);
 static void destroy(void);
 
-int put_dnscache_value(char *name,int r_type,void *record,int rdata_len,
+int put_dnscache_value(const char *name,int r_type,void *record,int rdata_len,
 				int failure,int ttl);
-void* get_dnscache_value(char *name,int r_type,int name_len);
+void* get_dnscache_value(const char *name,int r_type,int name_len);
 
 static cachedb_funcs cdbf;
 static cachedb_con *cdbc = 0;
@@ -655,7 +655,7 @@ it_alloc_error:
 }
 
 static char keyname_buff[300]; /* TODO - size ?*/
-char* create_keyname_for_record(char *name,int r_type,int name_len,int *res_len)
+char* create_keyname_for_record(const char *name,int r_type,int name_len,int *res_len)
 {
 	char *p;
 	int n,x;
@@ -734,7 +734,7 @@ char* create_keyname_for_record(char *name,int r_type,int name_len,int *res_len)
  * r_type - type of DNS query
  * name_len - only used in case of PTR
  */
-int get_dnscache_strvalue(char *name,int r_type,int name_len,str *res)
+int get_dnscache_strvalue(const char *name,int r_type,int name_len,str *res)
 {
 	str key;
 
@@ -761,7 +761,7 @@ int get_dnscache_strvalue(char *name,int r_type,int name_len,str *res)
 #define FAILURE_MARKER_LEN	1
 
 /* Returns hostent or rdata struct, based on what callers needs */
-void* get_dnscache_value(char *name,int r_type,int name_len)
+void* get_dnscache_value(const char *name,int r_type,int name_len)
 {
 	str value;
 	struct hostent *he;
@@ -823,7 +823,7 @@ void* get_dnscache_value(char *name,int r_type,int name_len)
  *	1  - cache not initialized yet
  *	-1 - internal failure
  */
-int put_dnscache_value(char *name,int r_type,void *record,int rdata_len,
+int put_dnscache_value(const char *name,int r_type,void *record,int rdata_len,
 				int failure,int ttl)
 {
 	str key,value;

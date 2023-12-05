@@ -62,8 +62,8 @@
 struct proxy_l;
 struct host_sock_info;
 
-typedef void* (fetch_dns_cache_f)(char *name,int r_type,int name_len);
-typedef int (put_dns_cache_f)(char *name,int r_type,void *record,int rdata_len,
+typedef void* (fetch_dns_cache_f)(const char *name,int r_type,int name_len);
+typedef int (put_dns_cache_f)(const char *name,int r_type,void *record,int rdata_len,
 				int failure,int ttl);
 
 extern fetch_dns_cache_f *dnscache_fetch_func;
@@ -152,7 +152,7 @@ struct dns_node {
 };
 
 
-struct rdata* get_record(char* name, int type);
+struct rdata* get_record(const char* name, int type);
 void free_rdata_list(struct rdata* head);
 
 

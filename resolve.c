@@ -1050,7 +1050,7 @@ void free_rdata_list(struct rdata* head)
  * \return A dyn. alloc'ed struct rdata linked list with the parsed responses
  * or 0 on error
  * \note see rfc1035 for the query/response format */
-struct rdata* get_record(char* name, int type)
+struct rdata* get_record(const char* name, int type)
 {
 	int size;
 	int qno, answers_no;
@@ -1484,7 +1484,7 @@ static inline void sort_srvs(struct rdata **head)
 }
 
 
-static inline struct hostent* do_srv_lookup(char *name, unsigned short* port, struct dns_node **dn)
+static inline struct hostent* do_srv_lookup(const char *name, unsigned short* port, struct dns_node **dn)
 {
 	struct hostent *he;
 	struct srv_rdata *srv;

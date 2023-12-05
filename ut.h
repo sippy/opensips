@@ -1349,9 +1349,9 @@ static inline unsigned long long get_clock_diff(struct timespec *begin)
 	} while (0)
 
 static inline void log_expiry(int time_diff,int expire,
-					const char *func_info,char *extra_dbg,int dbg_len,int tcp)
+					const char *func_info,const char *extra_dbg,int dbg_len,int tcp)
 {
-	str param;
+	str_const param;
 	evi_params_p list;
 	static str func_str = str_init("source");
 	static str time_str = str_init("time");
@@ -1387,7 +1387,7 @@ static inline void log_expiry(int time_diff,int expire,
 		}
 		if (evi_probe_event(EVI_THRESHOLD_ID)) {
 
-			param.s = (char *)func_info;
+			param.s = func_info;
 			param.len = strlen(func_info);
 			if (!(list = evi_get_params()))
 				return;

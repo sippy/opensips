@@ -55,7 +55,7 @@ struct proxy_l* proxies=0;
 int disable_dns_failover=0;
 
 
-int hostent_shm_cpy(struct hostent *dst, struct hostent* src)
+int hostent_shm_cpy(struct hostent *dst, const struct hostent* src)
 {
 	unsigned int len;
 	int  hal_len;
@@ -101,7 +101,7 @@ void free_shm_hostent(struct hostent *dst)
 
 
 /* copies a hostent structure*, returns 0 on success, <0 on error*/
-int hostent_cpy(struct hostent *dst, struct hostent* src)
+int hostent_cpy(struct hostent *dst, const struct hostent* src)
 {
 	unsigned int len,len2, i, r;
 	int ret;
@@ -337,7 +337,7 @@ error:
 }
 
 /* clones a proxy into pkg memory */
-struct proxy_l* clone_proxy(struct proxy_l *sp)
+struct proxy_l* clone_proxy(const struct proxy_l *sp)
 {
 	struct proxy_l *dp;
 

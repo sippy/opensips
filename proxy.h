@@ -64,13 +64,13 @@ void free_shm_proxy(struct proxy_l* p);
 
 void free_hostent(struct hostent *dst);
 
-int  hostent_cpy(struct hostent *dst, struct hostent* src);
+int  hostent_cpy(struct hostent *dst, const struct hostent* src);
 
-int  hostent_shm_cpy(struct hostent *dst, struct hostent* src);
+int  hostent_shm_cpy(struct hostent *dst, const struct hostent* src);
 
 void free_shm_hostent(struct hostent *dst);
 
-struct proxy_l* clone_proxy(struct proxy_l *sp);
+struct proxy_l* clone_proxy(const struct proxy_l *sp);
 
 #include "resolve.h"
 
