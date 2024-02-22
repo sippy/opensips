@@ -141,6 +141,7 @@ static int mod_load(void)
 			"very beginning of your script, before any other module!\n");
 		return -1;
 	}
+	OPENSSL_init_crypto(OPENSSL_INIT_NO_ATEXIT, NULL);
 
 	return 0;
 }
