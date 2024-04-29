@@ -417,7 +417,6 @@ struct hostent* own_gethostbyname2(char *name,int af)
 	cached_he = (struct hostent *)dnscache_fetch_func(name,af==AF_INET?T_A:T_AAAA,0);
 	if (cached_he == NULL) {
 		LM_DBG("not found in cache or other internal error\n");
-		goto query;
 	} else if (cached_he == (void *)-1) {
 		LM_DBG("previously failed query\n");
 		return NULL;
@@ -426,7 +425,19 @@ struct hostent* own_gethostbyname2(char *name,int af)
 		return cached_he;
 	}
 
-query:
+
+	sethostent(1);
+	struct hostent *entry;
+	while ((entry = gethostent()) != NULL) {
+		if (strcmp(entry->h_name, name) != 0 || entry->h_addrtype != af)
+			continue;
+		min_ttl = 60;
+		global_he = *entry;
+		endhostent();
+		goto save_new_he;
+	}
+	endhostent();
+
 	global_he.h_addrtype=af;
 	global_he.h_length=size;
 
@@ -443,6 +454,7 @@ query:
 		return NULL;
 	}
 
+save_new_he:
 	if (dnscache_put_func(name,af==AF_INET?T_A:T_AAAA,&global_he,-1,0,min_ttl) < 0)
 		LM_ERR("Failed to store %s - %d in cache\n",name,af);
 	return &global_he;
