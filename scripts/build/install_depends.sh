@@ -2,6 +2,10 @@
 
 set -e
 
+cat /etc/apt/sources.list
+sudo rm /etc/apt/sources.list.d/*
+sudo apt-get clean -y
+
 . $(dirname $0)/dockerize.sub
 
 PKGS=$(. "$(dirname $0)/apt_requirements.sh")
