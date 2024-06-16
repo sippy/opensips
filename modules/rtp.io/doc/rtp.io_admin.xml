@@ -1,0 +1,57 @@
+<!-- RTP.io Module Admin's Guide -->
+
+<chapter>
+    <title>&adminguide;</title>
+
+    <section id="overview" xreflabel="Overview">
+    <title>Overview</title>
+        <para>
+            The <acronym>RTP.io</acronym> module is an integrated solution for
+            handling RTP traffic in &osips;, allowing for RTP relaying and
+            processing inside the OpenSIPS process itself instead of requiring
+            an external process such as RTPProxy. For some use cases this
+            approach results in a more streamlined, efficient, and manageable
+            system.
+        </para>
+        <para>
+            The module relies on the librtpproxy library to manage RTP traffic
+            and interfaces with the existing rtpproxy module to generate
+            commands, parse responses, and process SIP messages.
+        </para>
+    </section>
+
+    <section id="dependencies" xreflabel="Dependencies">
+        <title>Dependencies</title>
+        <!-- To be filled based on specific dependencies -->
+    </section>
+
+    <section id="exported_parameters" xreflabel="Exported Parameters">
+        <title>Exported Parameters</title>
+        <section id="rtpproxy_args" xreflabel="rtpproxy_args">
+            <title><varname>rtpproxy_args</varname>(string)</title>
+            <para>
+                Command-line parameteres passed down to the embedded RTPProxy
+                module upon initialization.  Refer to the RTPProxy
+                documentation for the full list.
+            </para>
+            <para>
+                <emphasis>
+                    Parameter has no default value.
+                </emphasis>
+            </para>
+            <example>
+                <title>Set <varname>rtpproxy_args</varname> parameter</title>
+                <programlisting format="linespecific">
+...
+modparam("rtp.io", "rtpproxy_args", "-m 12000 -M 15000 -l 0.0.0.0 -6 /::")
+...
+</programlisting>
+            </example>
+        </section>
+    </section>
+
+    <section id="exported_functions" xreflabel="exported_functions">
+        <title>Exported Functions</title>
+        <!-- To be filled based on specific functions exported by the module -->
+    </section>
+</chapter>
