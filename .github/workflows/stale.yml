@@ -7,6 +7,7 @@ on:
 jobs:
   stale:
 
+    if: false
     runs-on: ubuntu-latest
     permissions:
       issues: write
