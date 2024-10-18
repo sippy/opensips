@@ -31,6 +31,7 @@ jobs:
     outputs:
       llvm_ver: ${{ steps.set_outputs.outputs.LLVM_VER }}
       llvm_ver_old: ${{ steps.set_outputs.outputs.LLVM_VER_OLD }}
+      ghcr-repo: ${{ steps.set_outputs.outputs.GHCR_REPO }}
 
     steps:
     - name: Set up environment
@@ -108,11 +109,13 @@ jobs:
         DEBIAN_FRONTEND=noninteractive apt-get install -y gpp
         sh -x ./test_run.sh
 
-    - name: Set LLVM Versions
+    - name: Pass Environment
       id: set_outputs
       run: |
         echo "LLVM_VER=${LLVM_VER}" >> $GITHUB_OUTPUT
         echo "LLVM_VER_OLD=${LLVM_VER_OLD}" >> $GITHUB_OUTPUT
+        GHCR_REPO="ghcr.io/${{ github.repository_owner }}/opensips"
+        echo "GHCR_REPO=${GHCR_REPO}" | tr '[:upper:]' '[:lower:]' >> $GITHUB_OUTPUT
 
   build_test_rtp_io_dock:
     name: Build & Test OpenSIPS+rtp.io
@@ -122,6 +125,7 @@ jobs:
       rtpp-tag: ${{ matrix.rtpp-tag }}
       llvm-version: ${{ needs.build_test_rtp_io_quick.outputs.llvm_ver }}
       llvm-version-old: ${{ needs.build_test_rtp_io_quick.outputs.llvm_ver_old }}
+      ghcr-repo: ${{ needs.build_test_rtp_io_quick.outputs.ghcr-repo }}
     strategy:
       fail-fast: false
       matrix:

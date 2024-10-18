@@ -76,6 +76,7 @@ jobs:
             sort -u | grep -v unknown | BUILD_OS="${BUILD_OS}" ./scripts/build/get-arch-buildargs.rtp.io fltplatforms | paste -sd ','`"
           echo "Platforms: ${PLATFORMS}"
           GIT_BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}"
+          GIT_BRANCH="${GIT_BRANCH#refs/tags/}"
           BUILD_IMAGE="${{ inputs.ghcr-repo }}:rtp.io-${{ inputs.rtpp-tag }}-${GIT_BRANCH}"
           echo "PLATFORMS=${PLATFORMS}" >> $GITHUB_ENV
           echo "GIT_BRANCH=${GIT_BRANCH}" >> $GITHUB_ENV
