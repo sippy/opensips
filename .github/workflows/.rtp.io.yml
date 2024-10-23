@@ -130,6 +130,7 @@ jobs:
     name: Build Container (Local)
     needs: set_env
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' }}
     strategy:
       fail-fast: false
       matrix:
@@ -230,6 +231,7 @@ jobs:
     name: Test (LOCAL)
     needs: [build_rtp_io_dock_local, set_env]
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' }}
     strategy:
       fail-fast: false
       matrix:
