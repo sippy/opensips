@@ -1669,6 +1669,20 @@ int add_hep_payload(trace_message message, char* pld_name, str* pld_value)
 	return 0;
 }
 
+static void free_hep_send_resources(struct proxy_l *p, union sockaddr_union *to, char *buf) {
+	if (p) {
+		free_proxy(p);
+		pkg_free(p);
+	}
+	if (to) {
+		pkg_free(to);
+	}
+	if (buf) {
+		pkg_free(buf);
+	}
+}
+
+
 
 int send_hep_message(trace_message message, trace_dest dest, struct socket_info* send_sock)
 {
@@ -1702,17 +1716,15 @@ int send_hep_message(trace_message message, trace_dest dest, struct socket_info*
 	/* */
 	p=mk_proxy( &hep_dest->ip, hep_dest->port_no ? hep_dest->port_no : HEP_PORT, hep_dest->transport, 0);
 	if (p == NULL) {
-		pkg_free(buf);
 		LM_ERR("bad hep host name!\n");
+		free_hep_send_resources(NULL, NULL, buf);
 		goto end;
 	}
 
 	to=(union sockaddr_union *)pkg_malloc(sizeof(union sockaddr_union));
 	if (to == 0) {
 		LM_ERR("no more pkg mem!\n");
-		pkg_free(buf);
-		free_proxy(p);
-		pkg_free(p);
+		free_hep_send_resources(p, NULL, buf);
 		goto end;
 	}
 
@@ -1723,10 +1735,7 @@ int send_hep_message(trace_message message, trace_dest dest, struct socket_info*
 	// Check cooldown logic
 	if (hep_failed_retries >= hep_max_retries && (now - hep_last_attempt) < hep_retry_cooldown) {
 		LM_ERR("HEP send suppressed: too many failures (%d), in cooldown (%ld seconds left)\n", hep_failed_retries, hep_retry_cooldown - (now - hep_last_attempt));
-		free_proxy(p);
-		pkg_free(p);
-		pkg_free(to);
-		pkg_free(buf);
+		free_hep_send_resources(p, to, buf);
 		goto end;
 	}
 
@@ -1746,10 +1755,7 @@ int send_hep_message(trace_message message, trace_dest dest, struct socket_info*
 	} while (get_next_su(p, to, 0) == 0);
 
 
-	free_proxy(p);
-	pkg_free(p);
-	pkg_free(to);
-	pkg_free(buf);
+	free_hep_send_resources(p, to, buf);
 
 end:
 	return ret;
