@@ -53,3 +53,16 @@ index 8d946f07b..a0f4a5fc5 100644
      /* unique side dup setup */
      dup->dupSide = WRITE_DUP_SIDE;
      ssl->dupSide = READ_DUP_SIDE;
+diff --git a/wolfcrypt/src/asn.c b/wolfcrypt/src/asn.c
+index 4bfd2562f..2c357e186 100644
+--- a/wolfcrypt/src/asn.c
++++ b/wolfcrypt/src/asn.c
+@@ -22916,7 +22916,7 @@ static int SetOidValue(byte* out, word32 outSz, const byte *oid, word32 oidSz,
+ static int SetSKID(byte* output, word32 outSz, const byte *input, word32 length)
+ {
+     byte skid_len[1 + MAX_LENGTH_SZ];
+-    byte skid_enc_len[MAX_LENGTH_SZ];
++    byte skid_enc_len[1 + MAX_LENGTH_SZ];
+     int idx = 0, skid_lenSz, skid_enc_lenSz;
+     const byte skid_oid[] = { 0x06, 0x03, 0x55, 0x1d, 0x0e, 0x04 };
+ 
