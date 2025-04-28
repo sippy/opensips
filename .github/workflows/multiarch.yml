@@ -27,8 +27,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        compiler: ['gcc-i386-cross', 'clang-i386-cross', 'gcc-mips64-cross', 'gcc-arm32-cross', 'gcc-arm64-cross',  'gcc-arm32-qemu-cross', 'gcc-arm64-qemu-cross', 'clang-arm32-qemu-cross', 'clang-arm64-qemu-cross']
+        compiler: ['gcc-i386-cross', 'clang-i386-cross', 'gcc-mips64-cross', 'gcc-arm32-cross', 'gcc-arm64-cross']
         os: [22.04]
+        include:
+          - os: 24.04
+            compiler: 'gcc-arm32-qemu-cross'
+          - os: 24.04
+            compiler: 'gcc-arm64-qemu-cross'
+          - os: 24.04
+            compiler: 'clang-arm32-qemu-cross'
+          - os: 24.04
+            compiler: 'clang-arm64-qemu-cross'
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
