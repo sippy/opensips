@@ -40,7 +40,7 @@ platformopts() {
   debian:*)
     case "${TARGETPLATFORM}" in
     linux/ppc64le | linux/arm/v7 | linux/mips64le | linux/arm/v5)
-      out="COMPILER=clang-${LLVM_VER_OLD} LINKER=lld-${LLVM_VER_OLD}"
+      #out="COMPILER=clang-${LLVM_VER_OLD} LINKER=lld-${LLVM_VER_OLD}"
       ;;
     esac
     ;;
