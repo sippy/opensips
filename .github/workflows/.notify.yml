@@ -15,12 +15,13 @@ on:
 
 jobs:
   notify_slack:
-    if: ${{ inputs.job_result == 'failure' && github.repository == 'OpenSIPS/opensips' && secrets.SLACK_BOT_TOKEN != '' }}
+    if: ${{ inputs.job_result == 'failure' && github.repository == 'OpenSIPS/opensips' }}
     runs-on: ubuntu-latest
     env:
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
     steps:
       - name: Notify slack fail
+        if: ${{ env.SLACK_BOT_TOKEN != '' }}
         uses: slackapi/slack-github-action@v3.0.3
         with:
           method: chat.postMessage
